@@ -31,9 +31,8 @@ Only **`system_admin`** may create/edit configs or activate. Other roles (`dispa
 
 4. **Seed** the first system admin + default “Modern Canada” active config:
 
-   ```bash
-   php scripts/seed.php
-   ```
+   - **CLI:** `php scripts/seed.php`
+   - **phpMyAdmin / no SSH:** import **`sql/seed_data.sql`** after the schema (run once).
 
    Default login (change in production):
 
@@ -68,6 +67,22 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8080
 3. **Save**, then on the dashboard click **Activate** on that row.
 
 All apps that call the API on next refresh (or after pull-to-refresh / `RegionConfigRepository.refresh()`) get the new active payload.
+
+## Shared hosting (subfolder URL +404)
+
+If the app is not at the domain root (e.g. `https://www.example.com/vpride/backend/public/`):
+
+1. Upload the **`backend`** tree so **`public/index.php`** is the entry point users hit.
+2. Edit **`public/.htaccess`**: set **`RewriteBase`** to the URL path of that folder (e.g. `/vpride/backend/public/`).
+3. In **`backend/.env`** set **`APP_BASE_PATH=vpride/backend/public`** (no leading/trailing slashes required).
+4. Set **`PUBLIC_BASE_URL=https://www.example.com/vpride/backend/public`** (no trailing slash).
+
+Test in a browser:
+
+- `…/vpride/backend/public/api/v1/config/regions` → JSON
+- `…/vpride/backend/public/admin/login` → admin login
+
+Flutter: `--dart-define=API_BASE_URL=https://www.example.com/vpride/backend/public`
 
 ## Production notes
 
