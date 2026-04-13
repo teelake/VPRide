@@ -37,7 +37,18 @@ if ($isNew) {
     $row = $repo->getConfigRow($id);
     if ($row === null) {
         http_response_code(404);
-        echo 'Config not found';
+        header('Content-Type: text/html; charset=utf-8');
+        $pageTitle = 'Not found · VPRide Console';
+        $bodyClass = 'vp-body vp-body--app';
+        require __DIR__ . '/includes/head.php';
+        require __DIR__ . '/includes/app_shell_start.php';
+        ?>
+        <div class="vp-card"><div class="vp-card__pad">
+          <h1 class="vp-page-title">Configuration not found</h1>
+          <p class="vp-page-desc"><a class="vp-back" href="/admin/dashboard"><span class="vp-back__arrow">←</span> Back to regions</a></p>
+        </div></div>
+        <?php
+        require __DIR__ . '/includes/app_shell_end.php';
         exit;
     }
     $label = $row['label'];
@@ -60,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
                 $repo->updateConfig($id, $label, $jsonText, $admin[0]);
-                $message = 'Saved. Activate this version on the dashboard to push it to apps.';
+                $message = 'Saved. Return to the dashboard and tap **Go live** on this version to publish.';
             } catch (Throwable $e) {
                 $error = 'Invalid JSON or database error: ' . $e->getMessage();
             }
@@ -123,40 +134,47 @@ function defaultWorldwideTemplate(): array
 }
 
 header('Content-Type: text/html; charset=utf-8');
+$pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · VPRide Console';
+$bodyClass = 'vp-body vp-body--app';
+require __DIR__ . '/includes/head.php';
+require __DIR__ . '/includes/app_shell_start.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Edit region config</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-    label { display: block; font-weight: 600; margin-top: 1rem; }
-    input[type=text] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
-    textarea { width: 100%; min-height: 420px; font-family: ui-monospace, monospace; font-size: 13px; padding: 0.5rem; box-sizing: border-box; }
-    .row { margin-top: 1rem; display: flex; gap: 1rem; align-items: center; }
-    .err { color: #b00020; }
-    .msg { color: #0a0; }
-  </style>
-</head>
-<body>
-  <h1><?= $isNew ? 'New region config' : 'Edit region config #' . $id ?></h1>
-  <p><a href="/admin/dashboard">← Back to dashboard</a></p>
-  <?php if ($error !== '') { ?><p class="err"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php } ?>
-  <?php if ($message !== '') { ?><p class="msg"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><?php } ?>
 
-  <form method="post" action="<?= htmlspecialchars($isNew ? '/admin/region/new' : '/admin/region/' . $id, ENT_QUOTES, 'UTF-8') ?>">
-    <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-    <label>Label (internal)
-      <input type="text" name="label" value="<?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>" required>
-    </label>
-    <label>Payload JSON (must match app contract: countries, defaults, branding, localization)
-      <textarea name="payload" required><?= htmlspecialchars($jsonText, ENT_QUOTES, 'UTF-8') ?></textarea>
-    </label>
-    <div class="row">
-      <button type="submit"><?= $isNew ? 'Create draft' : 'Save' ?></button>
-    </div>
-  </form>
-</body>
-</html>
+<a class="vp-back" href="/admin/dashboard"><span class="vp-back__arrow">←</span> Regions</a>
+
+<h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
+<p class="vp-hint">
+  <?= $isNew ? 'Start from the template and adjust countries, cities, defaults, and branding. Valid JSON is required.' : 'Update the JSON payload. Changes are not live until you activate this version on the dashboard.' ?>
+  <?php if (! $isNew) { ?>
+    <strong>#<?= (int) $id ?></strong>
+  <?php } ?>
+</p>
+
+<?php if ($error !== '') { ?>
+  <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
+<?php } ?>
+<?php if ($message !== '') { ?>
+  <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>
+<?php } ?>
+
+<section class="vp-card">
+  <div class="vp-card__pad">
+    <form method="post" action="<?= vp_h($isNew ? '/admin/region/new' : '/admin/region/' . $id) ?>">
+      <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+      <div class="vp-field">
+        <label class="vp-label" for="label">Internal label</label>
+        <input class="vp-input" id="label" type="text" name="label" value="<?= vp_h($label) ?>" required placeholder="e.g. Canada production / Nigeria QA">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="payload">Payload JSON</label>
+        <textarea class="vp-textarea" id="payload" name="payload" required spellcheck="false"><?= vp_h($jsonText) ?></textarea>
+      </div>
+      <div class="vp-form-actions">
+        <button type="submit" class="vp-btn vp-btn--primary"><?= $isNew ? 'Create draft' : 'Save changes' ?></button>
+        <a class="vp-btn vp-btn--ghost" href="/admin/dashboard">Cancel</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<?php require __DIR__ . '/includes/app_shell_end.php'; ?>

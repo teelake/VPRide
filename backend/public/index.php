@@ -16,6 +16,16 @@ if ($path === '') {
 }
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+if ($path === '/admin/assets/admin.css') {
+    $cssFile = $backendRoot . '/public/admin/assets/admin.css';
+    if (is_readable($cssFile)) {
+        header('Content-Type: text/css; charset=utf-8');
+        header('Cache-Control: public, max-age=86400');
+        readfile($cssFile);
+        exit;
+    }
+}
+
 if ($path === '/api/v1/config/regions' && $method === 'GET') {
     require $backendRoot . '/src/handlers/api_regions.php';
     exit;

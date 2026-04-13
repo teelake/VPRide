@@ -31,7 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isSystemAdmin) {
         try {
             $repo = new RegionRepository(Database::pdo());
             $repo->activate($id);
-            $message = "Configuration #{$id} is now active. Mobile apps will receive it on next fetch.";
+            $message = "Configuration #{$id} is now live. Mobile apps will pick it up on the next config fetch.";
         } catch (Throwable $e) {
             $error = 'Could not activate: ' . $e->getMessage();
         }
@@ -42,79 +42,97 @@ $repo = new RegionRepository(Database::pdo());
 $rows = $repo->listConfigs();
 $csrf = Auth::csrfToken();
 
+$publicBase = getenv('PUBLIC_BASE_URL') ?: 'http://localhost:8080';
+$apiUrl = rtrim($publicBase, '/') . '/api/v1/config/regions';
+
 header('Content-Type: text/html; charset=utf-8');
+$pageTitle = 'Regions · VPRide Console';
+$bodyClass = 'vp-body vp-body--app';
+require __DIR__ . '/includes/head.php';
+require __DIR__ . '/includes/app_shell_start.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VPRide Admin — Regions</title>
-  <style>
-    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
-    table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem 0.75rem; text-align: left; }
-    th { background: #f5f5f5; }
-    .active { font-weight: bold; color: #0a0; }
-    .row { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-top: 1rem; }
-    .msg { color: #0a0; }
-    .err { color: #b00020; }
-    button, .btn { padding: 0.4rem 0.75rem; cursor: pointer; text-decoration: none; display: inline-block; color: inherit; }
-    code { background: #f0f0f0; padding: 0.1rem 0.3rem; }
-  </style>
-</head>
-<body>
-  <h1>Region configuration</h1>
-  <p>Signed in as <?= htmlspecialchars($admin[1], ENT_QUOTES, 'UTF-8') ?>
-    (<?= htmlspecialchars($admin[2], ENT_QUOTES, 'UTF-8') ?>).
-  </p>
-  <div class="row">
-    <?php if ($isSystemAdmin) { ?>
-      <a class="btn" href="/admin/region/new">New draft config</a>
-    <?php } ?>
-    <form method="post" action="/admin/logout" style="display:inline;">
-      <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-      <button type="submit">Log out</button>
-    </form>
-  </div>
-  <p>Public API: <code>GET <?= htmlspecialchars((getenv('PUBLIC_BASE_URL') ?: 'http://localhost:8080') . '/api/v1/config/regions', ENT_QUOTES, 'UTF-8') ?></code>
-    (set <code>PUBLIC_BASE_URL</code> in <code>.env</code> to match your host).</p>
 
-  <?php if ($message !== '') { ?><p class="msg"><?= htmlspecialchars($message, ENT_QUOTES, 'UTF-8') ?></p><?php } ?>
-  <?php if ($error !== '') { ?><p class="err"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></p><?php } ?>
+<h1 class="vp-page-title">Region configuration</h1>
+<p class="vp-page-desc">One active profile is served to all apps. Create drafts, edit JSON, then <strong>Go live</strong> when you are ready.</p>
 
-  <table>
-    <thead>
-      <tr><th>ID</th><th>Label</th><th>Status</th><th>Updated</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-    <?php foreach ($rows as $r) { ?>
-      <tr>
-        <td><?= (int) $r['id'] ?></td>
-        <td><?= htmlspecialchars((string) $r['label'], ENT_QUOTES, 'UTF-8') ?></td>
-        <td><?= (int) $r['is_active'] === 1 ? '<span class="active">ACTIVE</span>' : 'draft' ?></td>
-        <td><?= htmlspecialchars((string) $r['updated_at'], ENT_QUOTES, 'UTF-8') ?></td>
-        <td>
-          <?php if ($isSystemAdmin) { ?>
-            <a href="/admin/region/<?= (int) $r['id'] ?>">Edit JSON</a>
-            <?php if ((int) $r['is_active'] !== 1) { ?>
-              <form method="post" action="/admin/dashboard" style="display:inline;">
-                <input type="hidden" name="_csrf" value="<?= htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8') ?>">
-                <input type="hidden" name="activate_id" value="<?= (int) $r['id'] ?>">
-                <button type="submit">Activate</button>
-              </form>
-            <?php } ?>
-          <?php } else { ?>
-            <span>View only</span>
-          <?php } ?>
-        </td>
-      </tr>
-    <?php } ?>
-    </tbody>
-  </table>
-
-  <?php if (! $isSystemAdmin) { ?>
-    <p><em>Only <strong>system_admin</strong> can edit or switch the active region.</em></p>
+<div class="vp-toolbar">
+  <?php if ($isSystemAdmin) { ?>
+    <a class="vp-btn vp-btn--primary" href="/admin/region/new">New draft</a>
   <?php } ?>
-</body>
-</html>
+</div>
+
+<div class="vp-api-strip">
+  <span class="vp-api-strip__label">Public API</span>
+  <code>GET <?= vp_h($apiUrl) ?></code>
+  <span style="opacity:0.7;">Set <code style="background:rgba(255,255,255,0.1);">PUBLIC_BASE_URL</code> in <code style="background:rgba(255,255,255,0.1);">.env</code> if this link should show your real host.</span>
+</div>
+
+<?php if ($message !== '') { ?>
+  <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>
+<?php } ?>
+<?php if ($error !== '') { ?>
+  <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
+<?php } ?>
+
+<section class="vp-card" aria-labelledby="configs-heading">
+  <div class="vp-card__pad">
+    <h2 id="configs-heading" class="vp-section-title">Configuration versions</h2>
+    <?php if ($rows === []) { ?>
+      <p class="vp-page-desc" style="margin-bottom:0;">No rows yet. Run <code>php scripts/seed.php</code> or create a draft.</p>
+    <?php } else { ?>
+      <div class="vp-table-wrap">
+        <table class="vp-table">
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Label</th>
+              <th scope="col">Status</th>
+              <th scope="col">Updated</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($rows as $r) { ?>
+              <tr>
+                <td class="vp-table__id"><?= (int) $r['id'] ?></td>
+                <td class="vp-table__label"><?= vp_h((string) $r['label']) ?></td>
+                <td>
+                  <?php if ((int) $r['is_active'] === 1) { ?>
+                    <span class="vp-badge-live">Live</span>
+                  <?php } else { ?>
+                    <span class="vp-badge-draft">Draft</span>
+                  <?php } ?>
+                </td>
+                <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['updated_at']) ?></td>
+                <td>
+                  <div class="vp-table__actions">
+                    <?php if ($isSystemAdmin) { ?>
+                      <a class="vp-btn vp-btn--inline" href="/admin/region/<?= (int) $r['id'] ?>">Edit</a>
+                      <?php if ((int) $r['is_active'] !== 1) { ?>
+                        <form method="post" action="/admin/dashboard" class="vp-inline-form">
+                          <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+                          <input type="hidden" name="activate_id" value="<?= (int) $r['id'] ?>">
+                          <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Go live</button>
+                        </form>
+                      <?php } ?>
+                    <?php } else { ?>
+                      <span class="vp-badge-draft">View only</span>
+                    <?php } ?>
+                  </div>
+                </td>
+              </tr>
+            <?php } ?>
+          </tbody>
+        </table>
+      </div>
+    <?php } ?>
+  </div>
+</section>
+
+<?php if (! $isSystemAdmin) { ?>
+  <div class="vp-readonly-note">
+    Only <strong>system_admin</strong> users can edit JSON or switch the live region. Your role is <strong><?= vp_h($admin[2]) ?></strong>.
+  </div>
+<?php } ?>
+
+<?php require __DIR__ . '/includes/app_shell_end.php'; ?>
