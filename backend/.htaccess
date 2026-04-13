@@ -1,21 +1,11 @@
-# Place this file in the "backend" folder next to index.php (same level as /public).
-# URL example: https://webspace.ng/vpride/backend/admin/login
-#
-# 1) Edit RewriteBase to match your folder path (leading + trailing slash).
-# 2) In .env set APP_BASE_PATH to the SAME path WITHOUT trailing slash and WITHOUT "public"
-#    Example: APP_BASE_PATH=vpride/backend
+# Optional: only used if someone opens …/vpride/backend/ (without /public).
+# Primary setup: point the site at /vpride/backend/public/ and use public/.htaccess.
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /vpride/backend/
 
-  RewriteCond %{REQUEST_FILENAME} -f
-  RewriteRule ^ - [L]
-
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-
-  RewriteRule ^ index.php [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^ public/index.php [QSA,L]
 </IfModule>
-
-# If mod_rewrite is off, enable it in hosting panel or ask support.

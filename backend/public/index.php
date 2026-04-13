@@ -9,14 +9,45 @@ use VprideBackend\Config;
 
 Config::load($backendRoot . '/.env');
 
+/**
+ * Build the logical path for routing (/admin/login, /api/v1/...).
+ * Handles subfolders, RewriteBase, and some hosts that put /index.php in REQUEST_URI.
+ */
 $rawPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
 $path = $rawPath;
-$basePath = \VprideBackend\Config::basePath();
-if ($basePath !== '') {
-    if ($path === $basePath || str_starts_with($path, $basePath . '/')) {
-        $path = substr($path, strlen($basePath)) ?: '/';
+
+// …/public/index.php or …/public/index.php/admin/foo
+if (str_contains($path, '/index.php')) {
+    $path = preg_replace('#^.*/index\.php#', '', $path, 1) ?? '';
+    if ($path === '' || $path === false) {
+        $path = '/';
+    }
+    if ($path !== '/' && ! str_starts_with($path, '/')) {
+        $path = '/' . $path;
     }
 }
+
+$bases = [];
+$configured = Config::basePath();
+if ($configured !== '') {
+    $bases[] = $configured;
+}
+$scriptDir = dirname($_SERVER['SCRIPT_NAME'] ?? '');
+$scriptDir = str_replace('\\', '/', $scriptDir);
+$scriptDir = rtrim($scriptDir, '/');
+if ($scriptDir !== '' && $scriptDir !== '/') {
+    $bases[] = $scriptDir;
+}
+
+$bases = array_values(array_unique($bases));
+foreach ($bases as $base) {
+    $b = str_starts_with($base, '/') ? $base : '/' . $base;
+    if ($path === $b || str_starts_with($path, $b . '/')) {
+        $path = substr($path, strlen($b)) ?: '/';
+        break;
+    }
+}
+
 $path = rtrim($path, '/');
 if ($path === '') {
     $path = '/';
