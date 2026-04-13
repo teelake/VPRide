@@ -1,12 +1,8 @@
-# Apache (shared hosting): send all requests to index.php so /admin/login and /api/v1/... work.
-#1) Put this file in the SAME folder as index.php (usually backend/public).
-# 2) Edit RewriteBase to match the URL path to that folder (leading slash, trailing slash).
+# Use this ONLY if your hosting URL includes /public/ (e.g. …/vpride/backend/public/).
+# Recommended setup: use backend/.htaccess + backend/index.php so the URL is …/vpride/backend/ (no /public).
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-
-  # Example: https://www.webspace.ng/vpride/backend/public/admin/login
-  # RewriteBase /vpride/backend/public/
   RewriteBase /vpride/backend/public/
 
   RewriteCond %{REQUEST_FILENAME} -f [OR]

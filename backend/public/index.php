@@ -23,6 +23,11 @@ if ($path === '') {
 }
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+if ($path === '/' && $method === 'GET') {
+    header('Location: ' . Config::url('/admin/login'));
+    exit;
+}
+
 if ($path === '/admin/assets/admin.css') {
     $cssFile = $backendRoot . '/public/admin/assets/admin.css';
     if (is_readable($cssFile)) {

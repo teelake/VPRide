@@ -68,21 +68,24 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8080
 
 All apps that call the API on next refresh (or after pull-to-refresh / `RegionConfigRepository.refresh()`) get the new active payload.
 
-## Shared hosting (subfolder URL +404)
+## Shared hosting (fix 404 on `/vpride/backend/`)
 
-If the app is not at the domain root (e.g. `https://www.example.com/vpride/backend/public/`):
+Use **`backend/index.php`** + **`backend/.htaccess`** so the URL does **not** need `/public` in the path.
 
-1. Upload the **`backend`** tree so **`public/index.php`** is the entry point users hit.
-2. Edit **`public/.htaccess`**: set **`RewriteBase`** to the URL path of that folder (e.g. `/vpride/backend/public/`).
-3. In **`backend/.env`** set **`APP_BASE_PATH=vpride/backend/public`** (no leading/trailing slashes required).
-4. Set **`PUBLIC_BASE_URL=https://www.example.com/vpride/backend/public`** (no trailing slash).
+1. Upload the full **`backend/`** folder. You should have **`backend/index.php`** next to **`backend/public/`**.
+2. Edit **`backend/.htaccess`**: set **`RewriteBase`** to your URL path with trailing slash, e.g. **`/vpride/backend/`**.
+3. In **`backend/.env`**:
+   - **`APP_BASE_PATH=vpride/backend`** (same as URL path, **no** `/public`)
+   - **`PUBLIC_BASE_URL=https://webspace.ng/vpride/backend`**
+4. Ensure **Apache `mod_rewrite`** is on (most cPanel hosts allow `.htaccess`).
 
-Test in a browser:
+Open:
 
-- `…/vpride/backend/public/api/v1/config/regions` → JSON
-- `…/vpride/backend/public/admin/login` → admin login
+- `https://webspace.ng/vpride/backend/` → redirects to admin login  
+- `https://webspace.ng/vpride/backend/api/v1/config/regions` → JSON  
+- `https://webspace.ng/vpride/backend/admin/login` → login**Whole Flutter repo under `/vpride/`:** add the repo’s root **`index.php`** (redirects to `backend/`). If `/vpride/` still 404s, set the host’s **DirectoryIndex** to include `index.php` or remove a conflicting `index.html`.
 
-Flutter: `--dart-define=API_BASE_URL=https://www.example.com/vpride/backend/public`
+Flutter: `--dart-define=API_BASE_URL=https://webspace.ng/vpride/backend`
 
 ## Production notes
 
