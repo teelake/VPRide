@@ -64,8 +64,8 @@ require __DIR__ . '/includes/app_shell_start.php';
 <div class="vp-api-strip">
   <span class="vp-api-strip__label">Public API</span>
   <code>GET <?= vp_h($apiUrl) ?></code>
-  <span style="opacity:0.7;">Set <code style="background:rgba(255,255,255,0.1);">PUBLIC_BASE_URL</code> in <code style="background:rgba(255,255,255,0.1);">.env</code> if this link should show your real host.</span>
 </div>
+<p class="vp-page-desc" style="margin-top:-0.75rem; font-size:0.8125rem;">Tip: set <code style="background:var(--vp-surface-elevated); padding:0.15rem 0.4rem; border-radius:6px;">PUBLIC_BASE_URL</code> in <code style="background:var(--vp-surface-elevated); padding:0.15rem 0.4rem; border-radius:6px;">.env</code> so this URL matches your deployment.</p>
 
 <?php if ($message !== '') { ?>
   <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>

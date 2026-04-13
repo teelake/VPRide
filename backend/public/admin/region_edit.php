@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
                 $repo->updateConfig($id, $label, $jsonText, $admin[0]);
-                $message = 'Saved. Return to the dashboard and tap **Go live** on this version to publish.';
+                $message = 'Saved. Open Regions and tap “Go live” on this version to publish to apps.';
             } catch (Throwable $e) {
                 $error = 'Invalid JSON or database error: ' . $e->getMessage();
             }

@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/helpers.php';
-
 /** @var array{0:int,1:string,2:string} $admin */
 /** @var string $csrf */
 
