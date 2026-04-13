@@ -17,7 +17,7 @@ Auth::startSession();
 $error = '';
 
 if (Auth::currentAdmin() !== null) {
-    header('Location: /admin/dashboard');
+    header('Location: ' . Config::url('/admin/dashboard'));
     exit;
 }
 
@@ -30,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($email === '' || $password === '') {
             $error = 'Email and password required.';
         } elseif (Auth::login(Database::pdo(), $email, $password)) {
-            header('Location: /admin/dashboard');
+            header('Location: ' . Config::url('/admin/dashboard'));
             exit;
         } else {
             $error = 'Invalid credentials.';
@@ -58,7 +58,7 @@ require __DIR__ . '/includes/head.php';
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
       <?php } ?>
 
-      <form method="post" action="/admin/login" class="vp-login__form">
+      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form">
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <div class="vp-field">
           <label class="vp-label" for="email">Email</label>

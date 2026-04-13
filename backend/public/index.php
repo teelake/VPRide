@@ -10,7 +10,14 @@ use VprideBackend\Config;
 Config::load($backendRoot . '/.env');
 
 $rawPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-$path = rtrim($rawPath, '/');
+$path = $rawPath;
+$basePath = \VprideBackend\Config::basePath();
+if ($basePath !== '') {
+    if ($path === $basePath || str_starts_with($path, $basePath . '/')) {
+        $path = substr($path, strlen($basePath)) ?: '/';
+    }
+}
+$path = rtrim($path, '/');
 if ($path === '') {
     $path = '/';
 }

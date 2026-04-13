@@ -17,6 +17,14 @@ final class Auth
         if (session_status() === PHP_SESSION_ACTIVE) {
             return;
         }
+        $cookiePath = Config::basePath() ?: '/';
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => $cookiePath,
+            'secure' => ! empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
     }
 
@@ -88,7 +96,7 @@ final class Auth
     public static function requireLogin(): void
     {
         if (self::currentAdmin() === null) {
-            header('Location: /admin/login.php');
+            header('Location: ' . Config::url('/admin/login'));
             exit;
         }
     }

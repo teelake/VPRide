@@ -45,7 +45,7 @@ if ($isNew) {
         ?>
         <div class="vp-card"><div class="vp-card__pad">
           <h1 class="vp-page-title">Configuration not found</h1>
-          <p class="vp-page-desc"><a class="vp-back" href="/admin/dashboard"><span class="vp-back__arrow">←</span> Back to regions</a></p>
+          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/dashboard') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
         </div></div>
         <?php
         require __DIR__ . '/includes/app_shell_end.php';
@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 if ($isNew) {
                     $newId = $repo->createDraft($label, $jsonText, $admin[0]);
-                    header('Location: /admin/region/' . $newId);
+                    header('Location: ' . Config::url('/admin/region/' . $newId));
                     exit;
                 }
                 $repo->updateConfig($id, $label, $jsonText, $admin[0]);
@@ -140,7 +140,7 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<a class="vp-back" href="/admin/dashboard"><span class="vp-back__arrow">←</span> Regions</a>
+<a class="vp-back" href="<?= vp_url('/admin/dashboard') ?>"><span class="vp-back__arrow">←</span> Regions</a>
 
 <h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
 <p class="vp-hint">
@@ -159,7 +159,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_h($isNew ? '/admin/region/new' : '/admin/region/' . $id) ?>">
+    <form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/region/new' : '/admin/region/' . $id)) ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="label">Internal label</label>
@@ -171,7 +171,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <div class="vp-form-actions">
         <button type="submit" class="vp-btn vp-btn--primary"><?= $isNew ? 'Create draft' : 'Save changes' ?></button>
-        <a class="vp-btn vp-btn--ghost" href="/admin/dashboard">Cancel</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/dashboard') ?>">Cancel</a>
       </div>
     </form>
   </div>

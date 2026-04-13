@@ -57,7 +57,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <div class="vp-toolbar">
   <?php if ($isSystemAdmin) { ?>
-    <a class="vp-btn vp-btn--primary" href="/admin/region/new">New draft</a>
+    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/region/new') ?>">New draft</a>
   <?php } ?>
 </div>
 
@@ -107,9 +107,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td>
                   <div class="vp-table__actions">
                     <?php if ($isSystemAdmin) { ?>
-                      <a class="vp-btn vp-btn--inline" href="/admin/region/<?= (int) $r['id'] ?>">Edit</a>
+                      <a class="vp-btn vp-btn--inline" href="<?= vp_url('/admin/region/' . (int) $r['id']) ?>">Edit</a>
                       <?php if ((int) $r['is_active'] !== 1) { ?>
-                        <form method="post" action="/admin/dashboard" class="vp-inline-form">
+                        <form method="post" action="<?= vp_url('/admin/dashboard') ?>" class="vp-inline-form">
                           <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
                           <input type="hidden" name="activate_id" value="<?= (int) $r['id'] ?>">
                           <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Go live</button>

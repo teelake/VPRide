@@ -8,7 +8,7 @@ declare(strict_types=1);
 ?>
 <header class="vp-header">
   <div class="vp-header__inner vp-container">
-    <a href="/admin/dashboard" class="vp-brand" aria-label="VPRide Admin home">
+    <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-brand" aria-label="VPRide Admin home">
       <span class="vp-brand__mark" aria-hidden="true"></span>
       <span class="vp-brand__text"><span class="vp-brand__vp">VP</span><span class="vp-brand__ride">Ride</span></span>
       <span class="vp-brand__tag">Console</span>
@@ -18,7 +18,7 @@ declare(strict_types=1);
         <span class="vp-header__email"><?= vp_h($admin[1]) ?></span>
         <span class="vp-pill vp-pill--muted"><?= vp_h($admin[2]) ?></span>
       </div>
-      <form method="post" action="/admin/logout" class="vp-inline-form">
+      <form method="post" action="<?= vp_url('/admin/logout') ?>" class="vp-inline-form">
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <button type="submit" class="vp-btn vp-btn--ghost vp-btn--sm">Log out</button>
       </form>

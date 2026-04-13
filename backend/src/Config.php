@@ -48,4 +48,29 @@ final class Config
     {
         return getenv('DB_PASSWORD') ?: '';
     }
+
+    /**
+     * URL path prefix when the app is not at the domain root (shared hosting subfolder).
+     * Example: site is https://example.com/vpride/backend/public → set APP_BASE_PATH=vpride/backend/public
+     * No leading/trailing slashes required; empty when the app is at domain root.
+     */
+    public static function basePath(): string
+    {
+        $raw = getenv('APP_BASE_PATH') ?: '';
+        $raw = trim($raw, "/ \t\r\n");
+        if ($raw === '') {
+            return '';
+        }
+
+        return '/' . $raw;
+    }
+
+    /** Absolute path for redirects and links, e.g. /vpride/backend/public/admin/login */
+    public static function url(string $path): string
+    {
+        $base = self::basePath();
+        $path = '/' . ltrim($path, '/');
+
+        return $base . $path;
+    }
 }
