@@ -629,3 +629,119 @@
 .vp-readonly-note strong {
   color: var(--vp-black);
 }
+
+/* ——— Region structured form ——— */
+.vp-card--region {
+  margin-bottom: 1.5rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--vp-surface);
+  border: 1px solid var(--vp-border);
+  border-radius: var(--vp-radius);
+  box-shadow: var(--vp-shadow);
+}
+
+.vp-card--region .vp-card__title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: var(--vp-black);
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--vp-border);
+}
+
+.vp-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.vp-field-grid .vp-field {
+  margin-bottom: 0;
+}
+
+.vp-locale-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.5rem 1rem;
+}
+
+.vp-locale-grid label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.vp-locale-grid input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--vp-gold);
+}
+
+.vp-country-block {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.1rem;
+  background: var(--vp-surface-elevated);
+  border: 1px solid var(--vp-border);
+  border-radius: var(--vp-radius-sm);
+}
+
+.vp-country-block__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vp-country-block__head .vp-field {
+  flex: 1 1 160px;
+  margin-bottom: 0;
+}
+
+.vp-country-block__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.vp-city-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.75rem 1rem;
+  align-items: end;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: var(--vp-surface);
+  border: 1px solid var(--vp-border);
+  border-radius: var(--vp-radius-sm);
+}
+
+.vp-city-grid .vp-field {
+  margin-bottom: 0;
+}
+
+.vp-city-grid .vp-field--wide {
+  grid-column: 1 / -1;
+}
+
+.vp-city-row-actions {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding-bottom: 0.15rem;
+}
+
+.vp-region-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.vp-form-prototypes {
+  display: none;
+}
