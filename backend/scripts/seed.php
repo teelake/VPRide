@@ -9,6 +9,8 @@
 
 declare(strict_types=1);
 
+use RuntimeException;
+
 $root = dirname(__DIR__);
 require_once $root . '/src/Config.php';
 require_once $root . '/src/Database.php';
@@ -33,9 +35,13 @@ if ($stmt->fetch()) {
 
 $pdo->beginTransaction();
 try {
+    $rid = (int) $pdo->query("SELECT id FROM admin_roles WHERE slug = 'system_admin' LIMIT 1")->fetchColumn();
+    if ($rid < 1) {
+        throw new RuntimeException('admin_roles not seeded: import schema or migration first');
+    }
     $pdo->prepare(
-        'INSERT INTO admins (email, password_hash, role) VALUES (?, ?, ?)',
-    )->execute([$email, $hash, 'system_admin']);
+        'INSERT INTO admins (email, password_hash, role_id) VALUES (?, ?, ?)',
+    )->execute([$email, $hash, $rid]);
     $adminId = (int) $pdo->lastInsertId();
 
     $payload = defaultRegionPayload();

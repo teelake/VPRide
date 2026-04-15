@@ -10,10 +10,10 @@
 -- Bcrypt for Admin@123 (PHP password_hash, cost 10):
 -- If you change the password, regenerate: php -r "echo password_hash('YourPass', PASSWORD_BCRYPT);"
 
-INSERT INTO admins (email, password_hash, role) VALUES (
+INSERT INTO admins (email, password_hash, role_id) VALUES (
   'admin@vpride.local',
   '$2y$10$YcpMZXQroXnD/ejZXa7i2eNXfTcsqNam14dy5zvlEKQouKoZ7gaJ6',
-  'system_admin'
+  (SELECT id FROM admin_roles WHERE slug = 'system_admin' LIMIT 1)
 );
 
 INSERT INTO region_configs (label, payload, is_active, updated_by_admin_id) VALUES (

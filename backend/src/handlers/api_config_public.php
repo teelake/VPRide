@@ -31,6 +31,7 @@ try {
             'googleWebClientId' => $settings['googleWebClientId'],
             'mapsApiKey' => $settings['mapsApiKey'],
             'minimumAppVersion' => $settings['minimumAppVersion'],
+            'features' => $settings['features'],
         ],
         JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
     );

@@ -161,6 +161,43 @@ if ($path === '/admin/settings' && in_array($method, ['GET', 'POST'], true)) {
     exit;
 }
 
+if ($path === '/admin/reports' && $method === 'GET') {
+    header('Location: ' . Config::url('/admin/reports/rides'));
+    exit;
+}
+
+if ($path === '/admin/reports/rides' && $method === 'GET') {
+    require $backendRoot . '/public/admin/reports_rides.php';
+    exit;
+}
+
+if ($path === '/admin/reports/riders' && $method === 'GET') {
+    require $backendRoot . '/public/admin/reports_riders.php';
+    exit;
+}
+
+if ($path === '/admin/rbac' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/rbac.php';
+    exit;
+}
+
+if ($path === '/admin/rbac/permissions' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/rbac_permissions.php';
+    exit;
+}
+
+if ($path === '/admin/rbac/role/new' && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_RBAC_NEW = true;
+    require $backendRoot . '/public/admin/rbac_role_edit.php';
+    exit;
+}
+
+if (preg_match('#^/admin/rbac/role/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_RBAC_ROLE_ID = (int) $m[1];
+    require $backendRoot . '/public/admin/rbac_role_edit.php';
+    exit;
+}
+
 if (preg_match('#^/admin/region/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_REGION_ID = (int) $m[1];
     require $backendRoot . '/public/admin/region_edit.php';

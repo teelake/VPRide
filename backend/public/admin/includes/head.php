@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/helpers.php';
 
-$pageTitle = $pageTitle ?? 'Pride Admin';
+$pageTitle = $pageTitle ?? 'VP Ride Admin';
 $bodyClass = $bodyClass ?? 'vp-body';
 
 ?>

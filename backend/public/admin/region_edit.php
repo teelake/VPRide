@@ -18,7 +18,7 @@ use VprideBackend\RegionRepository;
 Config::load($backendRoot . '/.env');
 Auth::startSession();
 Auth::requireLogin();
-Auth::requireSystemAdmin();
+Auth::requirePermission('regions.manage');
 
 $repo = new RegionRepository(Database::pdo());
 $admin = Auth::currentAdmin();
@@ -39,7 +39,7 @@ if ($isNew) {
     if ($row === null) {
         http_response_code(404);
         header('Content-Type: text/html; charset=utf-8');
-        $pageTitle = 'Not found · Pride Console';
+        $pageTitle = 'Not found · VP Ride Console';
         $bodyClass = 'vp-body vp-body--app';
         $vpNavActive = '';
         $vpTopbarTitle = 'Not found';
@@ -223,7 +223,7 @@ function region_locale_checked(array $post, array $model, bool $usePost, string 
 }
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · Pride Console';
+$pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = $isNew ? 'region_new' : 'regions';
 $vpTopbarTitle = $isNew ? 'New draft' : 'Edit configuration';

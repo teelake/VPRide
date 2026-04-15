@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $csrf = Auth::csrfToken();
 header('Content-Type: text/html; charset=utf-8');
 
-$pageTitle = 'Sign in · Pride Console';
+$pageTitle = 'Sign in · VP Ride Console';
 $bodyClass = 'vp-body vp-body--login';
 require __DIR__ . '/includes/head.php';
 ?>
@@ -64,13 +64,13 @@ require __DIR__ . '/includes/head.php';
           src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
           width="200"
           height="48"
-          alt="Pride"
+          alt="VP Ride"
           decoding="async"
         >
       </div>
-      <p class="vp-login__kicker">Operations</p>
+      <p class="vp-login__kicker">VP Ride</p>
       <h1 class="vp-login__title">Sign in to console</h1>
-      <p class="vp-login__lead">Sign in to manage region configuration and the active market served by rider apps.</p>
+      <p class="vp-login__lead">Manage regions, riders, rides, reports, and mobile feature flags for the VP Ride platform.</p>
 
       <?php if ($error !== '') { ?>
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
@@ -90,7 +90,7 @@ require __DIR__ . '/includes/head.php';
       </form>
     </div>
   </div>
-  <p class="vp-login__foot">Fleet control · Region routing</p>
+  <p class="vp-login__foot">VP Ride operations console</p>
 </div>
 
 <?php require __DIR__ . '/includes/foot_login.php'; ?>

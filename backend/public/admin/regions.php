@@ -46,7 +46,7 @@ $rows = $repo->listConfigs();
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Regions · Pride Console';
+$pageTitle = 'Regions · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'regions';
 $vpTopbarTitle = 'Region configuration';
@@ -129,7 +129,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <?php if (! $canManageRegions) { ?>
   <div class="vp-readonly-note">
-    Only <strong>system_admin</strong> users can edit JSON or switch the live region. Your role is <strong><?= vp_h($admin[2]) ?></strong>.
+    Only roles with <strong>region management</strong> permission can edit or switch the live profile. Your role is <strong><?= vp_h($admin[2]) ?></strong>.
   </div>
 <?php } ?>
 

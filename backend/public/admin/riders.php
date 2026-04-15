@@ -19,11 +19,31 @@ Auth::requireLogin();
 Auth::requirePermission('riders.view');
 
 $admin = Auth::currentAdmin();
-$rows = (new RiderUserRepository(Database::pdo()))->listRecent(150);
 $csrf = Auth::csrfToken();
+$repo = new RiderUserRepository(Database::pdo());
+
+$q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = max(10, min(100, (int) ($_GET['per_page'] ?? 30)));
+$qParam = $q === '' ? null : $q;
+$total = $repo->countFiltered($qParam);
+$pages = max(1, (int) ceil($total / $perPage));
+if ($page > $pages) {
+    $page = $pages;
+}
+$offset = ($page - 1) * $perPage;
+$rows = $repo->listFiltered($qParam, $perPage, $offset);
+
+$qBase = ['q' => $q, 'per_page' => (string) $perPage];
+$buildPageUrl = static function (int $p) use ($qBase): string {
+    $qq = array_merge($qBase, ['page' => (string) $p]);
+    $qq = array_filter($qq, static fn ($v) => $v !== '' && $v !== null);
+
+    return \VprideBackend\Config::url('/admin/riders?' . http_build_query($qq));
+};
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Riders · Pride Console';
+$pageTitle = 'Riders · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'riders';
 $vpTopbarTitle = 'Riders';
@@ -33,15 +53,45 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Riders</h1>
-  <p class="vp-page-desc">Google-authenticated accounts with an active or past session.</p>
+  <p class="vp-page-desc">Accounts created when someone signs in with Google on the VP Ride mobile app.</p>
 </header>
+
+<div class="vp-toolbar vp-toolbar--split">
+  <div class="vp-toolbar__left">
+    <span class="vp-cta-hint"><span class="vp-cta-hint__icon" aria-hidden="true"><?= vp_nav_icon_phone() ?></span> New riders appear automatically after their first successful sign-in.</span>
+  </div>
+  <div class="vp-toolbar__actions">
+    <?php if (Auth::can('reports.view')) { ?>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/riders') ?>">Reports &amp; export</a>
+    <?php } ?>
+    <?php if (Auth::can('settings.manage')) { ?>
+      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/settings') ?>">Mobile features</a>
+    <?php } ?>
+  </div>
+</div>
+
+<section class="vp-card vp-card--callout" id="how-riders-join" aria-labelledby="rider-cta-heading">
+  <div class="vp-card__pad vp-card__pad--compact">
+    <h2 id="rider-cta-heading" class="vp-callout-title">How riders join</h2>
+    <p class="vp-callout-text">There is no manual “add rider” action. Each profile is tied to a Google account. Use <strong>Reports</strong> to search the full directory, filter, paginate, and download CSV.</p>
+  </div>
+</section>
 
 <section class="vp-card" aria-labelledby="riders-heading">
   <div class="vp-card__pad">
-    <h2 id="riders-heading" class="vp-section-title">Directory</h2>
+    <div class="vp-card__head-row">
+      <h2 id="riders-heading" class="vp-section-title" style="margin:0;">Directory</h2>
+      <form method="get" action="<?= vp_h(vp_url('/admin/riders')) ?>" class="vp-inline-search">
+        <input type="hidden" name="per_page" value="<?= (int) $perPage ?>">
+        <label class="vp-sr-only" for="rider-q">Search riders</label>
+        <input class="vp-input vp-input--search" id="rider-q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Search email, name, ID…" autocomplete="off">
+        <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Search</button>
+      </form>
+    </div>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No riders yet.</p>
+      <p class="vp-page-desc" style="margin-bottom:0;">No riders match this view yet.</p>
     <?php } else { ?>
+      <p class="vp-muted-inline" style="margin-bottom:1rem;">Showing <?= number_format(count($rows)) ?> of <?= number_format($total) ?></p>
       <div class="vp-table-wrap">
         <table class="vp-table">
           <thead>
@@ -66,6 +116,17 @@ require __DIR__ . '/includes/app_shell_start.php';
           </tbody>
         </table>
       </div>
+      <?php if ($pages > 1) { ?>
+        <nav class="vp-pagination" aria-label="Rider list pages">
+          <?php if ($page > 1) { ?>
+            <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_h($buildPageUrl($page - 1)) ?>">Previous</a>
+          <?php } ?>
+          <span class="vp-pagination__meta">Page <?= (int) $page ?> of <?= (int) $pages ?></span>
+          <?php if ($page < $pages) { ?>
+            <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_h($buildPageUrl($page + 1)) ?>">Next</a>
+          <?php } ?>
+        </nav>
+      <?php } ?>
     <?php } ?>
   </div>
 </section>

@@ -6,13 +6,14 @@ namespace VprideBackend;
 
 use PDO;
 
-require_once __DIR__ . '/AdminPermissions.php';
+require_once __DIR__ . '/Database.php';
 
 final class Auth
 {
     public const SESSION_ADMIN_ID = 'admin_id';
     public const SESSION_ADMIN_EMAIL = 'admin_email';
     public const SESSION_ADMIN_ROLE = 'admin_role';
+    public const SESSION_ADMIN_ROLE_ID = 'admin_role_id';
 
     public static function startSession(): void
     {
@@ -49,7 +50,7 @@ final class Auth
     }
 
     /**
-     * @return array{0:int,1:string,2:string}|null admin id, email, role
+     * @return array{0:int,1:string,2:string}|null admin id, email, role slug (for display)
      */
     public static function currentAdmin(): ?array
     {
@@ -67,9 +68,24 @@ final class Auth
         return [(int) $id, $email, $role];
     }
 
+    public static function currentRoleId(): ?int
+    {
+        self::startSession();
+        $rid = $_SESSION[self::SESSION_ADMIN_ROLE_ID] ?? null;
+        if (! is_int($rid) && ! is_numeric($rid)) {
+            return null;
+        }
+
+        return (int) $rid;
+    }
+
     public static function login(PDO $pdo, string $email, string $password): bool
     {
-        $stmt = $pdo->prepare('SELECT id, password_hash, role FROM admins WHERE email = ? LIMIT 1');
+        $stmt = $pdo->prepare(
+            'SELECT a.id, a.password_hash, a.role_id, r.slug AS role_slug '
+            . 'FROM admins a INNER JOIN admin_roles r ON r.id = a.role_id '
+            . 'WHERE a.email = ? LIMIT 1',
+        );
         $stmt->execute([$email]);
         $row = $stmt->fetch();
         if (! $row || ! password_verify($password, $row['password_hash'])) {
@@ -79,7 +95,8 @@ final class Auth
         session_regenerate_id(true);
         $_SESSION[self::SESSION_ADMIN_ID] = (int) $row['id'];
         $_SESSION[self::SESSION_ADMIN_EMAIL] = $email;
-        $_SESSION[self::SESSION_ADMIN_ROLE] = (string) $row['role'];
+        $_SESSION[self::SESSION_ADMIN_ROLE_ID] = (int) $row['role_id'];
+        $_SESSION[self::SESSION_ADMIN_ROLE] = (string) $row['role_slug'];
 
         return true;
     }
@@ -105,22 +122,18 @@ final class Auth
 
     public static function requireSystemAdmin(): void
     {
-        $a = self::currentAdmin();
-        if ($a === null || $a[2] !== 'system_admin') {
-            http_response_code(403);
-            echo 'Forbidden: system administrator role required.';
-            exit;
-        }
+        self::requirePermission('rbac.manage');
     }
 
     public static function can(string $permission): bool
     {
         $a = self::currentAdmin();
-        if ($a === null) {
+        $roleId = self::currentRoleId();
+        if ($a === null || $roleId === null) {
             return false;
         }
 
-        return AdminPermissions::can($a[2], $permission);
+        return RbacRuntime::can(Database::pdo(), $roleId, $permission);
     }
 
     public static function requirePermission(string $permission): void

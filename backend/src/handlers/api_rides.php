@@ -8,8 +8,10 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RideRepository.php';
+require_once $backendRoot . '/src/AppSettingsRepository.php';
 
 use VprideBackend\ApiMobileCors;
+use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\RideRepository;
@@ -38,6 +40,22 @@ $user = $auth->resolveBearerToken($token);
 if ($user === null) {
     http_response_code(401);
     echo json_encode(['error' => 'invalid_session'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$pub = (new AppSettingsRepository(Database::pdo()))->getPublicSettings();
+$feat = $pub['features'];
+if (! empty($feat['maintenanceMode'])) {
+    http_response_code(503);
+    echo json_encode([
+        'error' => 'maintenance',
+        'message' => $feat['maintenanceMessage'] !== '' ? $feat['maintenanceMessage'] : 'Service temporarily unavailable.',
+    ], JSON_THROW_ON_ERROR);
+    exit;
+}
+if ($feat['rideBookingEnabled'] === false) {
+    http_response_code(403);
+    echo json_encode(['error' => 'ride_booking_disabled'], JSON_THROW_ON_ERROR);
     exit;
 }
 

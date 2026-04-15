@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /** @var array{0:int,1:string,2:string} $admin */
 /** @var string $csrf */
-/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | region_new | region_edit */
+/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | reports | rbac | region_new | region_edit */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
 
 use VprideBackend\Auth;
@@ -21,17 +21,17 @@ $initials = vp_admin_initials($admin[1]);
   <div class="vp-app__backdrop" data-vp-sidebar-backdrop hidden aria-hidden="true"></div>
   <aside class="vp-sidebar" id="vp-sidebar" data-vp-sidebar aria-label="Main navigation">
     <div class="vp-sidebar__head">
-      <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-sidebar__brand" aria-label="Pride — Admin home">
+      <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-sidebar__brand" aria-label="VP Ride — Admin home">
         <img
           class="vp-brand-logo"
           src="<?= vp_url('/admin/assets/brand/logo_wordmark_white_on_black.png') ?>"
           width="168"
           height="40"
-          alt="Pride"
+          alt="VP Ride"
           decoding="async"
           loading="lazy"
         >
-        <span class="vp-sidebar__brand-tag vp-sidebar__brand-tag--below">Console</span>
+        <span class="vp-sidebar__brand-tag vp-sidebar__brand-tag--below">Operations</span>
       </a>
     </div>
     <nav class="vp-sidebar__nav" aria-label="Sections">
@@ -77,6 +77,14 @@ $initials = vp_admin_initials($admin[1]);
             </a>
           </li>
         <?php } ?>
+        <?php if (Auth::can('reports.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/reports/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'reports' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'reports' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_reports() ?></span>
+              <span class="vp-nav-item__text">Reports</span>
+            </a>
+          </li>
+        <?php } ?>
         <?php if (Auth::can('team.view')) { ?>
           <li>
             <a href="<?= vp_url('/admin/team') ?>" class="vp-nav-item<?= $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
@@ -86,15 +94,25 @@ $initials = vp_admin_initials($admin[1]);
           </li>
         <?php } ?>
       </ul>
-      <?php if (Auth::can('settings.manage')) { ?>
+      <?php if (Auth::can('settings.manage') || Auth::can('rbac.manage')) { ?>
         <p class="vp-sidebar__section-label">Platform</p>
         <ul class="vp-sidebar__list">
-          <li>
-            <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
-              <span class="vp-nav-item__text">App settings</span>
-            </a>
-          </li>
+          <?php if (Auth::can('settings.manage')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
+                <span class="vp-nav-item__text">App settings</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('rbac.manage')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/rbac') ?>" class="vp-nav-item<?= $vpNavActive === 'rbac' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rbac' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rbac() ?></span>
+                <span class="vp-nav-item__text">Roles &amp; access</span>
+              </a>
+            </li>
+          <?php } ?>
         </ul>
       <?php } ?>
     </nav>
@@ -119,7 +137,7 @@ $initials = vp_admin_initials($admin[1]);
           <?= vp_nav_icon_menu() ?>
         </button>
         <div class="vp-topbar__titles">
-          <span class="vp-topbar__kicker">Pride</span>
+          <span class="vp-topbar__kicker">VP Ride</span>
           <span class="vp-topbar__title"><?= vp_h($vpTopbarTitle) ?></span>
         </div>
       </div>

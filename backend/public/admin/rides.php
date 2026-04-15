@@ -23,7 +23,7 @@ $rows = (new RideRepository(Database::pdo()))->listRecent(200);
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Rides · Pride Console';
+$pageTitle = 'Rides · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'rides';
 $vpTopbarTitle = 'Rides';
@@ -35,6 +35,18 @@ require __DIR__ . '/includes/app_shell_start.php';
   <h1 class="vp-page-title">Rides</h1>
   <p class="vp-page-desc">Latest ride requests submitted from rider devices.</p>
 </header>
+
+<div class="vp-toolbar vp-toolbar--split">
+  <div class="vp-toolbar__left"></div>
+  <div class="vp-toolbar__actions">
+    <?php if (Auth::can('reports.view')) { ?>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/rides') ?>">Filtered reports</a>
+    <?php } ?>
+    <?php if (Auth::can('settings.manage')) { ?>
+      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/settings') ?>">Ride booking flags</a>
+    <?php } ?>
+  </div>
+</div>
 
 <section class="vp-card" aria-labelledby="rides-heading">
   <div class="vp-card__pad">

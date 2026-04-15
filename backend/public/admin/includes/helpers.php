@@ -110,3 +110,68 @@ function vp_nav_icon_settings(): string
 {
     return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';
 }
+
+function vp_nav_icon_reports(): string
+{
+    return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22h16a2 2 0 0 0 2-2V6M4 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h10l6 6v12a2 2 0 0 1-2 2"/><path d="M14 2v6h6"/><path d="M8 13h2"/><path d="M8 17h8"/></svg>';
+}
+
+function vp_nav_icon_rbac(): string
+{
+    return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>';
+}
+
+function vp_nav_icon_phone(): string
+{
+    return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg>';
+}
+
+function vp_kpi_icon_riders(): string
+{
+    return '<svg class="vp-kpi-card__icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>';
+}
+
+function vp_kpi_icon_rides(): string
+{
+    return '<svg class="vp-kpi-card__icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M19 17h2a1 1 0 0 0 1-1v-2.5a2 2 0 0 0-.8-1.6l-1.5-1.2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/><path d="M14 17H9M5 17H3v-5l2-4h8l4 4v5"/></svg>';
+}
+
+function vp_kpi_icon_globe(): string
+{
+    return '<svg class="vp-kpi-card__icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10"/></svg>';
+}
+
+function vp_kpi_icon_layers(): string
+{
+    return '<svg class="vp-kpi-card__icon-svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>';
+}
+
+/**
+ * @param 'rides'|'riders' $active
+ */
+function vp_reports_tabs(string $active): void
+{
+    $ridesClass = $active === 'rides' ? ' vp-tabs__link--active' : '';
+    $ridersClass = $active === 'riders' ? ' vp-tabs__link--active' : '';
+    echo '<nav class="vp-tabs" aria-label="Report type">';
+    echo '<a class="vp-tabs__link' . $ridesClass . '" href="' . vp_h(vp_url('/admin/reports/rides')) . '">Rides</a>';
+    echo '<a class="vp-tabs__link' . $ridersClass . '" href="' . vp_h(vp_url('/admin/reports/riders')) . '">Riders</a>';
+    echo '</nav>';
+}
+
+/**
+ * @param list<string> $fields
+ */
+function vp_csv_line(array $fields): string
+{
+    $out = [];
+    foreach ($fields as $f) {
+        $s = (string) $f;
+        if (str_contains($s, '"') || str_contains($s, ',') || str_contains($s, "\n") || str_contains($s, "\r")) {
+            $s = '"' . str_replace('"', '""', $s) . '"';
+        }
+        $out[] = $s;
+    }
+
+    return implode(',', $out) . "\r\n";
+}
