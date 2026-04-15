@@ -110,17 +110,17 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Toggles are exposed in the API as booleans under <code class="vp-inline-code">features</code>. Wire the native app to respect them (ride booking and maintenance are enforced on the server for ride creation).</p>
       <div class="vp-feature-grid">
         <label class="vp-toggle">
-          <input type="checkbox" name="feat_ride_booking"<?= ! empty($settings['features']['rideBookingEnabled']) ? ' checked' : '' ?>>
+          <input class="vp-sr-only" type="checkbox" name="feat_ride_booking"<?= ! empty($settings['features']['rideBookingEnabled']) ? ' checked' : '' ?>>
           <span class="vp-toggle__ui"></span>
           <span class="vp-toggle__text"><strong>Ride booking</strong><span class="vp-toggle__sub">Allow new ride requests from the app</span></span>
         </label>
         <label class="vp-toggle">
-          <input type="checkbox" name="feat_promo"<?= ! empty($settings['features']['promoBannerEnabled']) ? ' checked' : '' ?>>
+          <input class="vp-sr-only" type="checkbox" name="feat_promo"<?= ! empty($settings['features']['promoBannerEnabled']) ? ' checked' : '' ?>>
           <span class="vp-toggle__ui"></span>
           <span class="vp-toggle__text"><strong>Promo banner</strong><span class="vp-toggle__sub">Client-side: show marketing strip when true</span></span>
         </label>
         <label class="vp-toggle">
-          <input type="checkbox" name="feat_maintenance"<?= ! empty($settings['features']['maintenanceMode']) ? ' checked' : '' ?>>
+          <input class="vp-sr-only" type="checkbox" name="feat_maintenance"<?= ! empty($settings['features']['maintenanceMode']) ? ' checked' : '' ?>>
           <span class="vp-toggle__ui"></span>
           <span class="vp-toggle__text"><strong>Maintenance mode</strong><span class="vp-toggle__sub">Blocks new ride requests (503) with optional message</span></span>
         </label>

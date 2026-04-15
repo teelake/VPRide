@@ -1575,20 +1575,13 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.vp-toggle:has(input:focus-visible) {
-  outline: 2px solid var(--vp-gold);
-  outline-offset: 2px;
-}
-
 .vp-toggle:hover {
   border-color: rgba(255, 195, 0, 0.45);
 }
 
-.vp-toggle input {
-  position: absolute;
-  opacity: 0;
-  width: 0;
-  height: 0;
+.vp-toggle input.vp-sr-only:focus + .vp-toggle__ui {
+  outline: 2px solid var(--vp-gold);
+  outline-offset: 2px;
 }
 
 .vp-toggle__ui {
