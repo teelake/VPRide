@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/auth/google_auth_service.dart';
+import 'core/brand/brand_assets.dart';
 import 'core/region/region_config_repository.dart';
 import 'core/region/region_config_scope.dart';
 import 'core/theme/app_colors.dart';
@@ -28,7 +29,7 @@ class VprideApp extends StatelessWidget {
       builder: (context, child) {
         final region = regionRepository.resolved;
         return MaterialApp(
-          title: 'Vpride',
+          title: 'Pride',
           theme: buildAppTheme(),
           locale: region.materialDefaultLocale,
           supportedLocales: region.supportedLocales,
@@ -129,7 +130,13 @@ class _ButtonLoadingDemoState extends State<ButtonLoadingDemo> {
     return Scaffold(
       backgroundColor: AppColors.surfaceMuted,
       appBar: AppBar(
-        title: const Text('Buttons'),
+        title: Image.asset(
+          BrandAssets.logoHorizontalLightBg,
+          height: 32,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+          filterQuality: FilterQuality.high,
+        ),
         backgroundColor: AppColors.surface,
         foregroundColor: AppColors.secondary,
         elevation: 0,
@@ -144,6 +151,14 @@ class _ButtonLoadingDemoState extends State<ButtonLoadingDemo> {
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
+          Center(
+            child: Image.asset(
+              BrandAssets.appIconSquircle,
+              height: 96,
+              filterQuality: FilterQuality.high,
+            ),
+          ),
+          const SizedBox(height: 20),
           Text(
             'Serving: ${region.serviceAreaLabel}',
             style: Theme.of(context).textTheme.titleSmall,

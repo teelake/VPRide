@@ -46,7 +46,7 @@ $publicBase = getenv('PUBLIC_BASE_URL') ?: 'http://localhost:8080';
 $apiUrl = rtrim($publicBase, '/') . '/api/v1/config/regions';
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Regions · VPRide Console';
+$pageTitle = 'Regions · Pride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'dashboard';
 $vpTopbarTitle = 'Region configuration';

@@ -21,12 +21,17 @@ $initials = vp_admin_initials($admin[1]);
   <div class="vp-app__backdrop" data-vp-sidebar-backdrop hidden aria-hidden="true"></div>
   <aside class="vp-sidebar" id="vp-sidebar" data-vp-sidebar aria-label="Main navigation">
     <div class="vp-sidebar__head">
-      <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-sidebar__brand" aria-label="VPRide Admin home">
-        <span class="vp-sidebar__mark" aria-hidden="true"></span>
-        <span class="vp-sidebar__brand-text">
-          <span class="vp-sidebar__brand-name"><span class="vp-sidebar__vp">VP</span>Ride</span>
-          <span class="vp-sidebar__brand-tag">Console</span>
-        </span>
+      <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-sidebar__brand" aria-label="Pride — Admin home">
+        <img
+          class="vp-brand-logo"
+          src="<?= vp_url('/admin/assets/brand/logo_wordmark_white_on_black.png') ?>"
+          width="168"
+          height="40"
+          alt="Pride"
+          decoding="async"
+          loading="lazy"
+        >
+        <span class="vp-sidebar__brand-tag vp-sidebar__brand-tag--below">Console</span>
       </a>
     </div>
     <nav class="vp-sidebar__nav" aria-label="Sections">
@@ -68,7 +73,7 @@ $initials = vp_admin_initials($admin[1]);
           <?= vp_nav_icon_menu() ?>
         </button>
         <div class="vp-topbar__titles">
-          <span class="vp-topbar__kicker">VPRide</span>
+          <span class="vp-topbar__kicker">Pride</span>
           <span class="vp-topbar__title"><?= vp_h($vpTopbarTitle) ?></span>
         </div>
       </div>

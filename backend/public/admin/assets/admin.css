@@ -72,6 +72,31 @@
   padding: 2rem 2rem 2.25rem;
 }
 
+.vp-login__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.35rem;
+}
+
+.vp-login__brand-icon {
+  display: block;
+  width: 72px;
+  height: auto;
+  max-width: 100%;
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgba(18, 18, 18, 0.12);
+}
+
+.vp-login__brand-wordmark {
+  display: block;
+  height: 40px;
+  width: auto;
+  max-width: min(240px, 100%);
+  object-fit: contain;
+}
+
 .vp-login__kicker {
   font-size: 0.6875rem;
   font-weight: 700;
@@ -167,39 +192,20 @@
 
 .vp-sidebar__brand {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.45rem;
   text-decoration: none;
   color: inherit;
 }
 
-.vp-sidebar__mark {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(145deg, var(--vp-gold), #c99700);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
-    0 4px 14px rgba(255, 195, 0, 0.35);
-  flex-shrink: 0;
-}
-
-.vp-sidebar__brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-
-.vp-sidebar__brand-name {
-  font-weight: 700;
-  font-size: 1.0625rem;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.vp-sidebar__vp {
-  color: var(--vp-gold);
+.vp-brand-logo {
+  display: block;
+  height: 34px;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: left center;
 }
 
 .vp-sidebar__brand-tag {
@@ -208,6 +214,10 @@
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.38);
+}
+
+.vp-sidebar__brand-tag--below {
+  margin: 0;
 }
 
 .vp-sidebar__nav {

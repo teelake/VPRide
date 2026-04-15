@@ -39,7 +39,7 @@ if ($isNew) {
     if ($row === null) {
         http_response_code(404);
         header('Content-Type: text/html; charset=utf-8');
-        $pageTitle = 'Not found · VPRide Console';
+        $pageTitle = 'Not found · Pride Console';
         $bodyClass = 'vp-body vp-body--app';
         $vpNavActive = '';
         $vpTopbarTitle = 'Not found';
@@ -223,7 +223,7 @@ function region_locale_checked(array $post, array $model, bool $usePost, string 
 }
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · VPRide Console';
+$pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · Pride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = $isNew ? 'region_new' : '';
 $vpTopbarTitle = $isNew ? 'New draft' : 'Edit configuration';

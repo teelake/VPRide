@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $csrf = Auth::csrfToken();
 header('Content-Type: text/html; charset=utf-8');
 
-$pageTitle = 'Sign in · VPRide Console';
+$pageTitle = 'Sign in · Pride Console';
 $bodyClass = 'vp-body vp-body--login';
 require __DIR__ . '/includes/head.php';
 ?>
@@ -50,8 +50,26 @@ require __DIR__ . '/includes/head.php';
   <div class="vp-login__card">
     <div class="vp-login__accent" aria-hidden="true"></div>
     <div class="vp-login__inner">
-      <p class="vp-login__kicker">VPRide</p>
-      <h1 class="vp-login__title">Operations console</h1>
+      <div class="vp-login__brand">
+        <img
+          class="vp-login__brand-icon"
+          src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+          width="72"
+          height="72"
+          alt=""
+          decoding="async"
+        >
+        <img
+          class="vp-login__brand-wordmark"
+          src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+          width="200"
+          height="48"
+          alt="Pride"
+          decoding="async"
+        >
+      </div>
+      <p class="vp-login__kicker">Operations</p>
+      <h1 class="vp-login__title">Sign in to console</h1>
       <p class="vp-login__lead">Sign in to manage region configuration and the active market served by rider apps.</p>
 
       <?php if ($error !== '') { ?>
