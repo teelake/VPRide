@@ -9,6 +9,11 @@ use VprideBackend\Config;
 
 Config::load($backendRoot . '/.env');
 
+$vendorAutoload = $backendRoot . '/vendor/autoload.php';
+if (is_readable($vendorAutoload)) {
+    require_once $vendorAutoload;
+}
+
 /**
  * Build the logical path for routing (/admin/login, /api/v1/...).
  * Handles subfolders, RewriteBase, and some hosts that put /index.php in REQUEST_URI.
@@ -71,6 +76,26 @@ if ($path === '/admin/assets/admin.css') {
 
 if ($path === '/api/v1/config/regions' && $method === 'GET') {
     require $backendRoot . '/src/handlers/api_regions.php';
+    exit;
+}
+
+if ($path === '/api/v1/auth/google' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_auth_google.php';
+    exit;
+}
+
+if ($path === '/api/v1/auth/logout' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_auth_logout.php';
+    exit;
+}
+
+if ($path === '/api/v1/me' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_me.php';
+    exit;
+}
+
+if ($path === '/api/v1/rides' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_rides.php';
     exit;
 }
 

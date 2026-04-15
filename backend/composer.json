@@ -1,0 +1,11 @@
+{
+  "name": "vpride/backend",
+  "description": "Pride PHP API",
+  "require": {
+    "php": ">=8.1",
+    "firebase/php-jwt": "^7.0"
+  },
+  "config": {
+    "sort-packages": true
+  }
+}

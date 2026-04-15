@@ -29,4 +29,10 @@ abstract final class AppConfig {
     'GOOGLE_SERVER_CLIENT_ID',
     defaultValue: '',
   );
+
+  /// Maps SDK + Geocoding REST (restrict key in Google Cloud Console by app/API).
+  static const String mapsApiKey = String.fromEnvironment(
+    'MAPS_API_KEY',
+    defaultValue: '',
+  );
 }

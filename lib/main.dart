@@ -1,22 +1,80 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:go_router/go_router.dart';
 
+import 'core/api/api_client.dart';
+import 'core/api/api_scope.dart';
+import 'core/auth/auth_repository.dart';
+import 'core/auth/auth_scope.dart';
+import 'core/auth/google_auth_service.dart';
+import 'core/auth/session_store.dart';
 import 'core/region/region_config_repository.dart';
 import 'core/region/region_config_scope.dart';
+import 'core/ride/ride_pickup_controller.dart';
+import 'core/ride/ride_pickup_scope.dart';
 import 'core/theme/app_theme.dart';
+import 'screens/home_shell_screen.dart';
 import 'screens/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   final regionRepository = RegionConfigRepository();
   await regionRepository.loadInitial();
+
+  final sessionStore = SessionStore();
+  final apiClient = ApiClient();
+  final authRepository = AuthRepository(
+    apiClient: apiClient,
+    googleAuth: GoogleAuthService(),
+    sessionStore: sessionStore,
+  );
+  await authRepository.hydrate();
+
+  final initialLocation = authRepository.isSignedIn ? '/home' : '/welcome';
+
+  final ridePickupController = RidePickupController();
+
+  final router = GoRouter(
+    initialLocation: initialLocation,
+    refreshListenable: authRepository,
+    routes: [
+      GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/home',
+        builder: (context, state) {
+          final tabRaw = int.tryParse(state.uri.queryParameters['tab'] ?? '');
+          final tab = (tabRaw ?? 0).clamp(0, 1);
+          return HomeShellScreen(initialTab: tab);
+        },
+      ),
+    ],
+  );
+
   runApp(
-    RegionConfigScope(repository: regionRepository, child: const VprideApp()),
+    ApiScope(
+      client: apiClient,
+      child: RegionConfigScope(
+        repository: regionRepository,
+        child: AuthScope(
+          repository: authRepository,
+          child: RidePickupScope(
+            controller: ridePickupController,
+            child: VprideApp(router: router),
+          ),
+        ),
+      ),
+    ),
   );
 }
 
 class VprideApp extends StatelessWidget {
-  const VprideApp({super.key});
+  const VprideApp({super.key, required this.router});
+
+  final GoRouter router;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +83,8 @@ class VprideApp extends StatelessWidget {
       listenable: regionRepository,
       builder: (context, child) {
         final region = regionRepository.resolved;
-        return MaterialApp(
+        return MaterialApp.router(
+          routerConfig: router,
           title: 'Pride',
           theme: buildAppTheme(),
           locale: region.materialDefaultLocale,
@@ -46,10 +105,8 @@ class VprideApp extends StatelessWidget {
             }
             return region.materialDefaultLocale;
           },
-          home: child,
         );
       },
-      child: const WelcomeScreen(),
     );
   }
 }

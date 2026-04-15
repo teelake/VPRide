@@ -46,3 +46,4 @@ app.*.map.json
 
 # PHP backend secrets
 backend/.env
+backend/vendor/

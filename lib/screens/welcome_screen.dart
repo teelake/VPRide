@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import '../core/auth/google_auth_service.dart';
+import '../core/auth/auth_scope.dart';
 import '../core/brand/brand_assets.dart';
 import '../core/region/region_config_scope.dart';
 import '../core/region/resolved_region_config.dart';
@@ -8,69 +9,21 @@ import '../core/theme/app_colors.dart';
 import '../core/widgets/app_buttons.dart';
 
 /// Consumer-facing welcome / get-started screen (Pride brand).
-class WelcomeScreen extends StatefulWidget {
+class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
-  @override
-  State<WelcomeScreen> createState() => _WelcomeScreenState();
-}
-
-class _WelcomeScreenState extends State<WelcomeScreen> {
-  bool _primaryLoading = false;
-  bool _secondaryLoading = false;
-  bool _textLoading = false;
-  bool _googleLoading = false;
-
-  final _googleAuth = GoogleAuthService();
-
-  Future<void> _simulatePrimary() async {
-    setState(() => _primaryLoading = true);
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => _primaryLoading = false);
-  }
-
-  Future<void> _simulateSecondary() async {
-    setState(() => _secondaryLoading = true);
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => _secondaryLoading = false);
-  }
-
-  Future<void> _simulateText() async {
-    setState(() => _textLoading = true);
-    await Future<void>.delayed(const Duration(seconds: 2));
-    if (mounted) setState(() => _textLoading = false);
-  }
-
-  Future<void> _signInWithGoogle() async {
-    setState(() => _googleLoading = true);
-    try {
-      final result = await _googleAuth.signIn();
-      if (!mounted) return;
-      if (result == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Google sign-in cancelled')),
-        );
-        return;
-      }
-      final tokenPreview = result.idToken == null || result.idToken!.length < 24
-          ? 'missing — set GOOGLE_SERVER_CLIENT_ID for PHP verification'
-          : '${result.idToken!.substring(0, 20)}…';
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    final auth = AuthScope.of(context);
+    final err = await auth.signInWithGoogle();
+    if (!context.mounted) return;
+    if (err != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '${result.email ?? 'Signed in'}\nID token: $tokenPreview',
-          ),
-        ),
+        SnackBar(content: Text(err)),
       );
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google sign-in failed: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _googleLoading = false);
+      return;
     }
+    if (!auth.isSignedIn) return;
+    context.go('/home');
   }
 
   @override
@@ -78,6 +31,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final region = RegionConfigScope.resolvedOf(context);
     final repo = RegionConfigScope.of(context);
     final textTheme = Theme.of(context).textTheme;
+    final auth = AuthScope.of(context);
+    final canPop = GoRouter.of(context).canPop();
 
     return Scaffold(
       backgroundColor: AppColors.surfaceMuted,
@@ -99,9 +54,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 8, 0),
+                padding: const EdgeInsets.fromLTRB(4, 4, 8, 0),
                 child: Row(
                   children: [
+                    if (canPop)
+                      IconButton(
+                        tooltip: 'Back',
+                        onPressed: () => context.pop(),
+                        icon: const Icon(Icons.arrow_back_rounded),
+                        color: AppColors.secondary,
+                      ),
                     Expanded(
                       child: Align(
                         alignment: Alignment.centerLeft,
@@ -117,8 +79,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     Material(
                       color: Colors.white.withValues(alpha: 0.92),
                       shape: const CircleBorder(),
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
                       child: IconButton(
                         tooltip: 'Refresh region settings',
                         onPressed: () => repo.refresh(),
@@ -199,32 +159,36 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           const SizedBox(height: 32),
                           AppPrimaryButton(
                             label: 'Book ride',
-                            isLoading: _primaryLoading,
-                            onPressed: _simulatePrimary,
+                            onPressed: () => context.go('/home?tab=0'),
                           ),
                           const SizedBox(height: 14),
                           AppSecondaryButton(
                             label: 'Choose on map',
                             icon: Icons.map_outlined,
-                            isLoading: _secondaryLoading,
-                            onPressed: _simulateSecondary,
+                            onPressed: () => context.go('/home?tab=0'),
                           ),
                           const SizedBox(height: 8),
                           Center(
                             child: AppTextLoadingButton(
                               label: 'Skip for now',
-                              isLoading: _textLoading,
-                              onPressed: _simulateText,
+                              onPressed: () => context.go('/home?tab=0'),
                             ),
                           ),
                           const SizedBox(height: 28),
                           _SignInDivider(textTheme: textTheme),
                           const SizedBox(height: 20),
-                          AppPrimaryButton(
-                            label: 'Sign in with Google',
-                            icon: Icons.login_rounded,
-                            isLoading: _googleLoading,
-                            onPressed: _signInWithGoogle,
+                          ListenableBuilder(
+                            listenable: auth,
+                            builder: (context, _) {
+                              return AppPrimaryButton(
+                                label: 'Sign in with Google',
+                                icon: Icons.login_rounded,
+                                isLoading: auth.isBusy,
+                                onPressed: auth.isBusy
+                                    ? null
+                                    : () => _signInWithGoogle(context),
+                              );
+                            },
                           ),
                           const SizedBox(height: 24),
                           Text(

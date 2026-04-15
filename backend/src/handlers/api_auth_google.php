@@ -1,0 +1,90 @@
+<?php
+
+declare(strict_types=1);
+
+$backendRoot = dirname(__DIR__, 2);
+require_once $backendRoot . '/src/Config.php';
+require_once $backendRoot . '/src/Database.php';
+require_once $backendRoot . '/src/ApiMobileCors.php';
+require_once $backendRoot . '/src/GoogleIdTokenVerifier.php';
+require_once $backendRoot . '/src/RiderAuthService.php';
+require_once $backendRoot . '/src/RateLimiter.php';
+
+use VprideBackend\ApiMobileCors;
+use VprideBackend\Config;
+use VprideBackend\Database;
+use VprideBackend\GoogleIdTokenVerifier;
+use VprideBackend\RateLimiter;
+use VprideBackend\RiderAuthService;
+
+Config::load($backendRoot . '/.env');
+
+ApiMobileCors::sendPreflightIfOptions();
+ApiMobileCors::headers();
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'method_not_allowed'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$maxAuth = (int) (getenv('API_RATE_LIMIT_AUTH_PER_HOUR') ?: '60');
+if (! RateLimiter::allow('auth_google', RateLimiter::clientIp(), max(1, $maxAuth), 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+if (! class_exists(\Firebase\JWT\JWT::class)) {
+    http_response_code(500);
+    echo json_encode([
+        'error' => 'server_misconfigured',
+        'message' => 'Run composer install in the backend directory.',
+    ], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$raw = file_get_contents('php://input') ?: '';
+try {
+    /** @var mixed $data */
+    $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+} catch (Throwable) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_json'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$idToken = is_array($data) && isset($data['idToken']) && is_string($data['idToken'])
+    ? trim($data['idToken'])
+    : '';
+if ($idToken === '') {
+    http_response_code(400);
+    echo json_encode(['error' => 'id_token_required'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$clientId = getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '';
+try {
+    $payload = GoogleIdTokenVerifier::verify($idToken, $clientId);
+    if (isset($payload->email_verified) && $payload->email_verified === false) {
+        http_response_code(401);
+        echo json_encode(['error' => 'email_not_verified'], JSON_THROW_ON_ERROR);
+        exit;
+    }
+} catch (Throwable $e) {
+    http_response_code(401);
+    echo json_encode([
+        'error' => 'invalid_id_token',
+        'message' => $e->getMessage(),
+    ], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+try {
+    $svc = new RiderAuthService(Database::pdo());
+    $out = $svc->issueSessionForGoogleUser($payload);
+    echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+} catch (Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
+}
