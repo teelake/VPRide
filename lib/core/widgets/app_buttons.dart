@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 
-const double _kButtonHeight = 48;
+const double _kButtonHeight = 52;
 const double _kSpinnerSize = 22;
 const double _kStrokeWidth = 2.5;
 
