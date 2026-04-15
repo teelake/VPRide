@@ -8,6 +8,8 @@ import 'core/auth/auth_repository.dart';
 import 'core/auth/auth_scope.dart';
 import 'core/auth/google_auth_service.dart';
 import 'core/auth/session_store.dart';
+import 'core/client/client_config_repository.dart';
+import 'core/client/client_config_scope.dart';
 import 'core/region/region_config_repository.dart';
 import 'core/region/region_config_scope.dart';
 import 'core/ride/ride_pickup_controller.dart';
@@ -19,6 +21,9 @@ import 'screens/welcome_screen.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  final clientConfigRepository = ClientConfigRepository();
+  await clientConfigRepository.loadInitial();
+
   final regionRepository = RegionConfigRepository();
   await regionRepository.loadInitial();
 
@@ -26,7 +31,7 @@ Future<void> main() async {
   final apiClient = ApiClient();
   final authRepository = AuthRepository(
     apiClient: apiClient,
-    googleAuth: GoogleAuthService(),
+    googleAuth: GoogleAuthService(clientConfig: clientConfigRepository),
     sessionStore: sessionStore,
   );
   await authRepository.hydrate();
@@ -57,13 +62,16 @@ Future<void> main() async {
   runApp(
     ApiScope(
       client: apiClient,
-      child: RegionConfigScope(
-        repository: regionRepository,
-        child: AuthScope(
-          repository: authRepository,
-          child: RidePickupScope(
-            controller: ridePickupController,
-            child: VprideApp(router: router),
+      child: ClientConfigScope(
+        repository: clientConfigRepository,
+        child: RegionConfigScope(
+          repository: regionRepository,
+          child: AuthScope(
+            repository: authRepository,
+            child: RidePickupScope(
+              controller: ridePickupController,
+              child: VprideApp(router: router),
+            ),
           ),
         ),
       ),

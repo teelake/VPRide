@@ -25,7 +25,7 @@ final class GoogleIdTokenVerifier
     {
         $clientId = trim($expectedAudience);
         if ($clientId === '') {
-            throw new RuntimeException('GOOGLE_OAUTH_CLIENT_ID is not configured');
+            throw new RuntimeException('Google OAuth Web client ID is not configured (set GOOGLE_OAUTH_CLIENT_ID or app_public_settings.googleWebClientId)');
         }
 
         $ctx = stream_context_create([

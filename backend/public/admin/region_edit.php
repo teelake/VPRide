@@ -48,7 +48,7 @@ if ($isNew) {
         ?>
         <div class="vp-card"><div class="vp-card__pad">
           <h1 class="vp-page-title">Configuration not found</h1>
-          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/dashboard') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
+          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
         </div></div>
         <?php
         require __DIR__ . '/includes/app_shell_end.php';
@@ -225,17 +225,17 @@ function region_locale_checked(array $post, array $model, bool $usePost, string 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · Pride Console';
 $bodyClass = 'vp-body vp-body--app';
-$vpNavActive = $isNew ? 'region_new' : '';
+$vpNavActive = $isNew ? 'region_new' : 'regions';
 $vpTopbarTitle = $isNew ? 'New draft' : 'Edit configuration';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<a class="vp-back" href="<?= vp_url('/admin/dashboard') ?>"><span class="vp-back__arrow">←</span> Regions</a>
+<a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
 
 <h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
 <p class="vp-hint">
-  Use the form below — no JSON required. Changes go live only after you <strong>Go live</strong> on the dashboard.
+  Use the form below — no JSON required. Changes go live only after you <strong>Go live</strong> on the regions list.
   <?php if (! $isNew) { ?>
     <strong>#<?= (int) $id ?></strong>
   <?php } ?>
@@ -455,7 +455,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
   <div class="vp-form-actions vp-form-actions--flush">
     <button type="submit" class="vp-btn vp-btn--primary"><?= $isNew ? 'Create draft' : 'Save changes' ?></button>
-    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/dashboard') ?>">Cancel</a>
+    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/regions') ?>">Cancel</a>
   </div>
 </form>
 

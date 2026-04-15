@@ -23,6 +23,12 @@ abstract final class AppConfig {
     defaultValue: '/api/v1/config/regions',
   );
 
+  /// Public client keys (Google Web client ID, Maps key, min version).
+  static const String publicConfigPath = String.fromEnvironment(
+    'PUBLIC_CONFIG_PATH',
+    defaultValue: '/api/v1/config/public',
+  );
+
   /// Web client ID (ends with `.apps.googleusercontent.com`).
   /// Required on Android for a non-null [GoogleSignInAuthentication.idToken] in many setups.
   static const String googleOAuthServerClientId = String.fromEnvironment(

@@ -79,6 +79,11 @@ if ($path === '/api/v1/config/regions' && $method === 'GET') {
     exit;
 }
 
+if ($path === '/api/v1/config/public' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_config_public.php';
+    exit;
+}
+
 if ($path === '/api/v1/auth/google' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_auth_google.php';
     exit;
@@ -111,6 +116,31 @@ if ($path === '/admin/logout' && $method === 'POST') {
 
 if ($path === '/admin' || $path === '/admin/dashboard') {
     require $backendRoot . '/public/admin/dashboard.php';
+    exit;
+}
+
+if ($path === '/admin/regions' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/regions.php';
+    exit;
+}
+
+if ($path === '/admin/rides' && $method === 'GET') {
+    require $backendRoot . '/public/admin/rides.php';
+    exit;
+}
+
+if ($path === '/admin/riders' && $method === 'GET') {
+    require $backendRoot . '/public/admin/riders.php';
+    exit;
+}
+
+if ($path === '/admin/team' && $method === 'GET') {
+    require $backendRoot . '/public/admin/team.php';
+    exit;
+}
+
+if ($path === '/admin/settings' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/settings.php';
     exit;
 }
 

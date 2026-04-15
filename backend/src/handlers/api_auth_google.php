@@ -9,8 +9,10 @@ require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/GoogleIdTokenVerifier.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
+require_once $backendRoot . '/src/AppSettingsRepository.php';
 
 use VprideBackend\ApiMobileCors;
+use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\GoogleIdTokenVerifier;
@@ -63,7 +65,7 @@ if ($idToken === '') {
     exit;
 }
 
-$clientId = getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '';
+$clientId = AppSettingsRepository::effectiveGoogleOAuthClientId(Database::pdo());
 try {
     $payload = GoogleIdTokenVerifier::verify($idToken, $clientId);
     if (isset($payload->email_verified) && $payload->email_verified === false) {

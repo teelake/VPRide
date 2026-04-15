@@ -10,8 +10,12 @@ final class GeocodeService {
 
   final http.Client _client;
 
-  Future<String?> reverseFormattedAddress(double lat, double lng) async {
-    final key = AppConfig.mapsApiKey.trim();
+  Future<String?> reverseFormattedAddress(
+    double lat,
+    double lng, {
+    String? apiKey,
+  }) async {
+    final key = (apiKey ?? AppConfig.mapsApiKey).trim();
     if (key.isEmpty) return null;
 
     final uri = Uri.https('maps.googleapis.com', '/maps/api/geocode/json', {

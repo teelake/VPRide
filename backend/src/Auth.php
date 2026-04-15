@@ -110,4 +110,30 @@ final class Auth
             exit;
         }
     }
+
+    public static function can(string $permission): bool
+    {
+        $a = self::currentAdmin();
+        if ($a === null) {
+            return false;
+        }
+
+        return AdminPermissions::can($a[2], $permission);
+    }
+
+    public static function requirePermission(string $permission): void
+    {
+        if (self::currentAdmin() === null) {
+            header('Location: ' . Config::url('/admin/login'));
+            exit;
+        }
+        if (! self::can($permission)) {
+            http_response_code(403);
+            header('Content-Type: text/html; charset=utf-8');
+            echo '<!DOCTYPE html><meta charset="utf-8"><title>Forbidden</title>'
+                . '<p>You do not have permission to view this page.</p>'
+                . '<p><a href="' . htmlspecialchars(Config::url('/admin/dashboard'), ENT_QUOTES, 'UTF-8') . '">Back to overview</a></p>';
+            exit;
+        }
+    }
 }

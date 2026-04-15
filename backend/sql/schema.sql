@@ -70,3 +70,11 @@ CREATE TABLE IF NOT EXISTS rides (
   INDEX idx_rides_status (status),
   INDEX idx_rides_created (created_at)
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS app_public_settings (
+  id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
+  payload JSON NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  updated_by_admin_id INT UNSIGNED NULL,
+  CONSTRAINT fk_app_public_settings_admin FOREIGN KEY (updated_by_admin_id) REFERENCES admins (id) ON DELETE SET NULL
+) ENGINE=InnoDB;

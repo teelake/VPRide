@@ -1,42 +1,55 @@
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../client/client_config_repository.dart';
 import '../config/app_config.dart';
 import 'google_auth_result.dart';
 
 /// Google OAuth for a **custom backend** (PHP): exchange [GoogleAuthResult.idToken] server-side.
 class GoogleAuthService {
-  GoogleAuthService({GoogleSignIn? googleSignIn})
-    : _googleSignIn =
-          googleSignIn ??
-          GoogleSignIn(
-            scopes: const <String>['email', 'profile'],
-            serverClientId: _serverClientIdOrNull,
-          );
+  GoogleAuthService({
+    ClientConfigRepository? clientConfig,
+    GoogleSignIn? googleSignIn,
+  }) : _clientConfig = clientConfig,
+       _inject = googleSignIn;
 
-  final GoogleSignIn _googleSignIn;
+  final ClientConfigRepository? _clientConfig;
+  final GoogleSignIn? _inject;
 
-  static String? get _serverClientIdOrNull {
-    final v = AppConfig.googleOAuthServerClientId.trim();
-    return v.isEmpty ? null : v;
+  GoogleSignIn? _cached;
+  String? _cacheKey;
+
+  GoogleSignIn _signIn() {
+    if (_inject != null) return _inject;
+    final id = (_clientConfig?.effectiveGoogleWebClientId ??
+            AppConfig.googleOAuthServerClientId)
+        .trim();
+    final key = id.isEmpty ? '_empty_' : id;
+    if (_cached != null && _cacheKey == key) return _cached;
+    _cacheKey = key;
+    _cached = GoogleSignIn(
+      scopes: const <String>['email', 'profile'],
+      serverClientId: id.isEmpty ? null : id,
+    );
+    return _cached;
   }
 
   /// Silent restore of a previous session (optional — call on startup).
   Future<GoogleAuthResult?> signInSilently() async {
-    final account = await _googleSignIn.signInSilently();
+    final account = await _signIn().signInSilently();
     if (account == null) return null;
     return _toResult(account);
   }
 
   /// Interactive sign-in (shows Google account picker when needed).
   Future<GoogleAuthResult?> signIn() async {
-    final account = await _googleSignIn.signIn();
+    final account = await _signIn().signIn();
     if (account == null) return null;
     return _toResult(account);
   }
 
-  Future<void> signOut() => _googleSignIn.signOut();
+  Future<void> signOut() => _signIn().signOut();
 
-  Future<void> disconnect() => _googleSignIn.disconnect();
+  Future<void> disconnect() => _signIn().disconnect();
 
   Future<GoogleAuthResult> _toResult(GoogleSignInAccount account) async {
     final auth = await account.authentication;

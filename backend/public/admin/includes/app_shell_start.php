@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 /** @var array{0:int,1:string,2:string} $admin */
 /** @var string $csrf */
-/** @var string|null $vpNavActive Optional: 'dashboard' | 'region_new' | 'region_edit' */
+/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | region_new | region_edit */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
+
+use VprideBackend\Auth;
 
 $vpNavActive = $vpNavActive ?? '';
 $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
     : 'Overview';
-$isSystemAdmin = $admin[2] === 'system_admin';
 $publicBase = getenv('PUBLIC_BASE_URL') ?: '';
-$apiPath = '/api/v1/config/regions';
+$apiPathRegions = '/api/v1/config/regions';
+$apiPathPublic = '/api/v1/config/public';
 $initials = vp_admin_initials($admin[1]);
 
 ?>
@@ -37,13 +39,23 @@ $initials = vp_admin_initials($admin[1]);
     <nav class="vp-sidebar__nav" aria-label="Sections">
       <p class="vp-sidebar__section-label">Operations</p>
       <ul class="vp-sidebar__list">
-        <li>
-          <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'dashboard' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'dashboard' ? ' aria-current="page"' : '' ?>>
-            <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_grid() ?></span>
-            <span class="vp-nav-item__text">Region profiles</span>
-          </a>
-        </li>
-        <?php if ($isSystemAdmin) { ?>
+        <?php if (Auth::can('dashboard.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'overview' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'overview' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_overview() ?></span>
+              <span class="vp-nav-item__text">Overview</span>
+            </a>
+          </li>
+        <?php } ?>
+        <?php if (Auth::can('regions.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/regions') ?>" class="vp-nav-item<?= $vpNavActive === 'regions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'regions' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_regions() ?></span>
+              <span class="vp-nav-item__text">Regions</span>
+            </a>
+          </li>
+        <?php } ?>
+        <?php if (Auth::can('regions.manage')) { ?>
           <li>
             <a href="<?= vp_url('/admin/region/new') ?>" class="vp-nav-item<?= $vpNavActive === 'region_new' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'region_new' ? ' aria-current="page"' : '' ?>>
               <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
@@ -51,16 +63,52 @@ $initials = vp_admin_initials($admin[1]);
             </a>
           </li>
         <?php } ?>
+        <?php if (Auth::can('rides.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'rides' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rides' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rides() ?></span>
+              <span class="vp-nav-item__text">Rides</span>
+            </a>
+          </li>
+        <?php } ?>
+        <?php if (Auth::can('riders.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/riders') ?>" class="vp-nav-item<?= $vpNavActive === 'riders' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'riders' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_riders() ?></span>
+              <span class="vp-nav-item__text">Riders</span>
+            </a>
+          </li>
+        <?php } ?>
+        <?php if (Auth::can('team.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/team') ?>" class="vp-nav-item<?= $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_team() ?></span>
+              <span class="vp-nav-item__text">Team</span>
+            </a>
+          </li>
+        <?php } ?>
       </ul>
+      <?php if (Auth::can('settings.manage')) { ?>
+        <p class="vp-sidebar__section-label">Platform</p>
+        <ul class="vp-sidebar__list">
+          <li>
+            <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
+              <span class="vp-nav-item__text">App settings</span>
+            </a>
+          </li>
+        </ul>
+      <?php } ?>
     </nav>
     <div class="vp-sidebar__foot">
       <?php if ($publicBase !== '') { ?>
         <p class="vp-sidebar__api-hint">
-          <span class="vp-sidebar__api-label">Public API</span>
-          <code class="vp-sidebar__api-code"><?= vp_h(rtrim($publicBase, '/') . $apiPath) ?></code>
+          <span class="vp-sidebar__api-label">APIs</span>
+          <code class="vp-sidebar__api-code"><?= vp_h(rtrim($publicBase, '/') . $apiPathRegions) ?></code>
+          <code class="vp-sidebar__api-code vp-sidebar__api-code--second"><?= vp_h(rtrim($publicBase, '/') . $apiPathPublic) ?></code>
         </p>
       <?php } else { ?>
-        <p class="vp-sidebar__api-hint vp-sidebar__api-hint--muted">Set <code>PUBLIC_BASE_URL</code> in <code>.env</code> to show the live config URL here.</p>
+        <p class="vp-sidebar__api-hint vp-sidebar__api-hint--muted">Set <code>PUBLIC_BASE_URL</code> in <code>.env</code> to show public API URLs here.</p>
       <?php } ?>
     </div>
   </aside>

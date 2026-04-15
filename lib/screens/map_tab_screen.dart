@@ -10,7 +10,7 @@ import '../core/api/api_exception.dart';
 import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/brand/brand_assets.dart';
-import '../core/config/app_config.dart';
+import '../core/client/client_config_scope.dart';
 import '../core/maps/geocode_service.dart';
 import '../core/region/region_config_scope.dart';
 import '../core/region/resolved_region_config.dart';
@@ -84,9 +84,13 @@ class _MapTabScreenState extends State<MapTabScreen>
     }
   }
 
-  void _scheduleGeocode(RidePickupController pickupCtrl, LatLng p) {
+  void _scheduleGeocode(
+    RidePickupController pickupCtrl,
+    LatLng p,
+    String mapsApiKey,
+  ) {
     _geoDebounce?.cancel();
-    if (AppConfig.mapsApiKey.trim().isEmpty) {
+    if (mapsApiKey.trim().isEmpty) {
       pickupCtrl.setAddressLabel(
         '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}',
       );
@@ -97,6 +101,7 @@ class _MapTabScreenState extends State<MapTabScreen>
       final label = await _geocoder.reverseFormattedAddress(
         p.latitude,
         p.longitude,
+        apiKey: mapsApiKey,
       );
       if (!mounted) return;
       pickupCtrl.setAddressLabel(
@@ -163,7 +168,8 @@ class _MapTabScreenState extends State<MapTabScreen>
     final region = RegionConfigScope.resolvedOf(context);
     final pickupCtrl = RidePickupScope.of(context);
     final textTheme = Theme.of(context).textTheme;
-    final hasMapsKey = AppConfig.mapsApiKey.trim().isNotEmpty;
+    final mapsKey = ClientConfigScope.of(context).effectiveMapsApiKey.trim();
+    final hasMapsKey = mapsKey.isNotEmpty;
 
     if (!hasMapsKey) {
       return _MapPlaceholder(region: region, textTheme: textTheme);
@@ -195,7 +201,7 @@ class _MapTabScreenState extends State<MapTabScreen>
               final t = _cameraTarget;
               if (t != null) {
                 pickupCtrl.setFromCamera(t);
-                _scheduleGeocode(pickupCtrl, t);
+                _scheduleGeocode(pickupCtrl, t, mapsKey);
               }
             },
           ),
@@ -326,9 +332,8 @@ class _MapPlaceholder extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Add MAPS_API_KEY when running or building the app, and '
-                  'maps.api.key in android/local.properties for Android. '
-                  'Set GMSApiKey in ios/Runner/Info.plist for iOS. '
+                  'Add a Maps API key: set it in the admin console (public config), '
+                  'or pass MAPS_API_KEY / maps.api.key (Android) and GMSApiKey (iOS) for native SDK. '
                   'Region: ${region.serviceAreaLabel}.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
