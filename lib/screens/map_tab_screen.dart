@@ -119,6 +119,22 @@ class _MapTabScreenState extends State<MapTabScreen>
     final auth = AuthScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    final cfg = ClientConfigScope.of(context).features;
+    if (cfg.maintenanceMode) {
+      final msg = cfg.maintenanceMessage.trim().isNotEmpty
+          ? cfg.maintenanceMessage.trim()
+          : 'Ride requests are paused (maintenance).';
+      messenger.showSnackBar(SnackBar(content: Text(msg)));
+      return;
+    }
+    if (!cfg.rideBookingEnabled) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Ride booking is turned off in the app settings.'),
+        ),
+      );
+      return;
+    }
     if (!auth.isSignedIn) {
       messenger.showSnackBar(
         SnackBar(
@@ -168,8 +184,12 @@ class _MapTabScreenState extends State<MapTabScreen>
     final region = RegionConfigScope.resolvedOf(context);
     final pickupCtrl = RidePickupScope.of(context);
     final textTheme = Theme.of(context).textTheme;
-    final mapsKey = ClientConfigScope.of(context).effectiveMapsApiKey.trim();
+    final clientCfg = ClientConfigScope.of(context);
+    final mapsKey = clientCfg.effectiveMapsApiKey.trim();
     final hasMapsKey = mapsKey.isNotEmpty;
+    final features = clientCfg.features;
+    final rideDisabled =
+        features.maintenanceMode || !features.rideBookingEnabled;
 
     if (!hasMapsKey) {
       return _MapPlaceholder(region: region, textTheme: textTheme);
@@ -279,9 +299,12 @@ class _MapTabScreenState extends State<MapTabScreen>
                     ),
                     const SizedBox(height: 14),
                     AppPrimaryButton(
-                      label: 'Request ride',
+                      label: rideDisabled
+                          ? (features.maintenanceMode ? 'Unavailable (maintenance)'
+                                : 'Booking disabled')
+                          : 'Request ride',
                       isLoading: _rideBusy,
-                      onPressed: _rideBusy
+                      onPressed: _rideBusy || rideDisabled
                           ? null
                           : () => _requestRide(context, pickupCtrl),
                     ),

@@ -33,13 +33,19 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Team</h1>
-  <p class="vp-page-desc">Console operators. Access is driven by roles configured under <em>Roles &amp; access</em> (system administrators only).</p>
+  <p class="vp-page-desc">Console operators. Access is driven by roles under <em>Roles &amp; access</em>.</p>
 </header>
+
+<?php if (Auth::can('rbac.manage')) { ?>
+  <div class="vp-toolbar">
+    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/team/new') ?>">New administrator</a>
+  </div>
+<?php } ?>
 
 <section class="vp-card" aria-labelledby="team-heading">
   <div class="vp-card__pad">
     <h2 id="team-heading" class="vp-section-title">Administrators</h2>
-    <p class="vp-page-desc" style="margin-top:-0.25rem;">Provision accounts via database or seed scripts today; RBAC defines what each role can open in this console.</p>
+    <p class="vp-page-desc" style="margin-top:-0.25rem;"><?= Auth::can('rbac.manage') ? 'Create accounts here or keep using SQL seeds for automation.' : 'Contact a system administrator to add console accounts.' ?></p>
     <div class="vp-table-wrap">
       <table class="vp-table">
         <thead>

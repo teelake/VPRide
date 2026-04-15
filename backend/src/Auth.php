@@ -10,6 +10,8 @@ require_once __DIR__ . '/Database.php';
 
 final class Auth
 {
+    private static bool $sessionRoleHydrated = false;
+
     public const SESSION_ADMIN_ID = 'admin_id';
     public const SESSION_ADMIN_EMAIL = 'admin_email';
     public const SESSION_ADMIN_ROLE = 'admin_role';
@@ -79,6 +81,39 @@ final class Auth
         return (int) $rid;
     }
 
+    /**
+     * After RBAC deploy, older sessions may lack admin_role_id. Load from DB once per request.
+     */
+    public static function hydrateAdminRoleSessionIfNeeded(): void
+    {
+        if (self::$sessionRoleHydrated) {
+            return;
+        }
+        self::$sessionRoleHydrated = true;
+        self::startSession();
+        $a = self::currentAdmin();
+        if ($a === null) {
+            return;
+        }
+        if (self::currentRoleId() !== null) {
+            return;
+        }
+        try {
+            $stmt = Database::pdo()->prepare(
+                'SELECT a.role_id, r.slug AS role_slug FROM admins a '
+                . 'INNER JOIN admin_roles r ON r.id = a.role_id WHERE a.id = ? LIMIT 1',
+            );
+            $stmt->execute([$a[0]]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row !== false && isset($row['role_id'], $row['role_slug'])) {
+                $_SESSION[self::SESSION_ADMIN_ROLE_ID] = (int) $row['role_id'];
+                $_SESSION[self::SESSION_ADMIN_ROLE] = (string) $row['role_slug'];
+            }
+        } catch (\Throwable) {
+            // Schema not migrated or DB error — leave session; permission checks may fail
+        }
+    }
+
     public static function login(PDO $pdo, string $email, string $password): bool
     {
         $stmt = $pdo->prepare(
@@ -127,6 +162,7 @@ final class Auth
 
     public static function can(string $permission): bool
     {
+        self::hydrateAdminRoleSessionIfNeeded();
         $a = self::currentAdmin();
         $roleId = self::currentRoleId();
         if ($a === null || $roleId === null) {
@@ -144,10 +180,9 @@ final class Auth
         }
         if (! self::can($permission)) {
             http_response_code(403);
-            header('Content-Type: text/html; charset=utf-8');
-            echo '<!DOCTYPE html><meta charset="utf-8"><title>Forbidden</title>'
-                . '<p>You do not have permission to view this page.</p>'
-                . '<p><a href="' . htmlspecialchars(Config::url('/admin/dashboard'), ENT_QUOTES, 'UTF-8') . '">Back to overview</a></p>';
+            $forbiddenTitle = 'Access denied';
+            $forbiddenMessage = 'You do not have permission to view this page.';
+            require dirname(__DIR__) . '/public/admin/includes/forbidden_page.php';
             exit;
         }
     }

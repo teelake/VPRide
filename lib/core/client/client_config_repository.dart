@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import 'app_public_features.dart';
 
 /// Public keys from [GET /api/v1/config/public] with `--dart-define` fallback.
 class ClientConfigRepository extends ChangeNotifier {
@@ -15,6 +16,10 @@ class ClientConfigRepository extends ChangeNotifier {
   String _remoteGoogleWebClientId = '';
   String _remoteMapsApiKey = '';
   String _remoteMinimumAppVersion = '';
+  AppPublicFeatures _features = AppPublicFeatures.fallback;
+
+  /// Feature flags from the last successful config fetch (or [AppPublicFeatures.fallback]).
+  AppPublicFeatures get features => _features;
 
   /// Non-empty when the last [loadInitial] returned values from the server.
   String get remoteGoogleWebClientId => _remoteGoogleWebClientId;
@@ -57,6 +62,7 @@ class ClientConfigRepository extends ChangeNotifier {
           _remoteMapsApiKey = '${data['mapsApiKey'] ?? ''}'.trim();
           _remoteMinimumAppVersion =
               '${data['minimumAppVersion'] ?? ''}'.trim();
+          _features = AppPublicFeatures.fromJson(data['features']);
         }
       } else if (kDebugMode) {
         debugPrint(

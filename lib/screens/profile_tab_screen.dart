@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/auth/auth_scope.dart';
+import '../core/client/client_config_scope.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/app_buttons.dart';
 
@@ -14,13 +16,16 @@ class ProfileTabScreen extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
     final auth = AuthScope.of(context);
 
+    final clientCfg = ClientConfigScope.of(context);
+
     return ColoredBox(
       color: AppColors.surfaceMuted,
       child: ListenableBuilder(
-        listenable: auth,
+        listenable: Listenable.merge([auth, clientCfg]),
         builder: (context, _) {
           final p = auth.profile;
           final signedIn = auth.isSignedIn;
+          final helpUrl = clientCfg.features.helpCenterUrl.trim();
 
           return ListView(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
@@ -96,6 +101,19 @@ class ProfileTabScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
+              if (helpUrl.isNotEmpty) ...[
+                AppSecondaryButton(
+                  label: 'Help center',
+                  icon: Icons.help_outline_rounded,
+                  onPressed: () async {
+                    final uri = Uri.tryParse(helpUrl);
+                    if (uri != null && await canLaunchUrl(uri)) {
+                      await launchUrl(uri, mode: LaunchMode.externalApplication);
+                    }
+                  },
+                ),
+                const SizedBox(height: 12),
+              ],
               if (!signedIn)
                 AppPrimaryButton(
                   label: 'Sign in',

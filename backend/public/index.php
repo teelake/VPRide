@@ -156,6 +156,11 @@ if ($path === '/admin/team' && $method === 'GET') {
     exit;
 }
 
+if ($path === '/admin/team/new' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/team_admin_new.php';
+    exit;
+}
+
 if ($path === '/admin/settings' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/settings.php';
     exit;
