@@ -9,6 +9,23 @@ use VprideBackend\Config;
 
 Config::load($backendRoot . '/.env');
 
+// Send PHP errors to a file (default: backend/storage/logs/php-error.log).
+// Disable: PHP_ERROR_LOG_DISABLE=1 in .env. Override path: PHP_ERROR_LOG_FILE=/full/path/to.log
+if (trim((string) getenv('PHP_ERROR_LOG_DISABLE')) !== '1') {
+    $customLog = trim((string) getenv('PHP_ERROR_LOG_FILE'));
+    if ($customLog !== '') {
+        $errorLogFile = $customLog;
+    } else {
+        $logDir = $backendRoot . '/storage/logs';
+        if (! is_dir($logDir)) {
+            @mkdir($logDir, 0755, true);
+        }
+        $errorLogFile = $logDir . '/php-error.log';
+    }
+    ini_set('log_errors', '1');
+    ini_set('error_log', $errorLogFile);
+}
+
 $vendorAutoload = $backendRoot . '/vendor/autoload.php';
 if (is_readable($vendorAutoload)) {
     require_once $vendorAutoload;
