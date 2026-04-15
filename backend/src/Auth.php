@@ -7,6 +7,9 @@ namespace VprideBackend;
 use PDO;
 
 require_once __DIR__ . '/Database.php';
+// Shared hosts may not run Composer; do not rely on vendor autoload for RBAC.
+require_once __DIR__ . '/RbacRepository.php';
+require_once __DIR__ . '/RbacRuntime.php';
 
 final class Auth
 {
