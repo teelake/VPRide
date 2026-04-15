@@ -231,15 +231,16 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
-
-<h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
-<p class="vp-hint">
-  Use the form below — no JSON required. Changes go live only after you <strong>Go live</strong> on the regions list.
-  <?php if (! $isNew) { ?>
-    <strong>#<?= (int) $id ?></strong>
-  <?php } ?>
-</p>
+<header class="vp-page-hero vp-page-hero--editor">
+  <a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
+  <h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
+  <p class="vp-page-desc">
+    Structured editor — no raw JSON required. Changes go live only after you <strong>Go live</strong> on the regions list.
+    <?php if (! $isNew) { ?>
+      <span class="vp-page-desc__id">#<?= (int) $id ?></span>
+    <?php } ?>
+  </p>
+</header>
 
 <?php if ($error !== '') { ?>
   <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>

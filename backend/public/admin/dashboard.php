@@ -43,7 +43,6 @@ $draftCount = count(array_filter($configs, static fn ($c) => (int) $c['is_active
 $recentRides = Auth::can('rides.view') ? $rideRepo->listRecent(6) : [];
 
 $csrf = Auth::csrfToken();
-$publicBase = getenv('PUBLIC_BASE_URL') ?: '';
 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Overview · Pride Console';
@@ -54,8 +53,10 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Operations overview</h1>
-<p class="vp-page-desc">Live metrics and shortcuts across riders, rides, and region routing.</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Operations overview</h1>
+  <p class="vp-page-desc">Live metrics and shortcuts across riders, rides, and region routing.</p>
+</header>
 
 <div class="vp-kpi-grid" role="list">
   <article class="vp-kpi-card" role="listitem">
@@ -89,15 +90,6 @@ require __DIR__ . '/includes/app_shell_start.php';
     <?php } ?>
   </article>
 </div>
-
-<?php if ($publicBase !== '') { ?>
-  <div class="vp-api-strip vp-api-strip--compact">
-    <span class="vp-api-strip__label">Config API</span>
-    <code><?= vp_h(rtrim($publicBase, '/') . '/api/v1/config/regions') ?></code>
-    <span class="vp-api-strip__sep" aria-hidden="true">·</span>
-    <code><?= vp_h(rtrim($publicBase, '/') . '/api/v1/config/public') ?></code>
-  </div>
-<?php } ?>
 
 <?php if (Auth::can('rides.view') && $recentRides !== []) { ?>
   <section class="vp-card vp-card--flush-top" aria-labelledby="recent-rides-heading">

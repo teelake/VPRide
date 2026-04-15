@@ -45,9 +45,6 @@ $repo = new RegionRepository(Database::pdo());
 $rows = $repo->listConfigs();
 $csrf = Auth::csrfToken();
 
-$publicBase = getenv('PUBLIC_BASE_URL') ?: 'http://localhost:8080';
-$apiUrl = rtrim($publicBase, '/') . '/api/v1/config/regions';
-
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Regions · Pride Console';
 $bodyClass = 'vp-body vp-body--app';
@@ -57,20 +54,16 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Region configuration</h1>
-<p class="vp-page-desc">One active profile is served to all apps. Create drafts, edit JSON, then <strong>Go live</strong> when you are ready.</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Region configuration</h1>
+  <p class="vp-page-desc">One active profile is served to all rider apps. Create drafts, refine coverage, then <strong>Go live</strong> when you are ready. Apps pick up the live profile on their next sync.</p>
+</header>
 
 <div class="vp-toolbar">
   <?php if ($canManageRegions) { ?>
     <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/region/new') ?>">New draft</a>
   <?php } ?>
 </div>
-
-<div class="vp-api-strip">
-  <span class="vp-api-strip__label">Public API</span>
-  <code>GET <?= vp_h($apiUrl) ?></code>
-</div>
-<p class="vp-page-desc" style="margin-top:-0.75rem; font-size:0.8125rem;">Tip: set <code style="background:var(--vp-surface-elevated); padding:0.15rem 0.4rem; border-radius:6px;">PUBLIC_BASE_URL</code> in <code style="background:var(--vp-surface-elevated); padding:0.15rem 0.4rem; border-radius:6px;">.env</code> so this URL matches your deployment.</p>
 
 <?php if ($message !== '') { ?>
   <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>

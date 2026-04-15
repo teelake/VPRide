@@ -13,6 +13,33 @@ function vp_url(string $path): string
     return \VprideBackend\Config::url($path);
 }
 
+/** Scheme + host for the current HTTP request (no path). Empty when unavailable (e.g. CLI). */
+function vp_request_origin(): string
+{
+    $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    if ($host === '') {
+        return '';
+    }
+    $https = ! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off';
+    $scheme = $https ? 'https' : 'http';
+
+    return $scheme . '://' . $host;
+}
+
+/**
+ * Full URL to this deployment’s public entry (origin + APP_BASE_PATH), e.g. …/vpride/backend/public.
+ * Useful for bookmarks; matches what riders hit when the document root is the `public` folder.
+ */
+function vp_console_public_url(): string
+{
+    $origin = vp_request_origin();
+    if ($origin === '') {
+        return '';
+    }
+
+    return rtrim($origin . \VprideBackend\Config::url('/'), '/');
+}
+
 /** Two-letter avatar label from admin email (e.g. "jd" from "jane.doe@x.com"). */
 function vp_admin_initials(string $email): string
 {

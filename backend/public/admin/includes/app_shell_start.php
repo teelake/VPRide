@@ -13,9 +13,7 @@ $vpNavActive = $vpNavActive ?? '';
 $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
     : 'Overview';
-$publicBase = getenv('PUBLIC_BASE_URL') ?: '';
-$apiPathRegions = '/api/v1/config/regions';
-$apiPathPublic = '/api/v1/config/public';
+$consolePublicUrl = vp_console_public_url();
 $initials = vp_admin_initials($admin[1]);
 
 ?>
@@ -101,14 +99,14 @@ $initials = vp_admin_initials($admin[1]);
       <?php } ?>
     </nav>
     <div class="vp-sidebar__foot">
-      <?php if ($publicBase !== '') { ?>
-        <p class="vp-sidebar__api-hint">
-          <span class="vp-sidebar__api-label">APIs</span>
-          <code class="vp-sidebar__api-code"><?= vp_h(rtrim($publicBase, '/') . $apiPathRegions) ?></code>
-          <code class="vp-sidebar__api-code vp-sidebar__api-code--second"><?= vp_h(rtrim($publicBase, '/') . $apiPathPublic) ?></code>
-        </p>
+      <?php if ($consolePublicUrl !== '') { ?>
+        <div class="vp-sidebar__console">
+          <span class="vp-sidebar__console-label">Console URL</span>
+          <code class="vp-sidebar__console-url" title="Bookmark this address"><?= vp_h($consolePublicUrl) ?></code>
+          <p class="vp-sidebar__console-note">This is your live admin entry point, including any subpath (for example <code class="vp-sidebar__console-code">/public</code>) configured for this host.</p>
+        </div>
       <?php } else { ?>
-        <p class="vp-sidebar__api-hint vp-sidebar__api-hint--muted">Set <code>PUBLIC_BASE_URL</code> in <code>.env</code> to show public API URLs here.</p>
+        <p class="vp-sidebar__console-note vp-sidebar__console-note--alone">Console address is not available for this request.</p>
       <?php } ?>
     </div>
   </aside>

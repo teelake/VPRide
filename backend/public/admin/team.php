@@ -31,8 +31,10 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Team</h1>
-<p class="vp-page-desc">Console operators and RBAC roles. User provisioning stays in the database or your identity workflow.</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Team</h1>
+  <p class="vp-page-desc">Console operators and roles. User provisioning stays in the database or your identity workflow.</p>
+</header>
 
 <section class="vp-card" aria-labelledby="team-heading">
   <div class="vp-card__pad">

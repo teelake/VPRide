@@ -31,8 +31,10 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Rides</h1>
-<p class="vp-page-desc">Latest ride requests from the mobile API (<code>POST /api/v1/rides</code>).</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Rides</h1>
+  <p class="vp-page-desc">Latest ride requests submitted from rider devices.</p>
+</header>
 
 <section class="vp-card" aria-labelledby="rides-heading">
   <div class="vp-card__pad">

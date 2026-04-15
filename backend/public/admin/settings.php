@@ -57,8 +57,10 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Public app configuration</h1>
-<p class="vp-page-desc">Values exposed to rider apps via <code>GET /api/v1/config/public</code>. Restrict your Maps API key by app package / bundle in Google Cloud Console.</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Public app configuration</h1>
+  <p class="vp-page-desc">Keys and version rules delivered to rider apps with their routine configuration sync. Restrict your Maps API key by app package or bundle in Google Cloud Console.</p>
+</header>
 
 <?php if ($message !== '') { ?>
   <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>

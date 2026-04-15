@@ -31,8 +31,10 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<h1 class="vp-page-title">Riders</h1>
-<p class="vp-page-desc">Google-authenticated accounts with an active or past session.</p>
+<header class="vp-page-hero">
+  <h1 class="vp-page-title">Riders</h1>
+  <p class="vp-page-desc">Google-authenticated accounts with an active or past session.</p>
+</header>
 
 <section class="vp-card" aria-labelledby="riders-heading">
   <div class="vp-card__pad">
