@@ -6,6 +6,8 @@ namespace VprideBackend;
 
 use PDO;
 
+require_once __DIR__ . '/AdminPermissions.php';
+
 final class Auth
 {
     public const SESSION_ADMIN_ID = 'admin_id';
