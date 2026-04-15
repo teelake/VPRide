@@ -48,6 +48,8 @@ $apiUrl = rtrim($publicBase, '/') . '/api/v1/config/regions';
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Regions · VPRide Console';
 $bodyClass = 'vp-body vp-body--app';
+$vpNavActive = 'dashboard';
+$vpTopbarTitle = 'Region configuration';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>

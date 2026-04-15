@@ -41,6 +41,8 @@ if ($isNew) {
         header('Content-Type: text/html; charset=utf-8');
         $pageTitle = 'Not found · VPRide Console';
         $bodyClass = 'vp-body vp-body--app';
+        $vpNavActive = '';
+        $vpTopbarTitle = 'Not found';
         require __DIR__ . '/includes/head.php';
         require __DIR__ . '/includes/app_shell_start.php';
         ?>
@@ -223,6 +225,8 @@ function region_locale_checked(array $post, array $model, bool $usePost, string 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = ($isNew ? 'New region' : 'Edit #' . $id) . ' · VPRide Console';
 $bodyClass = 'vp-body vp-body--app';
+$vpNavActive = $isNew ? 'region_new' : '';
+$vpTopbarTitle = $isNew ? 'New draft' : 'Edit configuration';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
