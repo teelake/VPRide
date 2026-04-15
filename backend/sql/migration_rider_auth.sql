@@ -1,5 +1,5 @@
--- Rider app auth (run once on existing DB). Requires MySQL 8+.
-USE vpride;
+-- Rider app auth (run once). Requires MySQL 8+ for JSON elsewhere; these tables do not use JSON.
+-- In phpMyAdmin: select your database first (e.g. u232647434_vpride). Do not rely on USE vpride on shared hosting.
 
 CREATE TABLE IF NOT EXISTS rider_users (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS rider_users (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uq_rider_google_sub (google_sub),
   INDEX idx_rider_email (email)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS rider_sessions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -24,4 +24,4 @@ CREATE TABLE IF NOT EXISTS rider_sessions (
   UNIQUE KEY uq_rider_token_hash (token_hash),
   INDEX idx_rider_sess_expires (expires_at),
   INDEX idx_rider_sess_user (rider_user_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

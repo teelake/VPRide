@@ -1,4 +1,7 @@
-USE vpride;
+-- Rides table for POST /api/v1/rides and admin dashboard.
+-- In phpMyAdmin: select your real database (e.g. u232647434_vpride), then run this.
+-- Do not use "USE vpride" on shared hosts unless that is your actual DB name.
+-- Requires table rider_users (see migration_rider_auth.sql).
 
 CREATE TABLE IF NOT EXISTS rides (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -22,4 +25,4 @@ CREATE TABLE IF NOT EXISTS rides (
   INDEX idx_rides_rider (rider_user_id),
   INDEX idx_rides_status (status),
   INDEX idx_rides_created (created_at)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
