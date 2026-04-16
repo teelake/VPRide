@@ -56,10 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'App settings · VP Ride Console';
+$pageTitle = 'Settings · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'settings';
-$vpTopbarTitle = 'App settings';
+$vpTopbarTitle = 'Settings';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
@@ -67,8 +67,8 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Overview', 'href' => vp_url('/admin/dashboard')],
-        ['label' => 'App settings', 'href' => null],
+        ['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'Settings', 'href' => null],
     ]);
 ?>
   <h1 class="vp-page-title">Public app configuration</h1>

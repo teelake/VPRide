@@ -88,7 +88,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Overview', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard')],
         ['label' => 'Account', 'href' => null],
     ]);
 ?>

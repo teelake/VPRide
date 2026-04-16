@@ -28,10 +28,10 @@ $rows = SchemaInspector::tableExists($pdo, 'rides')
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Rides · VP Ride Console';
+$pageTitle = 'Bookings · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'rides';
-$vpTopbarTitle = 'Rides';
+$vpTopbarTitle = 'Bookings';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
@@ -39,7 +39,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <?php vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Rides'); ?>
 
 <header class="vp-page-hero">
-  <h1 class="vp-page-title">Rides</h1>
+  <h1 class="vp-page-title">Bookings</h1>
   <p class="vp-page-desc">Latest ride requests submitted from rider devices.</p>
 </header>
 

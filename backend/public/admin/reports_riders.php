@@ -133,7 +133,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'Rider directory unavailable',
               'Import backend/sql/migration_rider_auth.sql (or full schema), then try again.',
-              [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+              [['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
           );
         ?>
       <?php } elseif ($q !== '') { ?>

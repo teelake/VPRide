@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 /** @var array{0:int,1:string,2:string} $admin */
 /** @var string $csrf */
-/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | reports | rbac | account | region_new | region_edit */
+/**
+ * @var string|null $vpNavActive
+ *   dashboard | bookings | schedule | fleet | users | reports | settings | help |
+ *   regions | region_new | rbac | account | region_edit
+ */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
 
 use VprideBackend\Auth;
@@ -12,7 +16,7 @@ use VprideBackend\Auth;
 $vpNavActive = $vpNavActive ?? '';
 $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
-    : 'Overview';
+    : 'Dashboard';
 $initials = vp_admin_initials($admin[1]);
 
 ?>
@@ -24,56 +28,51 @@ $initials = vp_admin_initials($admin[1]);
       <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-sidebar__brand" aria-label="VP Ride — Admin home">
         <img
           class="vp-brand-logo"
-          src="<?= vp_url('/admin/assets/brand/logo_wordmark_white_on_black.png') ?>"
+          src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
           width="168"
           height="40"
           alt="VP Ride"
           decoding="async"
           loading="lazy"
         >
-        <span class="vp-sidebar__brand-tag vp-sidebar__brand-tag--below">Operations</span>
+        <span class="vp-sidebar__brand-tag vp-sidebar__brand-tag--below">Console</span>
       </a>
     </div>
     <nav class="vp-sidebar__nav" aria-label="Sections">
-      <p class="vp-sidebar__section-label">Operations</p>
       <ul class="vp-sidebar__list">
         <?php if (Auth::can('dashboard.view')) { ?>
           <li>
-            <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'overview' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'overview' ? ' aria-current="page"' : '' ?>>
+            <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' aria-current="page"' : '' ?>>
               <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_overview() ?></span>
-              <span class="vp-nav-item__text">Overview</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('regions.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/regions') ?>" class="vp-nav-item<?= $vpNavActive === 'regions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'regions' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_regions() ?></span>
-              <span class="vp-nav-item__text">Regions</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('regions.manage')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/region/new') ?>" class="vp-nav-item<?= $vpNavActive === 'region_new' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'region_new' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
-              <span class="vp-nav-item__text">New draft</span>
+              <span class="vp-nav-item__text">Dashboard</span>
             </a>
           </li>
         <?php } ?>
         <?php if (Auth::can('rides.view')) { ?>
           <li>
-            <a href="<?= vp_url('/admin/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'rides' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rides' ? ' aria-current="page"' : '' ?>>
+            <a href="<?= vp_url('/admin/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' aria-current="page"' : '' ?>>
               <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rides() ?></span>
-              <span class="vp-nav-item__text">Rides</span>
+              <span class="vp-nav-item__text">Bookings</span>
+            </a>
+          </li>
+          <li>
+            <a href="<?= vp_url('/admin/schedule') ?>" class="vp-nav-item<?= $vpNavActive === 'schedule' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'schedule' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_schedule() ?></span>
+              <span class="vp-nav-item__text">Schedule</span>
+            </a>
+          </li>
+          <li>
+            <a href="<?= vp_url('/admin/fleet') ?>" class="vp-nav-item<?= $vpNavActive === 'fleet' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'fleet' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_fleet() ?></span>
+              <span class="vp-nav-item__text">Car management</span>
             </a>
           </li>
         <?php } ?>
-        <?php if (Auth::can('riders.view')) { ?>
+        <?php if (Auth::can('riders.view') || Auth::can('team.view')) { ?>
           <li>
-            <a href="<?= vp_url('/admin/riders') ?>" class="vp-nav-item<?= $vpNavActive === 'riders' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'riders' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_riders() ?></span>
-              <span class="vp-nav-item__text">Riders</span>
+            <a href="<?= vp_url('/admin/users') ?>" class="vp-nav-item<?= $vpNavActive === 'users' || $vpNavActive === 'riders' || $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'users' || $vpNavActive === 'riders' || $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_users_hub() ?></span>
+              <span class="vp-nav-item__text">Users</span>
             </a>
           </li>
         <?php } ?>
@@ -85,34 +84,53 @@ $initials = vp_admin_initials($admin[1]);
             </a>
           </li>
         <?php } ?>
-        <?php if (Auth::can('team.view')) { ?>
+        <?php if (Auth::can('settings.manage')) { ?>
           <li>
-            <a href="<?= vp_url('/admin/team') ?>" class="vp-nav-item<?= $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_team() ?></span>
-              <span class="vp-nav-item__text">Team</span>
+            <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
+              <span class="vp-nav-item__text">Settings</span>
             </a>
           </li>
         <?php } ?>
+        <li>
+          <a href="<?= vp_url('/admin/help') ?>" class="vp-nav-item<?= $vpNavActive === 'help' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'help' ? ' aria-current="page"' : '' ?>>
+            <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_help() ?></span>
+            <span class="vp-nav-item__text">Help &amp; support</span>
+          </a>
+        </li>
       </ul>
-      <?php if (Auth::can('settings.manage') || Auth::can('rbac.manage')) { ?>
-        <p class="vp-sidebar__section-label">Platform</p>
+
+      <?php if (Auth::can('regions.view') || Auth::can('regions.manage')) { ?>
+        <p class="vp-sidebar__section-label">Regions &amp; coverage</p>
         <ul class="vp-sidebar__list">
-          <?php if (Auth::can('settings.manage')) { ?>
+          <?php if (Auth::can('regions.view')) { ?>
             <li>
-              <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
-                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
-                <span class="vp-nav-item__text">App settings</span>
+              <a href="<?= vp_url('/admin/regions') ?>" class="vp-nav-item<?= $vpNavActive === 'regions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'regions' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_regions() ?></span>
+                <span class="vp-nav-item__text">Regions</span>
               </a>
             </li>
           <?php } ?>
-          <?php if (Auth::can('rbac.manage')) { ?>
+          <?php if (Auth::can('regions.manage')) { ?>
             <li>
-              <a href="<?= vp_url('/admin/rbac') ?>" class="vp-nav-item<?= $vpNavActive === 'rbac' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rbac' ? ' aria-current="page"' : '' ?>>
-                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rbac() ?></span>
-                <span class="vp-nav-item__text">Roles &amp; access</span>
+              <a href="<?= vp_url('/admin/region/new') ?>" class="vp-nav-item<?= $vpNavActive === 'region_new' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'region_new' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
+                <span class="vp-nav-item__text">New draft</span>
               </a>
             </li>
           <?php } ?>
+        </ul>
+      <?php } ?>
+
+      <?php if (Auth::can('rbac.manage')) { ?>
+        <p class="vp-sidebar__section-label">Administration</p>
+        <ul class="vp-sidebar__list">
+          <li>
+            <a href="<?= vp_url('/admin/rbac') ?>" class="vp-nav-item<?= $vpNavActive === 'rbac' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rbac' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rbac() ?></span>
+              <span class="vp-nav-item__text">Roles &amp; access</span>
+            </a>
+          </li>
         </ul>
       <?php } ?>
     </nav>

@@ -25,7 +25,7 @@ $csrf = Auth::csrfToken();
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Team · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
-$vpNavActive = 'team';
+$vpNavActive = 'users';
 $vpTopbarTitle = 'Team & roles';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';

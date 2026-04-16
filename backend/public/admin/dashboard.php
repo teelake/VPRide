@@ -100,16 +100,16 @@ foreach ($ridersByDay as $pt) {
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Overview · VP Ride Console';
+$pageTitle = 'Dashboard · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
-$vpNavActive = 'overview';
-$vpTopbarTitle = 'Overview';
+$vpNavActive = 'dashboard';
+$vpTopbarTitle = 'Dashboard';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero">
-  <h1 class="vp-page-title">Operations overview</h1>
+  <h1 class="vp-page-title">Dashboard</h1>
   <p class="vp-page-desc">Performance signals, live routing, and quick paths into VP Ride operations.</p>
 </header>
 

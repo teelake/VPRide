@@ -172,7 +172,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'Rides table missing',
               'Import backend/sql/migration_rides.sql, then return to this report.',
-              [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+              [['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
           );
         ?>
       <?php } ?>
