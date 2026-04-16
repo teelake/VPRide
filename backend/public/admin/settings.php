@@ -162,20 +162,20 @@ require __DIR__ . '/includes/app_shell_start.php';
             <div class="vp-stack-form">
               <div class="vp-field">
                 <label class="vp-label" for="googleWebClientId">Google OAuth Web client ID</label>
-                <input class="vp-input vp-input--mono" id="googleWebClientId" name="googleWebClientId" type="text" value="<?= vp_h($settings['googleWebClientId']) ?>" placeholder="123….apps.googleusercontent.com" autocomplete="off">
+                <input class="vp-input vp-input--mono" id="googleWebClientId" name="googleWebClientId" type="text" value="<?= vp_h($settings['googleWebClientId']) ?>" placeholder="123….apps.googleusercontent.com" maxlength="512" pattern="[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com" title="OAuth Web client ID ending in .apps.googleusercontent.com" autocomplete="off">
                 <p class="vp-field-hint">Used by the app for Google Sign-In and must match the audience your backend verifies. <?php if ($envOverridesClient) { ?><strong class="vp-hint-warn">Overridden for JWT verification by <code>GOOGLE_OAUTH_CLIENT_ID</code> in <code>.env</code>.</strong><?php } else { ?>If <code>.env</code> is empty, the backend uses this value to verify ID tokens.<?php } ?></p>
               </div>
 
               <div class="vp-field">
                 <label class="vp-label" for="mapsApiKey">Maps / Geocoding API key</label>
-                <input class="vp-input vp-input--mono" id="mapsApiKey" name="mapsApiKey" type="text" value="<?= vp_h($settings['mapsApiKey']) ?>" placeholder="AIza…" autocomplete="off">
+                <input class="vp-input vp-input--mono" id="mapsApiKey" name="mapsApiKey" type="text" value="<?= vp_h($settings['mapsApiKey']) ?>" placeholder="AIza…" maxlength="512" pattern="([A-Za-z0-9_-]{30,512})?" title="Leave blank to use .env, or enter an alphanumeric key (about 30+ characters)" autocomplete="off">
                 <p class="vp-field-hint">Returned to the app in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">mapsApiKey</code> (geocoding). If this field is empty, the API can still expose a key from <code class="vp-inline-code">MAPS_API_KEY</code> or <code class="vp-inline-code">GOOGLE_MAPS_API_KEY</code> in <code>.env</code>. Native Maps SDK builds should also set the key in Gradle / iOS (<code>maps.api.key</code> / <code>GMSApiKey</code>).</p>
               </div>
 
               <div class="vp-field">
                 <label class="vp-label" for="minimumAppVersion">Minimum app version</label>
-                <input class="vp-input" id="minimumAppVersion" name="minimumAppVersion" type="text" value="<?= vp_h($settings['minimumAppVersion']) ?>" placeholder="1.0.0">
-                <p class="vp-field-hint">Semantic version string for future force-upgrade checks in the mobile app.</p>
+                <input class="vp-input" id="minimumAppVersion" name="minimumAppVersion" type="text" value="<?= vp_h($settings['minimumAppVersion']) ?>" placeholder="1.0.0" maxlength="32" required pattern="\d+(\.\d+){1,2}([a-zA-Z0-9._+-]*)?" title="e.g. 1.0.0 or 1.2">
+                <p class="vp-field-hint">Semantic version for future force-upgrade checks (e.g. <code class="vp-inline-code">1.0.0</code>). Validated on save.</p>
               </div>
             </div>
           </div>
@@ -201,7 +201,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <div class="vp-field">
                 <label class="vp-label" for="welcomeBgUpload">Upload background image</label>
                 <input class="vp-input" id="welcomeBgUpload" name="welcomeBgUpload" type="file" accept="image/jpeg,image/png,image/webp">
-                <p class="vp-field-hint">JPEG, PNG, or WebP, max 3 MB. Saving applies the new image URL to the app (does not delete prior files on disk).</p>
+                <p class="vp-field-hint"><strong>Recommended:</strong> portrait hero <strong>1080×1920 px</strong> (9∶16) or <strong>1242×2688 px</strong> for sharp full-screen on large phones; <strong>9∶16 to 3∶4</strong> aspect works well. Minimum useful size about <strong>720×1280</strong>. JPEG, PNG, or WebP; <strong>max 3 MB</strong> upload. The server <strong>re-encodes</strong> to WebP (or JPEG if WebP is unavailable) at <strong>high quality</strong> and scales down if the longest side exceeds 2560 px so riders get a smaller file without visible loss. Prior files on disk are not deleted automatically.</p>
               </div>
               <div class="vp-field">
                 <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
@@ -211,7 +211,8 @@ require __DIR__ . '/includes/app_shell_start.php';
               </div>
               <div class="vp-field">
                 <label class="vp-label" for="welcomeBackgroundImageUrl">Background image URL (optional override)</label>
-                <input class="vp-input vp-input--mono" id="welcomeBackgroundImageUrl" name="welcomeBackgroundImageUrl" type="url" value="<?= vp_h($settings['welcome']['backgroundImageUrl'] ?? '') ?>" placeholder="https://…/hero.jpg" autocomplete="off">
+                <input class="vp-input vp-input--mono" id="welcomeBackgroundImageUrl" name="welcomeBackgroundImageUrl" type="url" maxlength="2048" value="<?= vp_h($settings['welcome']['backgroundImageUrl'] ?? '') ?>" placeholder="https://…/hero.jpg" autocomplete="off">
+                <p class="vp-field-hint">Must be a full <code class="vp-inline-code">http://</code> or <code class="vp-inline-code">https://</code> URL. Prefer uploading above so the image is optimized on this server.</p>
               </div>
               <div class="vp-field">
                 <label class="vp-label" for="welcomeOverlayColor">Overlay color (hex)</label>
@@ -308,7 +309,8 @@ require __DIR__ . '/includes/app_shell_start.php';
             </div>
             <div class="vp-field">
               <label class="vp-label" for="helpCenterUrl">Help center URL</label>
-              <input class="vp-input" id="helpCenterUrl" name="helpCenterUrl" type="url" value="<?= vp_h($settings['features']['helpCenterUrl']) ?>" placeholder="https://…">
+              <input class="vp-input" id="helpCenterUrl" name="helpCenterUrl" type="url" maxlength="512" value="<?= vp_h($settings['features']['helpCenterUrl']) ?>" placeholder="https://…">
+              <p class="vp-field-hint">Optional. If set, must be <code class="vp-inline-code">http(s)://</code> — validated on save.</p>
             </div>
           </div>
         </section>

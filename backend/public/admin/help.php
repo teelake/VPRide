@@ -35,7 +35,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <h2 id="help-console-h" class="vp-section-title">Using the console</h2>
       <ul class="vp-help-list">
         <li><strong>Bookings</strong> lists ride requests synced from rider devices.</li>
-        <li><strong>Users</strong> groups rider directory and admin team links in one place.</li>
+        <li><strong>Riders</strong> and <strong>Drivers</strong> each have their own sidebar menu; <strong>People &amp; access</strong> links to the same destinations in one hub.</li>
         <li><strong>Regions</strong> controls live routing configuration and drafts.</li>
         <li><strong>Reports</strong> offers filtered exports for rides and riders.</li>
       </ul>
@@ -46,6 +46,18 @@ require __DIR__ . '/includes/app_shell_start.php';
       <h2 id="help-account-h" class="vp-section-title">Your account</h2>
       <p class="vp-page-desc" style="margin:0 0 1rem;">Update email preferences and password from <a href="<?= vp_h(vp_url('/admin/account')) ?>">Account settings</a> (profile menu, top right).</p>
       <p class="vp-page-desc" style="margin:0;">Sign out from the same menu to end your session on this device.</p>
+    </div>
+  </section>
+  <section class="vp-card" aria-labelledby="help-security-h">
+    <div class="vp-card__pad">
+      <h2 id="help-security-h" class="vp-section-title">Security &amp; performance</h2>
+      <ul class="vp-help-list">
+        <li><strong>Session &amp; CSRF:</strong> Console actions use your login session and a hidden CSRF token on forms. Do not share admin links that include tokens; use bookmarks to normal URLs only.</li>
+        <li><strong>Secrets:</strong> Prefer storing sensitive API keys in server <code class="vp-inline-code">.env</code> when possible; restrict Google keys in Cloud Console (package, bundle, IP).</li>
+        <li><strong>URLs in settings:</strong> Help center and welcome background URLs must be <code class="vp-inline-code">http://</code> or <code class="vp-inline-code">https://</code> only — arbitrary schemes are rejected on save.</li>
+        <li><strong>Welcome image uploads:</strong> Files are checked with MIME detection and decoded as real images; oversized dimensions and huge pixel counts are blocked. The server re-encodes to WebP (or JPEG) and may downscale very large sources so riders download a smaller asset without visible loss.</li>
+        <li><strong>Hosting:</strong> Serve the admin and API over HTTPS in production; keep PHP and extensions updated.</li>
+      </ul>
     </div>
   </section>
 </div>

@@ -6,7 +6,7 @@ declare(strict_types=1);
 /** @var string $csrf */
 /**
  * @var string|null $vpNavActive
- *   dashboard | bookings | schedule | fleet | users | reports | settings | help |
+ *   dashboard | bookings | schedule | fleet | riders | drivers | team | users | reports | settings | help |
  *   regions | region_new | rbac | account | region_edit
  */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
@@ -64,20 +64,6 @@ $vpSearchPlaceholder = Auth::can('riders.view')
               <span class="vp-nav-item__text">Schedule</span>
             </a>
           </li>
-          <li>
-            <a href="<?= vp_url('/admin/fleet') ?>" class="vp-nav-item<?= $vpNavActive === 'fleet' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'fleet' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_fleet() ?></span>
-              <span class="vp-nav-item__text">Car management</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('riders.view') || Auth::can('team.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/users') ?>" class="vp-nav-item<?= $vpNavActive === 'users' || $vpNavActive === 'riders' || $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'users' || $vpNavActive === 'riders' || $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_users_hub() ?></span>
-              <span class="vp-nav-item__text">Users</span>
-            </a>
-          </li>
         <?php } ?>
         <?php if (Auth::can('reports.view')) { ?>
           <li>
@@ -102,6 +88,48 @@ $vpSearchPlaceholder = Auth::can('riders.view')
           </a>
         </li>
       </ul>
+
+      <?php if (Auth::can('riders.view')) { ?>
+        <p class="vp-sidebar__section-label">Riders</p>
+        <ul class="vp-sidebar__list">
+          <li>
+            <a href="<?= vp_url('/admin/riders') ?>" class="vp-nav-item<?= $vpNavActive === 'riders' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'riders' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_riders() ?></span>
+              <span class="vp-nav-item__text">Rider directory</span>
+            </a>
+          </li>
+        </ul>
+      <?php } ?>
+
+      <?php if (Auth::can('rides.view')) { ?>
+        <p class="vp-sidebar__section-label">Drivers</p>
+        <ul class="vp-sidebar__list">
+          <li>
+            <a href="<?= vp_url('/admin/drivers') ?>" class="vp-nav-item<?= $vpNavActive === 'drivers' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'drivers' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_drivers() ?></span>
+              <span class="vp-nav-item__text">Driver directory</span>
+            </a>
+          </li>
+          <li>
+            <a href="<?= vp_url('/admin/fleet') ?>" class="vp-nav-item<?= $vpNavActive === 'fleet' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'fleet' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_fleet() ?></span>
+              <span class="vp-nav-item__text">Car management</span>
+            </a>
+          </li>
+        </ul>
+      <?php } ?>
+
+      <?php if (Auth::can('team.view')) { ?>
+        <p class="vp-sidebar__section-label">Console team</p>
+        <ul class="vp-sidebar__list">
+          <li>
+            <a href="<?= vp_url('/admin/team') ?>" class="vp-nav-item<?= $vpNavActive === 'team' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'team' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_team() ?></span>
+              <span class="vp-nav-item__text">Administrators</span>
+            </a>
+          </li>
+        </ul>
+      <?php } ?>
 
       <?php if (Auth::can('rides.view')) { ?>
         <div class="vp-sidebar__cta">

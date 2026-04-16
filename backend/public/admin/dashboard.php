@@ -180,7 +180,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
     <p class="vp-kpi-card__delta<?= $riders7d > 0 ? ' vp-kpi-card__delta--up' : ' vp-kpi-card__delta--muted' ?>"><?= vp_h($ridersWeekLine) ?></p>
     <?php if (Auth::can('riders.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/users') ?>">User management</a>
+      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/users') ?>">People &amp; access</a>
     <?php } ?>
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">

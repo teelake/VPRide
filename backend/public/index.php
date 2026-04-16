@@ -192,6 +192,11 @@ if ($path === '/admin/riders' && $method === 'GET') {
     exit;
 }
 
+if ($path === '/admin/drivers' && $method === 'GET') {
+    require $backendRoot . '/public/admin/drivers.php';
+    exit;
+}
+
 if ($path === '/admin/users' && $method === 'GET') {
     require $backendRoot . '/public/admin/users.php';
     exit;

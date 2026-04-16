@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'New administrator · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
-$vpNavActive = 'users';
+$vpNavActive = 'team';
 $vpTopbarTitle = 'New administrator';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';

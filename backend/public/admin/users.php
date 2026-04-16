@@ -13,7 +13,7 @@ Config::load($backendRoot . '/.env');
 Auth::startSession();
 Auth::requireLogin();
 
-if (! Auth::can('riders.view') && ! Auth::can('team.view')) {
+if (! Auth::can('riders.view') && ! Auth::can('team.view') && ! Auth::can('rides.view')) {
     header('Location: ' . Config::url('/admin/dashboard'));
     exit;
 }
@@ -22,17 +22,17 @@ $admin = Auth::currentAdmin();
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
-$pageTitle = 'Users · VP Ride Console';
+$pageTitle = 'People · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'users';
-$vpTopbarTitle = 'Users';
+$vpTopbarTitle = 'People';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero">
-  <h1 class="vp-page-title">User management</h1>
-  <p class="vp-page-desc">Rider accounts from the mobile app and console administrators. Pick a directory to open.</p>
+  <h1 class="vp-page-title">People &amp; access</h1>
+  <p class="vp-page-desc">Shortcuts to <strong>riders</strong> (app customers), <strong>drivers</strong> (operations), and <strong>console administrators</strong>. The sidebar has the same entries under separate menus.</p>
 </header>
 
 <div class="vp-hub-grid" role="list">
@@ -41,7 +41,17 @@ require __DIR__ . '/includes/app_shell_start.php';
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_riders() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Rider directory</span>
-        <span class="vp-hub-card__desc">Mobile app sign-ups, search, and profile signals.</span>
+        <span class="vp-hub-card__desc">Customers who book rides in the mobile app.</span>
+      </span>
+      <span class="vp-hub-card__chev" aria-hidden="true"><?= vp_nav_icon_chevron_right() ?></span>
+    </a>
+  <?php } ?>
+  <?php if (Auth::can('rides.view')) { ?>
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/drivers')) ?>" role="listitem">
+      <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_drivers() ?></span>
+      <span class="vp-hub-card__body">
+        <span class="vp-hub-card__title">Driver directory</span>
+        <span class="vp-hub-card__desc">Operators who fulfill rides — onboarded from this console.</span>
       </span>
       <span class="vp-hub-card__chev" aria-hidden="true"><?= vp_nav_icon_chevron_right() ?></span>
     </a>

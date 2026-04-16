@@ -180,6 +180,10 @@ final class AppSettingsRepository
         if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
             throw new RuntimeException('Value too long');
         }
+        self::validateMinimumAppVersion($merged['minimumAppVersion']);
+        self::validateGoogleWebClientId($merged['googleWebClientId']);
+        self::validateMapsApiKey($merged['mapsApiKey']);
+        self::validateHttpUrlOrEmpty($merged['features']['helpCenterUrl'], 'Help center URL');
         $json = json_encode($merged, JSON_THROW_ON_ERROR);
         $stmt = $this->pdo->prepare(
             'INSERT INTO app_public_settings (id, payload, updated_by_admin_id) VALUES (1, ?, ?) '
@@ -382,6 +386,9 @@ final class AppSettingsRepository
         if (strlen($url) > 2048) {
             throw new RuntimeException('Welcome background URL too long');
         }
+        if ($url !== '') {
+            self::validateHttpUrlOrEmpty($url, 'Welcome background URL');
+        }
         $color = array_key_exists('overlayColor', $in)
             ? trim((string) $in['overlayColor'])
             : (string) ($base['overlayColor'] ?? '#F0F0F0');
@@ -470,5 +477,67 @@ final class AppSettingsRepository
         $s = strtolower(trim((string) $v));
 
         return $s === '1' || $s === 'true' || $s === 'yes' || $s === 'on';
+    }
+
+    private static function validateMinimumAppVersion(string $v): void
+    {
+        $v = trim($v);
+        if ($v === '') {
+            throw new RuntimeException('Minimum app version is required');
+        }
+        if (strlen($v) > 32) {
+            throw new RuntimeException('Minimum app version is too long');
+        }
+        if (! preg_match('/^\d+(\.\d+){1,2}([a-zA-Z0-9._+-]*)?$/', $v)) {
+            throw new RuntimeException('Minimum app version must look like a semantic version (e.g. 1.0.0 or 1.2)');
+        }
+    }
+
+    private static function validateGoogleWebClientId(string $id): void
+    {
+        $id = trim($id);
+        if ($id === '') {
+            return;
+        }
+        if (strlen($id) > 512) {
+            throw new RuntimeException('Google Web client ID is too long');
+        }
+        if (! preg_match('/^[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com$/', $id)) {
+            throw new RuntimeException(
+                'Google Web client ID should be the OAuth client ending in .apps.googleusercontent.com',
+            );
+        }
+    }
+
+    private static function validateMapsApiKey(string $key): void
+    {
+        $key = trim($key);
+        if ($key === '') {
+            return;
+        }
+        if (strlen($key) > 512) {
+            throw new RuntimeException('Maps API key is too long');
+        }
+        if (! preg_match('/^[A-Za-z0-9_\-]{30,512}$/', $key)) {
+            throw new RuntimeException('Maps API key format looks invalid');
+        }
+    }
+
+    private static function validateHttpUrlOrEmpty(string $url, string $label): void
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return;
+        }
+        if (strlen($url) > 2048) {
+            throw new RuntimeException($label . ' is too long');
+        }
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            throw new RuntimeException($label . ' is not a valid URL');
+        }
+        $scheme = strtolower((string) (parse_url($url, PHP_URL_SCHEME) ?? ''));
+        if (! in_array($scheme, ['https', 'http'], true)) {
+            throw new RuntimeException($label . ' must use http or https');
+        }
     }
 }
