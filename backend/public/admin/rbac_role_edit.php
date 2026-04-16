@@ -47,7 +47,9 @@ $allPerms = $rbac->listPermissions();
 $byCat = [];
 foreach ($allPerms as $p) {
     $c = (string) $p['category'];
-    $byCat[$c] ??= [];
+    if (! isset($byCat[$c])) {
+        $byCat[$c] = [];
+    }
     $byCat[$c][] = $p;
 }
 $selected = $isNew ? [] : $rbac->permissionIdsForRole($roleId);

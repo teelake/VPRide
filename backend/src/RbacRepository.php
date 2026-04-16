@@ -139,10 +139,14 @@ final class RbacRepository
                 'INSERT INTO admin_roles (slug, label, is_superuser, is_system) VALUES (?, ?, 0, 0)',
             );
             $stmt->execute([$slug, $label]);
+            $newId = (int) $this->pdo->lastInsertId();
+            if ($newId < 1) {
+                throw new RuntimeException('Could not create role — check database permissions and auto-increment.');
+            }
 
-            return (int) $this->pdo->lastInsertId();
+            return $newId;
         } catch (PDOException $e) {
-            if (str_contains($e->getMessage(), 'Duplicate')) {
+            if (self::messageContains($e->getMessage(), 'Duplicate')) {
                 throw new RuntimeException('A role with this key already exists');
             }
             throw $e;
@@ -191,11 +195,20 @@ final class RbacRepository
         try {
             $stmt->execute([$slug, $label, $category === '' ? 'general' : $category]);
         } catch (PDOException $e) {
-            if (str_contains($e->getMessage(), 'Duplicate')) {
+            if (self::messageContains($e->getMessage(), 'Duplicate')) {
                 throw new RuntimeException('Permission already exists');
             }
             throw $e;
         }
+    }
+
+    private static function messageContains(string $haystack, string $needle): bool
+    {
+        if ($needle === '') {
+            return true;
+        }
+
+        return strpos($haystack, $needle) !== false;
     }
 
     public function normalizeSlug(string $raw): string

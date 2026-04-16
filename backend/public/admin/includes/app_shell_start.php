@@ -13,7 +13,6 @@ $vpNavActive = $vpNavActive ?? '';
 $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
     : 'Overview';
-$consolePublicUrl = vp_console_public_url();
 $initials = vp_admin_initials($admin[1]);
 
 ?>
@@ -116,17 +115,7 @@ $initials = vp_admin_initials($admin[1]);
         </ul>
       <?php } ?>
     </nav>
-    <div class="vp-sidebar__foot">
-      <?php if ($consolePublicUrl !== '') { ?>
-        <div class="vp-sidebar__console">
-          <span class="vp-sidebar__console-label">Console URL</span>
-          <code class="vp-sidebar__console-url" title="Bookmark this address"><?= vp_h($consolePublicUrl) ?></code>
-          <p class="vp-sidebar__console-note">This is your live admin entry point, including any subpath (for example <code class="vp-sidebar__console-code">/public</code>) configured for this host.</p>
-        </div>
-      <?php } else { ?>
-        <p class="vp-sidebar__console-note vp-sidebar__console-note--alone">Console address is not available for this request.</p>
-      <?php } ?>
-    </div>
+    <div class="vp-sidebar__foot vp-sidebar__foot--minimal" aria-hidden="true"></div>
   </aside>
 
   <div class="vp-app__main">

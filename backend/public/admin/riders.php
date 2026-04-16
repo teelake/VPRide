@@ -53,13 +53,11 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Riders</h1>
-  <p class="vp-page-desc">Accounts created when someone signs in with Google on the VP Ride mobile app.</p>
+  <p class="vp-page-desc">Directory of rider accounts from the mobile app.</p>
 </header>
 
 <div class="vp-toolbar vp-toolbar--split">
-  <div class="vp-toolbar__left">
-    <span class="vp-cta-hint"><span class="vp-cta-hint__icon" aria-hidden="true"><?= vp_nav_icon_phone() ?></span> New riders appear automatically after their first successful sign-in.</span>
-  </div>
+  <div class="vp-toolbar__left"></div>
   <div class="vp-toolbar__actions">
     <?php if (Auth::can('reports.view')) { ?>
       <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/riders') ?>">Reports &amp; export</a>
@@ -69,13 +67,6 @@ require __DIR__ . '/includes/app_shell_start.php';
     <?php } ?>
   </div>
 </div>
-
-<section class="vp-card vp-card--callout" id="how-riders-join" aria-labelledby="rider-cta-heading">
-  <div class="vp-card__pad vp-card__pad--compact">
-    <h2 id="rider-cta-heading" class="vp-callout-title">How riders join</h2>
-    <p class="vp-callout-text">There is no manual “add rider” action. Each profile is tied to a Google account. Use <strong>Reports</strong> to search the full directory, filter, paginate, and download CSV.</p>
-  </div>
-</section>
 
 <section class="vp-card" aria-labelledby="riders-heading">
   <div class="vp-card__pad">

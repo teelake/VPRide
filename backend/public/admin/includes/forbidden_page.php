@@ -30,7 +30,7 @@ $bodyClass = 'vp-body vp-body--login';
         <p class="vp-login__kicker">VP Ride</p>
         <h1 class="vp-login__title"><?= vp_h($forbiddenTitle) ?></h1>
         <p class="vp-login__lead"><?= vp_h($forbiddenMessage) ?></p>
-        <p class="vp-field-hint" style="margin-bottom:1.25rem;">If you recently updated the console, sign out and sign in again. Your account may need the <strong>Overview</strong> permission, or the database RBAC migration may still need to run.</p>
+        <p class="vp-field-hint" style="margin-bottom:1.25rem;">Try signing in again, or ask an owner to grant access.</p>
         <a class="vp-btn vp-btn--primary" style="width:100%; justify-content:center;" href="<?= vp_h(vp_url('/admin/dashboard')) ?>">Back to overview</a>
         <a class="vp-btn vp-btn--ghost" style="width:100%; justify-content:center; margin-top:0.5rem;" href="<?= vp_h(vp_url('/admin/login')) ?>">Sign in again</a>
       </div>
