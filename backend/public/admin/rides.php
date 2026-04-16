@@ -7,11 +7,13 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/RideRepository.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\RideRepository;
+use VprideBackend\SchemaInspector;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -20,7 +22,7 @@ Auth::requirePermission('rides.view');
 
 $admin = Auth::currentAdmin();
 $pdo = Database::pdo();
-$rows = \VprideBackend\SchemaInspector::tableExists($pdo, 'rides')
+$rows = SchemaInspector::tableExists($pdo, 'rides')
     ? (new RideRepository($pdo))->listRecent(200)
     : [];
 $csrf = Auth::csrfToken();
@@ -57,7 +59,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 id="rides-heading" class="vp-section-title">Recent activity</h2>
     <?php if ($rows === []) { ?>
-      <?php if (\VprideBackend\SchemaInspector::tableExists($pdo, 'rides')) { ?>
+      <?php if (SchemaInspector::tableExists($pdo, 'rides')) { ?>
         <?php
           $rideEmptyActions = [];
           if (Auth::can('reports.view')) {
