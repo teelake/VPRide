@@ -7,11 +7,13 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/AppSettingsRepository.php';
+require_once $backendRoot . '/src/WelcomeImageUpload.php';
 
 use VprideBackend\AppSettingsRepository;
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\WelcomeImageUpload;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -39,15 +41,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($welcomeOpacityPct > 100) {
                 $welcomeOpacityPct = 100;
             }
+
+            $bgUrl = (string) ($_POST['welcomeBackgroundImageUrl'] ?? '');
+            if (isset($_POST['welcome_clear_bg']) && $_POST['welcome_clear_bg'] === '1') {
+                $bgUrl = '';
+            } else {
+                $uploaded = WelcomeImageUpload::saveFromRequest('welcomeBgUpload', $backendRoot);
+                if ($uploaded !== null) {
+                    $bgUrl = $uploaded;
+                }
+            }
+
             $repo->savePublicSettings(
                 [
                     'googleWebClientId' => (string) ($_POST['googleWebClientId'] ?? ''),
                     'mapsApiKey' => (string) ($_POST['mapsApiKey'] ?? ''),
                     'minimumAppVersion' => (string) ($_POST['minimumAppVersion'] ?? ''),
                     'welcome' => [
-                        'backgroundImageUrl' => (string) ($_POST['welcomeBackgroundImageUrl'] ?? ''),
+                        'backgroundImageUrl' => $bgUrl,
                         'overlayColor' => (string) ($_POST['welcomeOverlayColor'] ?? '#F0F0F0'),
                         'overlayOpacity' => $welcomeOpacityPct / 100.0,
+                        'brandWordmark' => (string) ($_POST['welcomeBrandWordmark'] ?? ''),
+                        'headline' => (string) ($_POST['welcomeHeadline'] ?? ''),
+                        'subhead' => (string) ($_POST['welcomeSubhead'] ?? ''),
+                        'featureLeftTitle' => (string) ($_POST['welcomeFeatureLeft'] ?? ''),
+                        'featureRightTitle' => (string) ($_POST['welcomeFeatureRight'] ?? ''),
+                        'footerTagline' => (string) ($_POST['welcomeFooterTagline'] ?? ''),
+                        'showFeatureRow' => isset($_POST['welcome_show_features']),
+                        'showPagerDots' => isset($_POST['welcome_show_pager']),
+                        'ctaRegister' => (string) ($_POST['welcomeCtaRegister'] ?? ''),
+                        'ctaEmailLogin' => (string) ($_POST['welcomeCtaEmailLogin'] ?? ''),
+                        'ctaGoogle' => (string) ($_POST['welcomeCtaGoogle'] ?? ''),
                     ],
                     'features' => [
                         'rideBookingEnabled' => isset($_POST['feat_ride_booking']),
@@ -95,7 +119,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
 <?php } ?>
 
-<form method="post" action="<?= vp_url('/admin/settings') ?>" class="vp-settings-form">
+<form method="post" action="<?= vp_url('/admin/settings') ?>" class="vp-settings-form" enctype="multipart/form-data">
   <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
 
   <section class="vp-card" aria-labelledby="settings-form-heading">
@@ -126,10 +150,21 @@ require __DIR__ . '/includes/app_shell_start.php';
   <section class="vp-card" aria-labelledby="welcome-heading">
     <div class="vp-card__pad">
       <h2 id="welcome-heading" class="vp-section-title">Welcome screen (mobile)</h2>
-      <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Delivered in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">welcome</code>. Use a high-resolution JPG/PNG/WebP URL (HTTPS). The overlay sits on top of the image so text stays readable.</p>
+      <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Delivered in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">welcome</code>. Upload sets a public URL under <code class="vp-inline-code">/uploads/welcome/</code>. Use <code class="vp-inline-code">{{region}}</code> in subhead — the app replaces it with the rider&apos;s service area label.</p>
       <div class="vp-stack-form">
         <div class="vp-field">
-          <label class="vp-label" for="welcomeBackgroundImageUrl">Background image URL</label>
+          <label class="vp-label" for="welcomeBgUpload">Upload background image</label>
+          <input class="vp-input" id="welcomeBgUpload" name="welcomeBgUpload" type="file" accept="image/jpeg,image/png,image/webp">
+          <p class="vp-field-hint">JPEG, PNG, or WebP, max 3 MB. Saving applies the new image URL to the app (does not delete prior files on disk).</p>
+        </div>
+        <div class="vp-field">
+          <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+            <input type="checkbox" name="welcome_clear_bg" value="1" style="margin-top:0.2rem;">
+            <span>Clear background image URL (remove hero from app)</span>
+          </label>
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeBackgroundImageUrl">Background image URL (optional override)</label>
           <input class="vp-input vp-input--mono" id="welcomeBackgroundImageUrl" name="welcomeBackgroundImageUrl" type="url" value="<?= vp_h($settings['welcome']['backgroundImageUrl'] ?? '') ?>" placeholder="https://…/hero.jpg" autocomplete="off">
         </div>
         <div class="vp-field">
@@ -140,6 +175,54 @@ require __DIR__ . '/includes/app_shell_start.php';
           <label class="vp-label" for="welcomeOverlayOpacity">Overlay strength (%)</label>
           <input class="vp-input" id="welcomeOverlayOpacity" name="welcomeOverlayOpacity" type="number" min="0" max="100" step="1" value="<?= (int) round(((float) ($settings['welcome']['overlayOpacity'] ?? 0.78)) * 100) ?>">
           <p class="vp-field-hint">0 = image only, 100 = solid overlay color.</p>
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeBrandWordmark">Brand line (small caps)</label>
+          <input class="vp-input" id="welcomeBrandWordmark" name="welcomeBrandWordmark" type="text" value="<?= vp_h($settings['welcome']['brandWordmark'] ?? 'VP RIDE') ?>" maxlength="48">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeHeadline">Headline</label>
+          <input class="vp-input" id="welcomeHeadline" name="welcomeHeadline" type="text" value="<?= vp_h($settings['welcome']['headline'] ?? '') ?>" maxlength="120">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeSubhead">Subhead / body</label>
+          <textarea class="vp-input vp-textarea vp-textarea--sm" id="welcomeSubhead" name="welcomeSubhead" rows="3" maxlength="600"><?= vp_h($settings['welcome']['subhead'] ?? '') ?></textarea>
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeFeatureLeft">Feature card — left title</label>
+          <input class="vp-input" id="welcomeFeatureLeft" name="welcomeFeatureLeft" type="text" value="<?= vp_h($settings['welcome']['featureLeftTitle'] ?? '') ?>" maxlength="64">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeFeatureRight">Feature card — right title</label>
+          <input class="vp-input" id="welcomeFeatureRight" name="welcomeFeatureRight" type="text" value="<?= vp_h($settings['welcome']['featureRightTitle'] ?? '') ?>" maxlength="64">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeFooterTagline">Footer tagline</label>
+          <input class="vp-input" id="welcomeFooterTagline" name="welcomeFooterTagline" type="text" value="<?= vp_h($settings['welcome']['footerTagline'] ?? '') ?>" maxlength="80">
+        </div>
+        <div class="vp-field">
+          <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+            <input type="checkbox" name="welcome_show_features" value="1"<?= ! empty($settings['welcome']['showFeatureRow']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+            <span>Show feature cards row</span>
+          </label>
+        </div>
+        <div class="vp-field">
+          <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+            <input type="checkbox" name="welcome_show_pager" value="1"<?= ! empty($settings['welcome']['showPagerDots']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+            <span>Show pager dots (decorative)</span>
+          </label>
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeCtaRegister">Button — create account</label>
+          <input class="vp-input" id="welcomeCtaRegister" name="welcomeCtaRegister" type="text" value="<?= vp_h($settings['welcome']['ctaRegister'] ?? '') ?>" maxlength="48">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeCtaEmailLogin">Button — email sign in</label>
+          <input class="vp-input" id="welcomeCtaEmailLogin" name="welcomeCtaEmailLogin" type="text" value="<?= vp_h($settings['welcome']['ctaEmailLogin'] ?? '') ?>" maxlength="48">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeCtaGoogle">Button — Google</label>
+          <input class="vp-input" id="welcomeCtaGoogle" name="welcomeCtaGoogle" type="text" value="<?= vp_h($settings['welcome']['ctaGoogle'] ?? '') ?>" maxlength="64">
         </div>
       </div>
     </div>

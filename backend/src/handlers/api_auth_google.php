@@ -87,6 +87,16 @@ try {
     $svc = new RiderAuthService(Database::pdo());
     $out = $svc->issueSessionForGoogleUser($payload);
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+} catch (\RuntimeException $e) {
+    $m = $e->getMessage();
+    if ($m === 'email_has_password_account' || $m === 'email_linked_other_google') {
+        http_response_code(409);
+        echo json_encode(['error' => $m], JSON_THROW_ON_ERROR);
+        exit;
+    }
+    error_log('[vpride] POST /api/v1/auth/google session_error: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
     error_log('[vpride] POST /api/v1/auth/google session_error: ' . $e->getMessage());
     http_response_code(500);

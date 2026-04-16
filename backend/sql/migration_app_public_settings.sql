@@ -19,7 +19,18 @@ INSERT INTO app_public_settings (id, payload) VALUES (
     'welcome', JSON_OBJECT(
       'backgroundImageUrl', '',
       'overlayColor', '#F0F0F0',
-      'overlayOpacity', 0.78
+      'overlayOpacity', 0.78,
+      'brandWordmark', 'VP RIDE',
+      'headline', 'Move with intention',
+      'subhead', 'Book a ride in a few taps, or open the map to choose your pickup. We are built for {{region}}.',
+      'featureLeftTitle', 'Elite Safety',
+      'featureRightTitle', 'On Demand',
+      'footerTagline', 'NAVIGATE THE CITY',
+      'showFeatureRow', true,
+      'showPagerDots', true,
+      'ctaRegister', 'Create account',
+      'ctaEmailLogin', 'Sign in',
+      'ctaGoogle', 'Continue with Google'
     ),
     'features', JSON_OBJECT(
       'rideBookingEnabled', true,

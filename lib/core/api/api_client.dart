@@ -25,6 +25,50 @@ final class ApiClient {
     return Uri.parse('$base$p');
   }
 
+  Future<Map<String, dynamic>> postAuthRegister({
+    required String email,
+    required String password,
+    String? displayName,
+  }) async {
+    final body = <String, dynamic>{
+      'email': email,
+      'password': password,
+      if (displayName != null && displayName.trim().isNotEmpty)
+        'displayName': displayName.trim(),
+    };
+    final res = await _client
+        .post(
+          _uri('/api/v1/auth/register'),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postAuthLogin({
+    required String email,
+    required String password,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/auth/login'),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'email': email,
+            'password': password,
+          }),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postAuthGoogle(String idToken) async {
     final res = await _client
         .post(

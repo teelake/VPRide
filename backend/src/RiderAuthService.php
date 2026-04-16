@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace VprideBackend;
 
 use PDO;
+use PDOException;
+use RuntimeException;
 use Throwable;
 
 final class RiderAuthService
 {
+    private const MIN_PASSWORD_LEN = 8;
+
     public function __construct(private PDO $pdo) {}
 
     /**
@@ -19,7 +23,7 @@ final class RiderAuthService
     {
         $sub = (string) $claims->sub;
         $email = isset($claims->email) && is_string($claims->email)
-            ? $claims->email
+            ? trim(strtolower($claims->email))
             : '';
         if ($email === '') {
             throw new RuntimeException('Google token has no email');
@@ -29,33 +33,138 @@ final class RiderAuthService
 
         $this->pdo->beginTransaction();
         try {
-            $userId = $this->upsertRiderUser($sub, $email, $name, $picture);
-            $rawToken = bin2hex(random_bytes(32));
-            $hash = hash('sha256', $rawToken);
-            $expires = gmdate('Y-m-d H:i:s', time() + 30 * 24 * 3600);
-
-            $stmt = $this->pdo->prepare(
-                'INSERT INTO rider_sessions (rider_user_id, token_hash, expires_at) VALUES (?, ?, ?)',
-            );
-            $stmt->execute([$userId, $hash, $expires]);
+            $userId = $this->upsertRiderUserFromGoogle($sub, $email, $name, $picture);
+            $out = $this->insertSession($userId, $email, $name, $picture);
             $this->pdo->commit();
+
+            return $out;
         } catch (Throwable $e) {
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    /**
+     * @return array{sessionToken: string, user: array<string, mixed>}
+     */
+    public function registerWithPassword(string $email, string $password, ?string $displayName): array
+    {
+        $email = trim(strtolower($email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('invalid_email');
+        }
+        if (strlen($password) < self::MIN_PASSWORD_LEN) {
+            throw new RuntimeException('password_too_short');
+        }
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        if ($hash === false) {
+            throw new RuntimeException('hash_failed');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $chk = $this->pdo->prepare('SELECT id, google_sub, password_hash FROM rider_users WHERE email = ? LIMIT 1');
+            $chk->execute([$email]);
+            $row = $chk->fetch();
+            if ($row !== false) {
+                if ($row['password_hash'] !== null && $row['password_hash'] !== '') {
+                    throw new RuntimeException('email_taken');
+                }
+                // Email used by Google-only row: allow adding password? Skip — user should use Google or contact support.
+                throw new RuntimeException('email_taken');
+            }
+
+            $ins = $this->pdo->prepare(
+                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (NULL, ?, ?, ?, NULL)',
+            );
+            $ins->execute([$hash, $email, $displayName !== null && $displayName !== '' ? $displayName : null]);
+            $userId = (int) $this->pdo->lastInsertId();
+            $out = $this->insertSession(
+                $userId,
+                $email,
+                $displayName !== null && $displayName !== '' ? $displayName : null,
+                null,
+            );
+            $this->pdo->commit();
+
+            return $out;
+        } catch (PDOException $e) {
+            $this->pdo->rollBack();
+            if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate')) {
+                throw new RuntimeException('email_taken', 0, $e);
+            }
+            throw $e;
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * @return array{sessionToken: string, user: array<string, mixed>}
+     */
+    public function loginWithPassword(string $email, string $password): array
+    {
+        $email = trim(strtolower($email));
+        if ($email === '' || $password === '') {
+            throw new RuntimeException('invalid_credentials');
+        }
+
+        $stmt = $this->pdo->prepare(
+            'SELECT id, password_hash, email, display_name, photo_url FROM rider_users WHERE email = ? LIMIT 1',
+        );
+        $stmt->execute([$email]);
+        $row = $stmt->fetch();
+        if ($row === false || empty($row['password_hash']) || ! is_string($row['password_hash'])) {
+            throw new RuntimeException('invalid_credentials');
+        }
+        if (! password_verify($password, (string) $row['password_hash'])) {
+            throw new RuntimeException('invalid_credentials');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $out = $this->insertSession(
+                (int) $row['id'],
+                (string) $row['email'],
+                $row['display_name'] !== null ? (string) $row['display_name'] : null,
+                $row['photo_url'] !== null ? (string) $row['photo_url'] : null,
+            );
+            $this->pdo->commit();
+
+            return $out;
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * @return array{sessionToken: string, user: array<string, mixed>}
+     */
+    private function insertSession(int $userId, string $email, ?string $displayName, ?string $photoUrl): array
+    {
+        $rawToken = bin2hex(random_bytes(32));
+        $hash = hash('sha256', $rawToken);
+        $expires = gmdate('Y-m-d H:i:s', time() + 30 * 24 * 3600);
+
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO rider_sessions (rider_user_id, token_hash, expires_at) VALUES (?, ?, ?)',
+        );
+        $stmt->execute([$userId, $hash, $expires]);
 
         return [
             'sessionToken' => $rawToken,
             'user' => [
                 'id' => $userId,
                 'email' => $email,
-                'displayName' => $name,
-                'photoUrl' => $picture,
+                'displayName' => $displayName,
+                'photoUrl' => $photoUrl,
             ],
         ];
     }
 
-    private function upsertRiderUser(
+    private function upsertRiderUserFromGoogle(
         string $googleSub,
         string $email,
         ?string $displayName,
@@ -74,8 +183,20 @@ final class RiderAuthService
             return $id;
         }
 
+        $chk = $this->pdo->prepare(
+            'SELECT id, google_sub FROM rider_users WHERE email = ? LIMIT 1',
+        );
+        $chk->execute([$email]);
+        $existing = $chk->fetch();
+        if ($existing !== false) {
+            if ($existing['google_sub'] !== null && (string) $existing['google_sub'] !== '') {
+                throw new RuntimeException('email_linked_other_google');
+            }
+            throw new RuntimeException('email_has_password_account');
+        }
+
         $ins = $this->pdo->prepare(
-            'INSERT INTO rider_users (google_sub, email, display_name, photo_url) VALUES (?, ?, ?, ?)',
+            'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (?, NULL, ?, ?, ?)',
         );
         $ins->execute([$googleSub, $email, $displayName, $photoUrl]);
 

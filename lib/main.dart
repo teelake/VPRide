@@ -19,6 +19,8 @@ import 'core/ride/ride_pickup_scope.dart';
 import 'core/logging/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/home_shell_screen.dart';
+import 'screens/rider_login_screen.dart';
+import 'screens/rider_register_screen.dart';
 import 'screens/welcome_screen.dart';
 
 Future<void> main() async {
@@ -72,7 +74,10 @@ Future<void> main() async {
     ]),
     redirect: (context, state) {
       final path = state.uri.path;
-      if (path == '/welcome' && authRepository.isSignedIn) {
+      if ((path == '/welcome' ||
+              path == '/welcome/register' ||
+              path == '/welcome/login') &&
+          authRepository.isSignedIn) {
         return '/home';
       }
       if ((path == '/home' || path.startsWith('/home/')) &&
@@ -86,6 +91,14 @@ Future<void> main() async {
       GoRoute(
         path: '/welcome',
         builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
+        path: '/welcome/register',
+        builder: (context, state) => const RiderRegisterScreen(),
+      ),
+      GoRoute(
+        path: '/welcome/login',
+        builder: (context, state) => const RiderLoginScreen(),
       ),
       GoRoute(
         path: '/home',

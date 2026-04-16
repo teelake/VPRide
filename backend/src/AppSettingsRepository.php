@@ -179,24 +179,37 @@ final class AppSettingsRepository
      */
     /**
      * @param array<string, mixed> $in
-     * @param array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float} $base
-     * @return array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float}
+     * @param array<string, mixed> $base
+     * @return array<string, mixed>
      */
     private static function normalizeWelcome(array $in, array $base): array
     {
+        $defWelcome = self::defaultWelcome();
+        $s = static function (string $key, int $max, array $in, array $base) use ($defWelcome): string {
+            $v = array_key_exists($key, $in) ? trim((string) $in[$key]) : '';
+            if ($v === '') {
+                $v = trim((string) ($base[$key] ?? $defWelcome[$key] ?? ''));
+            }
+            if (strlen($v) > $max) {
+                $v = mb_substr($v, 0, $max);
+            }
+
+            return $v;
+        };
+
         $url = array_key_exists('backgroundImageUrl', $in)
             ? trim((string) $in['backgroundImageUrl'])
-            : $base['backgroundImageUrl'];
+            : (string) ($base['backgroundImageUrl'] ?? '');
         if (strlen($url) > 2048) {
             throw new RuntimeException('Welcome background URL too long');
         }
         $color = array_key_exists('overlayColor', $in)
             ? trim((string) $in['overlayColor'])
-            : $base['overlayColor'];
+            : (string) ($base['overlayColor'] ?? '#F0F0F0');
         if (! preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
-            $color = $base['overlayColor'];
+            $color = (string) ($base['overlayColor'] ?? '#F0F0F0');
         }
-        $op = $base['overlayOpacity'];
+        $op = isset($base['overlayOpacity']) ? (float) $base['overlayOpacity'] : 0.78;
         if (array_key_exists('overlayOpacity', $in)) {
             $op = (float) $in['overlayOpacity'];
         }
@@ -211,11 +224,22 @@ final class AppSettingsRepository
             'backgroundImageUrl' => $url,
             'overlayColor' => $color,
             'overlayOpacity' => $op,
+            'brandWordmark' => $s('brandWordmark', 48, $in, $base),
+            'headline' => $s('headline', 120, $in, $base),
+            'subhead' => $s('subhead', 600, $in, $base),
+            'featureLeftTitle' => $s('featureLeftTitle', 64, $in, $base),
+            'featureRightTitle' => $s('featureRightTitle', 64, $in, $base),
+            'footerTagline' => $s('footerTagline', 80, $in, $base),
+            'showFeatureRow' => self::boolish($in['showFeatureRow'] ?? $base['showFeatureRow'] ?? true),
+            'showPagerDots' => self::boolish($in['showPagerDots'] ?? $base['showPagerDots'] ?? true),
+            'ctaRegister' => $s('ctaRegister', 48, $in, $base),
+            'ctaEmailLogin' => $s('ctaEmailLogin', 48, $in, $base),
+            'ctaGoogle' => $s('ctaGoogle', 64, $in, $base),
         ];
     }
 
     /**
-     * @return array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float}
+     * @return array<string, mixed>
      */
     private static function defaultWelcome(): array
     {
@@ -223,6 +247,17 @@ final class AppSettingsRepository
             'backgroundImageUrl' => '',
             'overlayColor' => '#F0F0F0',
             'overlayOpacity' => 0.78,
+            'brandWordmark' => 'VP RIDE',
+            'headline' => 'Move with intention',
+            'subhead' => 'Book a ride in a few taps, or open the map to choose your pickup. We are built for {{region}}.',
+            'featureLeftTitle' => 'Elite Safety',
+            'featureRightTitle' => 'On Demand',
+            'footerTagline' => 'NAVIGATE THE CITY',
+            'showFeatureRow' => true,
+            'showPagerDots' => true,
+            'ctaRegister' => 'Create account',
+            'ctaEmailLogin' => 'Sign in',
+            'ctaGoogle' => 'Continue with Google',
         ];
     }
 

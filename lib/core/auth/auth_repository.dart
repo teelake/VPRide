@@ -58,6 +58,88 @@ final class AuthRepository extends ChangeNotifier {
     }
   }
 
+  /// Returns null on success, or an error message for UI.
+  Future<String?> registerWithEmail({
+    required String email,
+    required String password,
+    String? displayName,
+  }) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      final out = await _api.postAuthRegister(
+        email: email,
+        password: password,
+        displayName: displayName,
+      );
+      final token = out['sessionToken'] as String?;
+      if (token == null || token.isEmpty) {
+        return 'Server did not return a session.';
+      }
+      final userRaw = out['user'];
+      await _sessionStore.writeToken(token);
+      _token = token;
+      if (userRaw is Map<String, dynamic>) {
+        _profile = RiderProfile.fromJson(userRaw);
+      }
+      notifyListeners();
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 409) {
+        return 'That email is already registered. Sign in or use Google.';
+      }
+      if (e.statusCode == 400) {
+        return e.message;
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Returns null on success, or an error message for UI.
+  Future<String?> signInWithEmail({
+    required String email,
+    required String password,
+  }) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      final out = await _api.postAuthLogin(email: email, password: password);
+      final token = out['sessionToken'] as String?;
+      if (token == null || token.isEmpty) {
+        return 'Server did not return a session.';
+      }
+      final userRaw = out['user'];
+      await _sessionStore.writeToken(token);
+      _token = token;
+      if (userRaw is Map<String, dynamic>) {
+        _profile = RiderProfile.fromJson(userRaw);
+      }
+      notifyListeners();
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        return 'Wrong email or password.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
   /// Returns null on success, or a short error key / message for UI.
   Future<String?> signInWithGoogle() async {
     _busy = true;
@@ -86,6 +168,10 @@ final class AuthRepository extends ChangeNotifier {
       notifyListeners();
       return null;
     } on ApiException catch (e) {
+      if (e.statusCode == 409) {
+        return 'This email already has a password account. Sign in with email, '
+            'or use a different Google account.';
+      }
       return e.message;
     } catch (e) {
       return e.toString();

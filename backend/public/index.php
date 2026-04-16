@@ -117,6 +117,16 @@ if ($path === '/api/v1/auth/google' && in_array($method, ['POST', 'OPTIONS'], tr
     exit;
 }
 
+if ($path === '/api/v1/auth/register' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_auth_register.php';
+    exit;
+}
+
+if ($path === '/api/v1/auth/login' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_auth_login.php';
+    exit;
+}
+
 if ($path === '/api/v1/auth/logout' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_auth_logout.php';
     exit;
