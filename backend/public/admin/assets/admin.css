@@ -938,7 +938,8 @@ html {
   border: none;
   cursor: pointer;
   text-decoration: none;
-  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .vp-btn:focus-visible {
@@ -946,20 +947,21 @@ html {
   outline-offset: 2px;
 }
 
-.vp-btn:active {
-  transform: scale(0.98);
-}
-
 .vp-btn--primary {
-  background: linear-gradient(180deg, var(--vp-gold-bright) 0%, var(--vp-gold) 55%, var(--vp-gold-dim) 100%);
+  background: var(--vp-gold);
   color: var(--vp-black);
-  box-shadow: 0 2px 12px var(--vp-gold-glow), 0 1px 0 rgba(255, 255, 255, 0.35) inset;
-  border: 1px solid rgba(180, 140, 0, 0.35);
+  box-shadow: var(--vp-shadow-xs);
+  border: 1px solid color-mix(in srgb, var(--vp-gold-dim) 55%, var(--vp-black) 12%);
 }
 
 .vp-btn--primary:hover {
-  filter: brightness(1.03);
-  box-shadow: 0 4px 18px var(--vp-gold-glow), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  background: var(--vp-gold-dim);
+  border-color: color-mix(in srgb, var(--vp-gold-dim) 70%, var(--vp-black) 18%);
+  box-shadow: var(--vp-shadow-xs);
+}
+
+.vp-btn--primary:active {
+  background: color-mix(in srgb, var(--vp-gold-dim) 88%, var(--vp-black) 8%);
 }
 
 .vp-btn--ghost {

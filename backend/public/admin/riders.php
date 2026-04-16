@@ -21,7 +21,6 @@ Auth::requirePermission('riders.view');
 $admin = Auth::currentAdmin();
 $csrf = Auth::csrfToken();
 $pdo = Database::pdo();
-vp_schema_single_table_alert($pdo, 'rider_users', 'migration_rider_auth.sql', 'Rider directory');
 $repo = new RiderUserRepository($pdo);
 
 $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
@@ -52,6 +51,8 @@ $vpTopbarTitle = 'Riders';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
+
+<?php vp_schema_single_table_alert($pdo, 'rider_users', 'migration_rider_auth.sql', 'Rider directory'); ?>
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Riders</h1>

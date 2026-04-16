@@ -20,7 +20,6 @@ Auth::requirePermission('rides.view');
 
 $admin = Auth::currentAdmin();
 $pdo = Database::pdo();
-vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Rides');
 $rows = \VprideBackend\SchemaInspector::tableExists($pdo, 'rides')
     ? (new RideRepository($pdo))->listRecent(200)
     : [];
@@ -34,6 +33,8 @@ $vpTopbarTitle = 'Rides';
 require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
+
+<?php vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Rides'); ?>
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Rides</h1>
