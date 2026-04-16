@@ -17,6 +17,7 @@ $initials = vp_admin_initials($admin[1]);
 
 ?>
 <div class="vp-app" data-vp-app>
+  <a class="vp-skip-link" href="#vp-main-content">Skip to content</a>
   <div class="vp-app__backdrop" data-vp-sidebar-backdrop hidden aria-hidden="true"></div>
   <aside class="vp-sidebar" id="vp-sidebar" data-vp-sidebar aria-label="Main navigation">
     <div class="vp-sidebar__head">
@@ -157,5 +158,5 @@ $initials = vp_admin_initials($admin[1]);
       </div>
     </header>
 
-    <main class="vp-main vp-main--shell">
+    <main class="vp-main vp-main--shell" id="vp-main-content" tabindex="-1">
       <div class="vp-container vp-container--main">

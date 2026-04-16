@@ -13,10 +13,11 @@ $bodyClass = $bodyClass ?? 'vp-body';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#121212">
+  <meta name="theme-color" content="#0c0c0c">
+  <meta name="color-scheme" content="light">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,600&display=swap" rel="stylesheet">
   <link rel="icon" type="image/png" href="<?= vp_url('/admin/assets/brand/favicon.png') ?>">
   <link rel="apple-touch-icon" href="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>">
   <link rel="stylesheet" href="<?= vp_url('/admin/assets/admin.css') ?>">
