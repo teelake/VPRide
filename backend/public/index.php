@@ -172,6 +172,26 @@ if ($path === '/admin/riders' && $method === 'GET') {
     exit;
 }
 
+if ($path === '/admin/users' && $method === 'GET') {
+    require $backendRoot . '/public/admin/users.php';
+    exit;
+}
+
+if ($path === '/admin/schedule' && $method === 'GET') {
+    require $backendRoot . '/public/admin/schedule.php';
+    exit;
+}
+
+if ($path === '/admin/fleet' && $method === 'GET') {
+    require $backendRoot . '/public/admin/fleet.php';
+    exit;
+}
+
+if ($path === '/admin/help' && $method === 'GET') {
+    require $backendRoot . '/public/admin/help.php';
+    exit;
+}
+
 if ($path === '/admin/team' && $method === 'GET') {
     require $backendRoot . '/public/admin/team.php';
     exit;
