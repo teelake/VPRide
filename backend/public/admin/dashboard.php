@@ -156,33 +156,23 @@ require __DIR__ . '/includes/head.php';
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
-<header class="vp-dash-hero">
-  <div class="vp-dash-hero__intro">
-    <h1 class="vp-dash-hero__title">Dashboard</h1>
-    <p class="vp-dash-hero__desc">At-a-glance volume, routing health, and latest bookings.</p>
+<div class="vp-dash-overview">
+  <div class="vp-dash-overview__intro">
+    <h1 class="vp-dash-overview__title">Operations overview</h1>
+    <p class="vp-dash-overview__desc">Routing health, booking flow, and rider demand — backed by live data from this console.</p>
+    <p class="vp-dash-overview__meta"><span class="vp-dash-overview__date"><?= vp_h($dashDateLabel) ?></span><span class="vp-dash-overview__sep" aria-hidden="true">·</span><span class="vp-dash-overview__hint">Use the top search for riders; tools link to help and settings.</span></p>
   </div>
-  <div class="vp-dash-hero__bar">
-    <div class="vp-dash-date" title="Today"><?= vp_h($dashDateLabel) ?></div>
-    <?php if (Auth::can('riders.view')) { ?>
-      <form class="vp-dash-search" method="get" action="<?= vp_h(vp_url('/admin/riders')) ?>" role="search">
-        <label class="vp-sr-only" for="dash-rider-q">Search riders</label>
-        <span class="vp-dash-search__icon" aria-hidden="true">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
-        </span>
-        <input id="dash-rider-q" class="vp-dash-search__input" type="search" name="q" placeholder="Search riders…" autocomplete="off">
-      </form>
-    <?php } else { ?>
-      <div class="vp-dash-search vp-dash-search--placeholder" aria-hidden="true"></div>
-    <?php } ?>
+  <div class="vp-dash-overview__status">
+    <?php vp_system_health_render($systemHealth); ?>
   </div>
-</header>
+</div>
 
 <?php vp_schema_migration_alerts($pdo); ?>
 
 <div class="vp-kpi-grid vp-kpi-grid--dash" role="list">
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
-      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--blue" aria-hidden="true"><?= vp_kpi_icon_riders() ?></span>
+      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-a" aria-hidden="true"><?= vp_kpi_icon_riders() ?></span>
     </div>
     <p class="vp-kpi-card__label">Registered riders</p>
     <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
@@ -193,7 +183,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
-      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--orange" aria-hidden="true"><?= vp_kpi_icon_rides() ?></span>
+      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-b" aria-hidden="true"><?= vp_kpi_icon_rides() ?></span>
     </div>
     <p class="vp-kpi-card__label">Total bookings</p>
     <p class="vp-kpi-card__value"><?= number_format($rideCount) ?></p>
@@ -204,7 +194,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
-      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--green" aria-hidden="true"><?= vp_kpi_icon_globe() ?></span>
+      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-c" aria-hidden="true"><?= vp_kpi_icon_globe() ?></span>
     </div>
     <p class="vp-kpi-card__label">Completion rate</p>
     <p class="vp-kpi-card__value"><?= $statusTotal > 0 ? vp_h((string) $completionPct) . '%' : '—' ?></p>
@@ -215,7 +205,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
-      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--amber" aria-hidden="true"><?= vp_kpi_icon_layers() ?></span>
+      <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-d" aria-hidden="true"><?= vp_kpi_icon_layers() ?></span>
     </div>
     <p class="vp-kpi-card__label">Canceled</p>
     <p class="vp-kpi-card__value"><?= number_format($canceledN) ?></p>
