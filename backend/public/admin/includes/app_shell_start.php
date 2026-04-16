@@ -18,6 +18,9 @@ $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
     : 'Dashboard';
 $initials = vp_admin_initials($admin[1]);
+$vpSearchPlaceholder = Auth::can('riders.view')
+    ? 'Search riders by email…'
+    : (Auth::can('rides.view') ? 'Jump to bookings…' : 'Search…');
 
 ?>
 <div class="vp-app" data-vp-app>
@@ -100,6 +103,15 @@ $initials = vp_admin_initials($admin[1]);
         </li>
       </ul>
 
+      <?php if (Auth::can('rides.view')) { ?>
+        <div class="vp-sidebar__cta">
+          <a class="vp-sidebar__cta-btn vp-btn vp-btn--primary" href="<?= vp_url('/admin/rides') ?>">
+            <span class="vp-sidebar__cta-icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
+            <span>Bookings queue</span>
+          </a>
+        </div>
+      <?php } ?>
+
       <?php if (Auth::can('regions.view') || Auth::can('regions.manage')) { ?>
         <p class="vp-sidebar__section-label">Regions &amp; coverage</p>
         <ul class="vp-sidebar__list">
@@ -149,7 +161,31 @@ $initials = vp_admin_initials($admin[1]);
           <span class="vp-topbar__title"><?= vp_h($vpTopbarTitle) ?></span>
         </div>
       </div>
+      <div class="vp-topbar__center">
+        <?php if (Auth::can('riders.view') || Auth::can('rides.view')) { ?>
+          <form class="vp-topbar-search" method="get" action="<?= vp_h(vp_url('/admin/search')) ?>" role="search">
+            <label class="vp-sr-only" for="vp-global-search">Search console</label>
+            <span class="vp-topbar-search__icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+            </span>
+            <input
+              id="vp-global-search"
+              class="vp-topbar-search__input"
+              type="search"
+              name="q"
+              placeholder="<?= vp_h($vpSearchPlaceholder) ?>"
+              autocomplete="off"
+            >
+          </form>
+        <?php } ?>
+      </div>
       <div class="vp-topbar__right">
+        <div class="vp-topbar__tools">
+          <a class="vp-icon-btn vp-icon-btn--quiet" href="<?= vp_url('/admin/help') ?>" title="Help &amp; support"><?= vp_nav_icon_bell() ?></a>
+          <?php if (Auth::can('settings.manage')) { ?>
+            <a class="vp-icon-btn vp-icon-btn--quiet" href="<?= vp_url('/admin/settings') ?>" title="Settings"><?= vp_nav_icon_settings() ?></a>
+          <?php } ?>
+        </div>
         <details class="vp-profile" data-vp-profile>
           <summary class="vp-profile__summary">
             <span class="vp-profile__avatar" aria-hidden="true"><?= vp_h($initials) ?></span>

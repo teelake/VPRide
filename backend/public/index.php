@@ -157,6 +157,11 @@ if ($path === '/admin' || $path === '/admin/dashboard') {
     exit;
 }
 
+if ($path === '/admin/search' && $method === 'GET') {
+    require $backendRoot . '/public/admin/search.php';
+    exit;
+}
+
 if ($path === '/admin/regions' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/regions.php';
     exit;
