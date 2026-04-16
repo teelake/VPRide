@@ -39,11 +39,17 @@ if ($row === null) {
     exit;
 }
 
-echo json_encode([
-    'user' => [
-        'id' => $row['rider_user_id'],
-        'email' => $row['email'],
-        'displayName' => $row['display_name'],
-        'photoUrl' => $row['photo_url'],
-    ],
-], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+try {
+    echo json_encode([
+        'user' => [
+            'id' => $row['rider_user_id'],
+            'email' => $row['email'],
+            'displayName' => $row['display_name'],
+            'photoUrl' => $row['photo_url'],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+} catch (Throwable $e) {
+    error_log('[vpride] GET /api/v1/me: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
+}

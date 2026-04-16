@@ -50,7 +50,8 @@ $raw = file_get_contents('php://input') ?: '';
 try {
     /** @var mixed $data */
     $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-} catch (Throwable) {
+} catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/auth/google invalid_json: ' . $e->getMessage());
     http_response_code(400);
     echo json_encode(['error' => 'invalid_json'], JSON_THROW_ON_ERROR);
     exit;
@@ -87,6 +88,7 @@ try {
     $out = $svc->issueSessionForGoogleUser($payload);
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/auth/google session_error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }

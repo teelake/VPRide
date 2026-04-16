@@ -36,6 +36,7 @@ try {
     }
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
+    error_log('[vpride] GET /api/v1/config/regions: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'Server error']);
 }

@@ -1,8 +1,6 @@
 -- Single-row public app settings (mobile reads via GET /api/v1/config/public).
 -- Server-side JWT verification still prefers GOOGLE_OAUTH_CLIENT_ID in .env when set.
 
-USE vpride;
-
 CREATE TABLE IF NOT EXISTS app_public_settings (
   id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
   payload JSON NOT NULL,
@@ -11,11 +9,25 @@ CREATE TABLE IF NOT EXISTS app_public_settings (
   CONSTRAINT fk_app_public_settings_admin FOREIGN KEY (updated_by_admin_id) REFERENCES admins (id) ON DELETE SET NULL
 ) ENGINE=InnoDB;
 
+-- Default payload for new installs (MySQL 8+ nested JSON_OBJECT).
 INSERT INTO app_public_settings (id, payload) VALUES (
   1,
   JSON_OBJECT(
     'googleWebClientId', '',
     'mapsApiKey', '',
-    'minimumAppVersion', '1.0.0'
+    'minimumAppVersion', '1.0.0',
+    'welcome', JSON_OBJECT(
+      'backgroundImageUrl', '',
+      'overlayColor', '#F0F0F0',
+      'overlayOpacity', 0.78
+    ),
+    'features', JSON_OBJECT(
+      'rideBookingEnabled', true,
+      'promoBannerEnabled', false,
+      'maintenanceMode', false,
+      'maintenanceMessage', '',
+      'helpCenterUrl', '',
+      'requireSignInForHome', true
+    )
   )
 ) ON DUPLICATE KEY UPDATE id = VALUES(id);

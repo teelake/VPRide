@@ -24,7 +24,7 @@ class AppPublicFeatures {
     maintenanceMode: false,
     maintenanceMessage: '',
     helpCenterUrl: '',
-    requireSignInForHome: false,
+    requireSignInForHome: true,
   );
 
   factory AppPublicFeatures.fromJson(Object? raw) {
@@ -38,7 +38,7 @@ class AppPublicFeatures {
       maintenanceMode: _bool(m['maintenanceMode'], fallback: false),
       maintenanceMessage: '${m['maintenanceMessage'] ?? ''}'.trim(),
       helpCenterUrl: '${m['helpCenterUrl'] ?? ''}'.trim(),
-      requireSignInForHome: _bool(m['requireSignInForHome'], fallback: false),
+      requireSignInForHome: _bool(m['requireSignInForHome'], fallback: true),
     );
   }
 

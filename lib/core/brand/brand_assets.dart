@@ -1,4 +1,4 @@
-/// Pride / VPRide brand image paths (bundled under [assets/brand/]).
+/// VP Ride brand image paths (bundled under [assets/brand/]).
 abstract final class BrandAssets {
   static const String appIconSquircle = 'assets/brand/app_icon_squircle.png';
   static const String logoMonogramPin = 'assets/brand/logo_monogram_pin.png';

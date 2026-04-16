@@ -239,7 +239,7 @@ final class AppSettingsRepository
                 'maintenanceMode' => false,
                 'maintenanceMessage' => '',
                 'helpCenterUrl' => '',
-                'requireSignInForHome' => false,
+                'requireSignInForHome' => true,
             ],
         ];
     }

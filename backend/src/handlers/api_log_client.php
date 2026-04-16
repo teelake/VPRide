@@ -40,7 +40,8 @@ if (! RateLimiter::allow('client_log', $ip, $max, 3600)) {
 try {
     /** @var mixed $decoded */
     $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-} catch (Throwable) {
+} catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/log/client invalid_json: ' . $e->getMessage());
     http_response_code(400);
     echo json_encode(['error' => 'invalid_json'], JSON_THROW_ON_ERROR);
     exit;
@@ -68,17 +69,24 @@ if ($context !== null && ! is_array($context)) {
     $context = ['value' => $context];
 }
 
-$line = json_encode(
-    [
-        'ts' => gmdate('c'),
-        'ip' => $ip,
-        'level' => $level,
-        'message' => $message,
-        'context' => $context,
-    ],
-    JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
-);
-error_log('[vpride-client] ' . $line);
+try {
+    $line = json_encode(
+        [
+            'ts' => gmdate('c'),
+            'ip' => $ip,
+            'level' => $level,
+            'message' => $message,
+            'context' => $context,
+        ],
+        JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+    );
+    error_log('[vpride-client] ' . $line);
+} catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/log/client encode_failed: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
+    exit;
+}
 
 http_response_code(204);
 exit;

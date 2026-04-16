@@ -168,7 +168,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <label class="vp-toggle">
           <input class="vp-sr-only" type="checkbox" name="feat_require_signin_home"<?= ! empty($settings['features']['requireSignInForHome']) ? ' checked' : '' ?>>
           <span class="vp-toggle__ui"></span>
-          <span class="vp-toggle__text"><strong>Require sign-in for Map / Home</strong><span class="vp-toggle__sub">Unsigned users stay on welcome unless they use a guest link in the app</span></span>
+          <span class="vp-toggle__text"><strong>Require sign-in for Map / Home</strong><span class="vp-toggle__sub">Recommended: on for production. When on, unsigned users stay on welcome (no guest map link). Turn off only if you want map browsing without an account.</span></span>
         </label>
       </div>
       <div class="vp-field" style="margin-top:1.25rem;">

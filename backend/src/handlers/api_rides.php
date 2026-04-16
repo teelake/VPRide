@@ -63,7 +63,8 @@ $raw = file_get_contents('php://input') ?: '';
 try {
     /** @var mixed $data */
     $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-} catch (Throwable) {
+} catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/rides invalid_json: ' . $e->getMessage());
     http_response_code(400);
     echo json_encode(['error' => 'invalid_json'], JSON_THROW_ON_ERROR);
     exit;
@@ -109,7 +110,8 @@ try {
         'id' => $id,
         'status' => 'requested',
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-} catch (Throwable) {
+} catch (Throwable $e) {
+    error_log('[vpride] POST /api/v1/rides: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }
