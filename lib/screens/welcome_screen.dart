@@ -280,6 +280,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                       const SizedBox(height: 12),
                                       AppSecondaryButton(
                                         label: welcome.ctaGoogle,
+                                        leading: const GoogleSignInMark(),
                                         onPressed: auth.isBusy
                                             ? null
                                             : () => _googleSignIn(context),

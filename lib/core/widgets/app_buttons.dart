@@ -63,6 +63,7 @@ class AppSecondaryButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.leading,
     this.expand = true,
   });
 
@@ -70,6 +71,8 @@ class AppSecondaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
+  /// Optional widget before the label (e.g. brand mark). Takes precedence over [icon].
+  final Widget? leading;
   final bool expand;
 
   @override
@@ -89,6 +92,7 @@ class AppSecondaryButton extends StatelessWidget {
         label: label,
         isLoading: busy,
         icon: icon,
+        leading: leading,
         indicatorColor: AppColors.secondary,
         labelColor: AppColors.secondary,
       ),
@@ -99,6 +103,26 @@ class AppSecondaryButton extends StatelessWidget {
       label: busy ? '$label, loading' : label,
       enabled: effectiveOnPressed != null,
       child: expand ? SizedBox(width: double.infinity, child: button) : button,
+    );
+  }
+}
+
+/// Multicolor Google mark for “Continue with Google” (see Google branding guidelines).
+class GoogleSignInMark extends StatelessWidget {
+  const GoogleSignInMark({super.key, this.size = 22});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        'assets/brand/google_g_logo.png',
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+      ),
     );
   }
 }
@@ -155,6 +179,7 @@ class _ButtonContent extends StatelessWidget {
     required this.indicatorColor,
     required this.labelColor,
     this.icon,
+    this.leading,
     this.dense = false,
   });
 
@@ -163,6 +188,7 @@ class _ButtonContent extends StatelessWidget {
   final Color indicatorColor;
   final Color labelColor;
   final IconData? icon;
+  final Widget? leading;
   final bool dense;
 
   @override
@@ -183,6 +209,25 @@ class _ButtonContent extends StatelessWidget {
       );
     }
 
+    if (leading != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          leading!,
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: labelColor),
+            ),
+          ),
+        ],
+      );
+    }
+
     if (icon != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
@@ -191,12 +236,22 @@ class _ButtonContent extends StatelessWidget {
           Icon(icon, size: 20, color: labelColor),
           const SizedBox(width: 8),
           Flexible(
-            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: labelColor),
+            ),
           ),
         ],
       );
     }
 
-    return Text(label, maxLines: 1, overflow: TextOverflow.ellipsis);
+    return Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(color: labelColor),
+    );
   }
 }

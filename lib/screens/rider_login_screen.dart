@@ -155,6 +155,7 @@ class _RiderLoginScreenState extends State<RiderLoginScreen> {
                           const SizedBox(height: 14),
                           AppSecondaryButton(
                             label: 'Continue with Google',
+                            leading: const GoogleSignInMark(),
                             onPressed: auth.isBusy ? null : _google,
                           ),
                           const SizedBox(height: 8),
