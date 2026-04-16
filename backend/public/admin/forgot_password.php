@@ -9,9 +9,11 @@ require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/AdminUserRepository.php';
 require_once $backendRoot . '/src/AdminPasswordResetRepository.php';
 require_once $backendRoot . '/src/Mailer.php';
+require_once $backendRoot . '/src/AppSettingsRepository.php';
 
 use VprideBackend\AdminPasswordResetRepository;
 use VprideBackend\AdminUserRepository;
+use VprideBackend\AppSettingsRepository;
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
@@ -47,7 +49,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $body = "Reset your VP Ride console password using this link (valid for one hour):\r\n\r\n"
                         . $link
                         . "\r\n\r\nIf you did not request this, you can ignore this email.\r\n";
-                    $ok = Mailer::sendPlain($email, 'VP Ride — reset your console password', $body);
+                    $from = AppSettingsRepository::emailOutboundEffective(Database::pdo())['mailFrom'];
+                    $ok = Mailer::sendPlain(
+                        $email,
+                        'VP Ride — reset your console password',
+                        $body,
+                        $from !== '' ? $from : null,
+                    );
                     if (! $ok) {
                         error_log('VP Ride: password reset email failed for ' . $email);
                     }

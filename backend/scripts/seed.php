@@ -20,6 +20,7 @@ Config::load($root . '/.env');
 
 $pdo = Database::pdo();
 $email = getenv('SEED_ADMIN_EMAIL') ?: 'admin@vpride.local';
+$displayName = getenv('SEED_ADMIN_DISPLAY_NAME') ?: 'System administrator';
 $plain = getenv('SEED_ADMIN_PASSWORD') ?: 'Admin@123';
 
 $hash = password_hash($plain, PASSWORD_DEFAULT);
@@ -38,8 +39,8 @@ try {
         throw new \RuntimeException('admin_roles not seeded: import schema or migration first');
     }
     $pdo->prepare(
-        'INSERT INTO admins (email, password_hash, role_id) VALUES (?, ?, ?)',
-    )->execute([$email, $hash, $rid]);
+        'INSERT INTO admins (email, display_name, password_hash, role_id) VALUES (?, ?, ?, ?)',
+    )->execute([$email, $displayName, $hash, $rid]);
     $adminId = (int) $pdo->lastInsertId();
 
     $payload = defaultRegionPayload();

@@ -1486,6 +1486,27 @@ html {
   border-top: 1px solid var(--vp-border);
 }
 
+.vp-password-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.vp-password-row__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.vp-password-row__toggle {
+  flex-shrink: 0;
+  align-self: stretch;
+  white-space: nowrap;
+  padding-left: 0.85rem;
+  padding-right: 0.85rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
 /* ——— Editor page ——— */
 .vp-back {
   display: inline-flex;
@@ -3197,14 +3218,16 @@ html {
 
 #settings_tab_keys:focus-visible ~ .vp-tablist label[for="settings_tab_keys"],
 #settings_tab_welcome:focus-visible ~ .vp-tablist label[for="settings_tab_welcome"],
-#settings_tab_features:focus-visible ~ .vp-tablist label[for="settings_tab_features"] {
+#settings_tab_features:focus-visible ~ .vp-tablist label[for="settings_tab_features"],
+#settings_tab_email:focus-visible ~ .vp-tablist label[for="settings_tab_email"] {
   outline: 2px solid var(--vp-gold);
   outline-offset: 2px;
 }
 
 #settings_tab_keys:checked ~ .vp-tablist label[for="settings_tab_keys"],
 #settings_tab_welcome:checked ~ .vp-tablist label[for="settings_tab_welcome"],
-#settings_tab_features:checked ~ .vp-tablist label[for="settings_tab_features"] {
+#settings_tab_features:checked ~ .vp-tablist label[for="settings_tab_features"],
+#settings_tab_email:checked ~ .vp-tablist label[for="settings_tab_email"] {
   color: var(--vp-text);
   background: var(--vp-surface);
   border-bottom-color: var(--vp-surface);
@@ -3218,7 +3241,8 @@ html {
 
 #settings_tab_keys:checked ~ .vp-tab-panels .vp-tab-panel--keys,
 #settings_tab_welcome:checked ~ .vp-tab-panels .vp-tab-panel--welcome,
-#settings_tab_features:checked ~ .vp-tab-panels .vp-tab-panel--features {
+#settings_tab_features:checked ~ .vp-tab-panels .vp-tab-panel--features,
+#settings_tab_email:checked ~ .vp-tab-panels .vp-tab-panel--email {
   display: block;
 }
 

@@ -29,6 +29,7 @@ $roles = $rbac->listRolesWithCounts();
 $message = '';
 $error = '';
 $emailVal = '';
+$displayNameVal = '';
 $roleIdVal = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -36,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid session.';
     } else {
         $emailVal = trim((string) ($_POST['email'] ?? ''));
+        $displayNameVal = trim((string) ($_POST['display_name'] ?? ''));
         $roleIdVal = (int) ($_POST['role_id'] ?? 0);
         $pass = (string) ($_POST['password'] ?? '');
         $pass2 = (string) ($_POST['password2'] ?? '');
@@ -43,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Passwords do not match.';
         } else {
             try {
-                $userRepo->create($emailVal, $pass, $roleIdVal);
+                $userRepo->create($emailVal, $displayNameVal, $pass, $roleIdVal);
                 header('Location: ' . Config::url('/admin/team'));
                 exit;
             } catch (Throwable $e) {
@@ -89,6 +91,11 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
 
       <div class="vp-field">
+        <label class="vp-label" for="display_name">Full name</label>
+        <input class="vp-input" id="display_name" name="display_name" type="text" required autocomplete="name" maxlength="255" value="<?= vp_h($displayNameVal) ?>" placeholder="First and last name">
+      </div>
+
+      <div class="vp-field">
         <label class="vp-label" for="role_id">Role</label>
         <select class="vp-input" id="role_id" name="role_id" required>
           <?php foreach ($roles as $r) { ?>
@@ -102,12 +109,18 @@ require __DIR__ . '/includes/app_shell_start.php';
 
       <div class="vp-field">
         <label class="vp-label" for="password">Password</label>
-        <input class="vp-input" id="password" name="password" type="password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+        <div class="vp-password-row">
+          <input class="vp-input vp-password-row__input" id="password" name="password" type="password" required autocomplete="new-password" minlength="8" placeholder="At least 8 characters">
+          <button type="button" class="vp-btn vp-btn--ghost vp-password-row__toggle" id="toggle_password" aria-controls="password" aria-label="Show password">Show</button>
+        </div>
       </div>
 
       <div class="vp-field">
         <label class="vp-label" for="password2">Confirm password</label>
-        <input class="vp-input" id="password2" name="password2" type="password" required autocomplete="new-password" minlength="8">
+        <div class="vp-password-row">
+          <input class="vp-input vp-password-row__input" id="password2" name="password2" type="password" required autocomplete="new-password" minlength="8">
+          <button type="button" class="vp-btn vp-btn--ghost vp-password-row__toggle" id="toggle_password2" aria-controls="password2" aria-label="Show password">Show</button>
+        </div>
       </div>
 
       <div class="vp-form-actions" style="border:none; padding-top:0; margin-top:0;">
@@ -117,5 +130,23 @@ require __DIR__ . '/includes/app_shell_start.php';
     </form>
   </div>
 </section>
+
+<script>
+(function () {
+  function wire(toggleId, inputId) {
+    var btn = document.getElementById(toggleId);
+    var input = document.getElementById(inputId);
+    if (!btn || !input) return;
+    btn.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.textContent = show ? 'Hide' : 'Show';
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+  }
+  wire('toggle_password', 'password');
+  wire('toggle_password2', 'password2');
+})();
+</script>
 
 <?php require __DIR__ . '/includes/app_shell_end.php'; ?>

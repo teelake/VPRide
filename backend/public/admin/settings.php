@@ -23,13 +23,14 @@ Auth::requirePermission('settings.manage');
 $admin = Auth::currentAdmin();
 $repo = new AppSettingsRepository(Database::pdo());
 $settings = $repo->getPublicSettings();
+$emailSettings = $repo->getEmailSettings();
 $message = '';
 $error = '';
 $csrf = Auth::csrfToken();
 $settingsTab = 'keys';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $t = (string) ($_POST['settings_ui_tab'] ?? '');
-    if (in_array($t, ['keys', 'welcome', 'features'], true)) {
+    if (in_array($t, ['keys', 'welcome', 'features', 'email'], true)) {
         $settingsTab = $t;
     }
 }
@@ -88,11 +89,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'helpCenterUrl' => (string) ($_POST['helpCenterUrl'] ?? ''),
                         'requireSignInForHome' => isset($_POST['feat_require_signin_home']),
                     ],
+                    'email' => [
+                        'mailFrom' => (string) ($_POST['emailMailFrom'] ?? ''),
+                        'staffNotifyOnRiderSignup' => isset($_POST['email_staff_notify_rider']),
+                        'staffNotifyEmails' => (string) ($_POST['emailStaffNotifyEmails'] ?? ''),
+                        'staffNotifySubject' => (string) ($_POST['emailStaffNotifySubject'] ?? ''),
+                        'staffNotifyBody' => (string) ($_POST['emailStaffNotifyBody'] ?? ''),
+                        'riderWelcomeEnabled' => isset($_POST['email_rider_welcome']),
+                        'riderWelcomeSubject' => (string) ($_POST['emailRiderWelcomeSubject'] ?? ''),
+                        'riderWelcomeBody' => (string) ($_POST['emailRiderWelcomeBody'] ?? ''),
+                    ],
                 ],
                 $admin[0],
             );
             $settings = $repo->getPublicSettings();
-            $message = 'Public app settings saved. Mobile apps will receive updates on the next config fetch.';
+            $emailSettings = $repo->getEmailSettings();
+            $message = 'Settings saved. Mobile apps receive key and feature updates on the next config sync.';
         } catch (Throwable $e) {
             $error = 'Could not save: ' . $e->getMessage();
         }
@@ -116,7 +128,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     ]);
 ?>
   <h1 class="vp-page-title">Public app configuration</h1>
-  <p class="vp-page-desc">Keys, version rules, and mobile feature flags delivered to VP Ride apps on each config sync. The app should read the <code class="vp-inline-code">features</code> object from the public config response.</p>
+  <p class="vp-page-desc"><strong>Riders</strong> create accounts in the mobile app (email or Google). <strong>Drivers</strong> are added only from this console — there is no driver self-sign-up in the app. Keys, version rules, feature flags, and outbound email for notifications are managed here.</p>
 </header>
 
 <?php if ($message !== '') { ?>
@@ -133,11 +145,13 @@ require __DIR__ . '/includes/app_shell_start.php';
     <input type="radio" name="settings_ui_tab" id="settings_tab_keys" class="vp-sr-only" value="keys"<?= $settingsTab === 'keys' ? ' checked' : '' ?>>
     <input type="radio" name="settings_ui_tab" id="settings_tab_welcome" class="vp-sr-only" value="welcome"<?= $settingsTab === 'welcome' ? ' checked' : '' ?>>
     <input type="radio" name="settings_ui_tab" id="settings_tab_features" class="vp-sr-only" value="features"<?= $settingsTab === 'features' ? ' checked' : '' ?>>
+    <input type="radio" name="settings_ui_tab" id="settings_tab_email" class="vp-sr-only" value="email"<?= $settingsTab === 'email' ? ' checked' : '' ?>>
 
     <div class="vp-tablist" aria-label="Settings sections">
       <label class="vp-tab" for="settings_tab_keys">Keys &amp; limits</label>
       <label class="vp-tab" for="settings_tab_welcome">Welcome screen</label>
       <label class="vp-tab" for="settings_tab_features">App features</label>
+      <label class="vp-tab" for="settings_tab_email">Email</label>
     </div>
 
     <div class="vp-tab-panels">
@@ -296,6 +310,63 @@ require __DIR__ . '/includes/app_shell_start.php';
               <label class="vp-label" for="helpCenterUrl">Help center URL</label>
               <input class="vp-input" id="helpCenterUrl" name="helpCenterUrl" type="url" value="<?= vp_h($settings['features']['helpCenterUrl']) ?>" placeholder="https://…">
             </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="vp-tab-panel vp-tab-panel--email" id="settings_panel_email">
+        <section class="vp-card" aria-labelledby="email-heading">
+          <div class="vp-card__pad">
+            <h2 id="email-heading" class="vp-section-title">Outbound email</h2>
+            <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Used for rider sign-up notifications, rider welcome mail, and admin password reset links. Delivery uses PHP <code class="vp-inline-code">mail()</code> — your host must allow sending from the address you set below. These values are stored in the database and are <strong>not</strong> exposed to mobile apps.</p>
+            <div class="vp-stack-form">
+              <div class="vp-field">
+                <label class="vp-label" for="emailMailFrom">From (sender)</label>
+                <input class="vp-input vp-input--mono" id="emailMailFrom" name="emailMailFrom" type="text" value="<?= vp_h($emailSettings['mailFrom']) ?>" placeholder="VP Ride &lt;noreply@yourdomain.com&gt;" autocomplete="off" maxlength="255">
+                <p class="vp-field-hint">If empty, the backend falls back to <code class="vp-inline-code">APP_MAIL_FROM</code> in <code>.env</code>, then a local placeholder (not suitable for production).</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+                  <input type="checkbox" name="email_staff_notify_rider" value="1"<?= ! empty($emailSettings['staffNotifyOnRiderSignup']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+                  <span><strong>Email staff when a new rider registers</strong> (mobile app sign-up only)</span>
+                </label>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailStaffNotifyEmails">Staff notification addresses</label>
+                <textarea class="vp-input vp-textarea vp-textarea--sm" id="emailStaffNotifyEmails" name="emailStaffNotifyEmails" rows="2" placeholder="ops@company.com, admin@company.com"><?= vp_h($emailSettings['staffNotifyEmails']) ?></textarea>
+                <p class="vp-field-hint">Comma-separated. If empty, falls back to <code class="vp-inline-code">RIDER_SIGNUP_NOTIFY_EMAIL</code> in <code>.env</code>. No mail is sent to staff if the resolved list is empty.</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailStaffNotifySubject">Staff notification — subject</label>
+                <input class="vp-input" id="emailStaffNotifySubject" name="emailStaffNotifySubject" type="text" value="<?= vp_h($emailSettings['staffNotifySubject']) ?>" maxlength="200">
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailStaffNotifyBody">Staff notification — body (plain text)</label>
+                <textarea class="vp-input vp-textarea" id="emailStaffNotifyBody" name="emailStaffNotifyBody" rows="6" maxlength="4000"><?= vp_h($emailSettings['staffNotifyBody']) ?></textarea>
+                <p class="vp-field-hint">Placeholders: <code class="vp-inline-code">{email}</code>, <code class="vp-inline-code">{displayName}</code>, <code class="vp-inline-code">{userId}</code>, <code class="vp-inline-code">{greeting}</code> (same as rider welcome).</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+                  <input type="checkbox" name="email_rider_welcome" value="1"<?= ! empty($emailSettings['riderWelcomeEnabled']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+                  <span><strong>Send welcome email to new riders</strong></span>
+                </label>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailRiderWelcomeSubject">Rider welcome — subject</label>
+                <input class="vp-input" id="emailRiderWelcomeSubject" name="emailRiderWelcomeSubject" type="text" value="<?= vp_h($emailSettings['riderWelcomeSubject']) ?>" maxlength="200">
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailRiderWelcomeBody">Rider welcome — body (plain text)</label>
+                <textarea class="vp-input vp-textarea" id="emailRiderWelcomeBody" name="emailRiderWelcomeBody" rows="6" maxlength="4000"><?= vp_h($emailSettings['riderWelcomeBody']) ?></textarea>
+                <p class="vp-field-hint">Use <code class="vp-inline-code">{greeting}</code> for &ldquo;Hi Name,&rdquo; vs &ldquo;Hello,&rdquo; plus <code class="vp-inline-code">{email}</code>, <code class="vp-inline-code">{displayName}</code>, <code class="vp-inline-code">{userId}</code>.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="vp-card vp-card--note" aria-labelledby="email-drivers-note">
+          <div class="vp-card__pad">
+            <h2 id="email-drivers-note" class="vp-section-title">Drivers</h2>
+            <p class="vp-field-hint" style="margin:0;">Driver accounts are provisioned from the console, not from the rider app. When driver onboarding emails are added, they will use this same <strong>From</strong> line and delivery path.</p>
           </div>
         </section>
       </div>

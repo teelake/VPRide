@@ -13,21 +13,6 @@ final class AppSettingsRepository
     public function __construct(private PDO $pdo) {}
 
     /**
-     * @return array{
-     *   googleWebClientId: string,
-     *   mapsApiKey: string,
-     *   minimumAppVersion: string,
-     *   welcome: array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float},
-     *   features: array{
-     *     rideBookingEnabled: bool,
-     *     promoBannerEnabled: bool,
-     *     maintenanceMode: bool,
-     *     maintenanceMessage: string,
-     *     helpCenterUrl: string,
-     *     requireSignInForHome: bool
-     *   }
-     * }
-     *
      * mapsApiKeyWithEnvFallback: DB value first; if empty, MAPS_API_KEY /
      * GOOGLE_MAPS_API_KEY from the environment.
      */
@@ -47,7 +32,186 @@ final class AppSettingsRepository
         return '';
     }
 
+    /**
+     * Mobile app and admin "public" fields only — never includes server-only `email` block.
+     *
+     * @return array{
+     *   googleWebClientId: string,
+     *   mapsApiKey: string,
+     *   minimumAppVersion: string,
+     *   welcome: array<string, mixed>,
+     *   features: array<string, mixed>
+     * }
+     */
     public function getPublicSettings(): array
+    {
+        $p = $this->loadFullPayload();
+
+        return [
+            'googleWebClientId' => $p['googleWebClientId'],
+            'mapsApiKey' => $p['mapsApiKey'],
+            'minimumAppVersion' => $p['minimumAppVersion'],
+            'welcome' => $p['welcome'],
+            'features' => $p['features'],
+        ];
+    }
+
+    /**
+     * Outbound email settings stored in DB (admin Settings → Email). Not exposed to mobile clients.
+     *
+     * @return array{
+     *   mailFrom: string,
+     *   staffNotifyOnRiderSignup: bool,
+     *   staffNotifyEmails: string,
+     *   staffNotifySubject: string,
+     *   staffNotifyBody: string,
+     *   riderWelcomeEnabled: bool,
+     *   riderWelcomeSubject: string,
+     *   riderWelcomeBody: string
+     * }
+     */
+    public function getEmailSettings(): array
+    {
+        return $this->loadFullPayload()['email'];
+    }
+
+    /**
+     * Effective outbound config: DB first, then .env fallbacks for From line and staff notify list.
+     *
+     * @return array{
+     *   mailFrom: string,
+     *   staffNotifyOnRiderSignup: bool,
+     *   staffNotifyEmails: string,
+     *   staffNotifySubject: string,
+     *   staffNotifyBody: string,
+     *   riderWelcomeEnabled: bool,
+     *   riderWelcomeSubject: string,
+     *   riderWelcomeBody: string
+     * }
+     */
+    public static function emailOutboundEffective(PDO $pdo): array
+    {
+        $e = (new self($pdo))->loadFullPayload()['email'];
+        $mailFrom = trim($e['mailFrom']);
+        if ($mailFrom === '') {
+            $mailFrom = trim((string) getenv('APP_MAIL_FROM'));
+        }
+        $staffEmails = trim($e['staffNotifyEmails']);
+        if ($staffEmails === '') {
+            $staffEmails = trim((string) getenv('RIDER_SIGNUP_NOTIFY_EMAIL'));
+        }
+
+        return [
+            'mailFrom' => $mailFrom,
+            'staffNotifyOnRiderSignup' => $e['staffNotifyOnRiderSignup'],
+            'staffNotifyEmails' => $staffEmails,
+            'staffNotifySubject' => $e['staffNotifySubject'],
+            'staffNotifyBody' => $e['staffNotifyBody'],
+            'riderWelcomeEnabled' => $e['riderWelcomeEnabled'],
+            'riderWelcomeSubject' => $e['riderWelcomeSubject'],
+            'riderWelcomeBody' => $e['riderWelcomeBody'],
+        ];
+    }
+
+    /**
+     * @param array{
+     *   googleWebClientId?: string,
+     *   mapsApiKey?: string,
+     *   minimumAppVersion?: string,
+     *   welcome?: array<string, mixed>,
+     *   features?: array<string, mixed>,
+     *   email?: array<string, mixed>
+     * } $patch
+     */
+    public function savePublicSettings(array $patch, int $updatedByAdminId): void
+    {
+        $current = $this->loadFullPayload();
+        $featPatch = isset($patch['features']) && is_array($patch['features']) ? $patch['features'] : [];
+        $mergedFeatures = [
+            'rideBookingEnabled' => array_key_exists('rideBookingEnabled', $featPatch)
+                ? self::boolish($featPatch['rideBookingEnabled'])
+                : $current['features']['rideBookingEnabled'],
+            'promoBannerEnabled' => array_key_exists('promoBannerEnabled', $featPatch)
+                ? self::boolish($featPatch['promoBannerEnabled'])
+                : $current['features']['promoBannerEnabled'],
+            'maintenanceMode' => array_key_exists('maintenanceMode', $featPatch)
+                ? self::boolish($featPatch['maintenanceMode'])
+                : $current['features']['maintenanceMode'],
+            'maintenanceMessage' => array_key_exists('maintenanceMessage', $featPatch)
+                ? trim((string) $featPatch['maintenanceMessage'])
+                : $current['features']['maintenanceMessage'],
+            'helpCenterUrl' => array_key_exists('helpCenterUrl', $featPatch)
+                ? trim((string) $featPatch['helpCenterUrl'])
+                : $current['features']['helpCenterUrl'],
+            'requireSignInForHome' => array_key_exists('requireSignInForHome', $featPatch)
+                ? self::boolish($featPatch['requireSignInForHome'])
+                : $current['features']['requireSignInForHome'],
+        ];
+        if (strlen($mergedFeatures['maintenanceMessage']) > 2000) {
+            throw new RuntimeException('Maintenance message too long');
+        }
+        if (strlen($mergedFeatures['helpCenterUrl']) > 512) {
+            throw new RuntimeException('Help URL too long');
+        }
+        $welcomeMerged = $current['welcome'];
+        if (isset($patch['welcome']) && is_array($patch['welcome'])) {
+            $welcomeMerged = self::normalizeWelcome($patch['welcome'], $current['welcome']);
+        }
+
+        $mergedEmail = $current['email'];
+        if (isset($patch['email']) && is_array($patch['email'])) {
+            $mergedEmail = self::normalizeEmail($patch['email'], $current['email']);
+        }
+
+        $merged = [
+            'googleWebClientId' => isset($patch['googleWebClientId'])
+                ? trim((string) $patch['googleWebClientId'])
+                : $current['googleWebClientId'],
+            'mapsApiKey' => isset($patch['mapsApiKey'])
+                ? trim((string) $patch['mapsApiKey'])
+                : $current['mapsApiKey'],
+            'minimumAppVersion' => isset($patch['minimumAppVersion'])
+                ? trim((string) $patch['minimumAppVersion'])
+                : $current['minimumAppVersion'],
+            'welcome' => $welcomeMerged,
+            'features' => $mergedFeatures,
+            'email' => $mergedEmail,
+        ];
+        if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
+            throw new RuntimeException('Value too long');
+        }
+        $json = json_encode($merged, JSON_THROW_ON_ERROR);
+        $stmt = $this->pdo->prepare(
+            'INSERT INTO app_public_settings (id, payload, updated_by_admin_id) VALUES (1, ?, ?) '
+            . 'ON DUPLICATE KEY UPDATE payload = VALUES(payload), updated_by_admin_id = VALUES(updated_by_admin_id)',
+        );
+        $stmt->execute([$json, $updatedByAdminId]);
+    }
+
+    /**
+     * OAuth Web client ID for verifying Google ID tokens: .env wins when non-empty.
+     */
+    public static function effectiveGoogleOAuthClientId(PDO $pdo): string
+    {
+        $env = trim(getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '');
+        if ($env !== '') {
+            return $env;
+        }
+
+        return (new self($pdo))->getPublicSettings()['googleWebClientId'];
+    }
+
+    /**
+     * @return array{
+     *   googleWebClientId: string,
+     *   mapsApiKey: string,
+     *   minimumAppVersion: string,
+     *   welcome: array<string, mixed>,
+     *   features: array<string, mixed>,
+     *   email: array<string, mixed>
+     * }
+     */
+    private function loadFullPayload(): array
     {
         $defaults = self::defaultPayload();
         try {
@@ -83,6 +247,7 @@ final class AppSettingsRepository
         }
 
         $welcomeIn = is_array($decoded['welcome'] ?? null) ? $decoded['welcome'] : [];
+        $emailIn = is_array($decoded['email'] ?? null) ? $decoded['email'] : [];
 
         return [
             'googleWebClientId' => trim((string) ($decoded['googleWebClientId'] ?? $defaults['googleWebClientId'])),
@@ -90,93 +255,107 @@ final class AppSettingsRepository
             'minimumAppVersion' => trim((string) ($decoded['minimumAppVersion'] ?? $defaults['minimumAppVersion'])),
             'welcome' => self::normalizeWelcome($welcomeIn, $defaults['welcome']),
             'features' => $features,
+            'email' => self::normalizeEmail($emailIn, self::defaultEmail()),
         ];
     }
 
     /**
-     * @param array{
-     *   googleWebClientId?: string,
-     *   mapsApiKey?: string,
-     *   minimumAppVersion?: string,
-     *   welcome?: array{backgroundImageUrl?: string, overlayColor?: string, overlayOpacity?: float|int|string},
-     *   features?: array<string, mixed>
-     * } $patch
+     * @param array<string, mixed> $in
+     * @param array<string, mixed> $base
+     * @return array<string, mixed>
      */
-    public function savePublicSettings(array $patch, int $updatedByAdminId): void
+    private static function normalizeEmail(array $in, array $base): array
     {
-        $current = $this->getPublicSettings();
-        $featPatch = isset($patch['features']) && is_array($patch['features']) ? $patch['features'] : [];
-        $mergedFeatures = [
-            'rideBookingEnabled' => array_key_exists('rideBookingEnabled', $featPatch)
-                ? self::boolish($featPatch['rideBookingEnabled'])
-                : $current['features']['rideBookingEnabled'],
-            'promoBannerEnabled' => array_key_exists('promoBannerEnabled', $featPatch)
-                ? self::boolish($featPatch['promoBannerEnabled'])
-                : $current['features']['promoBannerEnabled'],
-            'maintenanceMode' => array_key_exists('maintenanceMode', $featPatch)
-                ? self::boolish($featPatch['maintenanceMode'])
-                : $current['features']['maintenanceMode'],
-            'maintenanceMessage' => array_key_exists('maintenanceMessage', $featPatch)
-                ? trim((string) $featPatch['maintenanceMessage'])
-                : $current['features']['maintenanceMessage'],
-            'helpCenterUrl' => array_key_exists('helpCenterUrl', $featPatch)
-                ? trim((string) $featPatch['helpCenterUrl'])
-                : $current['features']['helpCenterUrl'],
-            'requireSignInForHome' => array_key_exists('requireSignInForHome', $featPatch)
-                ? self::boolish($featPatch['requireSignInForHome'])
-                : $current['features']['requireSignInForHome'],
-        ];
-        if (strlen($mergedFeatures['maintenanceMessage']) > 2000) {
-            throw new RuntimeException('Maintenance message too long');
-        }
-        if (strlen($mergedFeatures['helpCenterUrl']) > 512) {
-            throw new RuntimeException('Help URL too long');
-        }
-        $welcomeMerged = $current['welcome'];
-        if (isset($patch['welcome']) && is_array($patch['welcome'])) {
-            $welcomeMerged = self::normalizeWelcome($patch['welcome'], $current['welcome']);
+        $def = self::defaultEmail();
+        $base = array_merge($def, $base);
+
+        $mailFrom = array_key_exists('mailFrom', $in)
+            ? trim((string) $in['mailFrom'])
+            : trim((string) $base['mailFrom']);
+        if (strlen($mailFrom) > 255) {
+            throw new RuntimeException('Email From line too long');
         }
 
-        $merged = [
-            'googleWebClientId' => isset($patch['googleWebClientId'])
-                ? trim((string) $patch['googleWebClientId'])
-                : $current['googleWebClientId'],
-            'mapsApiKey' => isset($patch['mapsApiKey'])
-                ? trim((string) $patch['mapsApiKey'])
-                : $current['mapsApiKey'],
-            'minimumAppVersion' => isset($patch['minimumAppVersion'])
-                ? trim((string) $patch['minimumAppVersion'])
-                : $current['minimumAppVersion'],
-            'welcome' => $welcomeMerged,
-            'features' => $mergedFeatures,
-        ];
-        if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
-            throw new RuntimeException('Value too long');
+        $staffNotifyEmails = array_key_exists('staffNotifyEmails', $in)
+            ? trim((string) $in['staffNotifyEmails'])
+            : trim((string) $base['staffNotifyEmails']);
+        if (strlen($staffNotifyEmails) > 2000) {
+            throw new RuntimeException('Staff notify list too long');
         }
-        $json = json_encode($merged, JSON_THROW_ON_ERROR);
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO app_public_settings (id, payload, updated_by_admin_id) VALUES (1, ?, ?) '
-            . 'ON DUPLICATE KEY UPDATE payload = VALUES(payload), updated_by_admin_id = VALUES(updated_by_admin_id)',
-        );
-        $stmt->execute([$json, $updatedByAdminId]);
+
+        $staffNotifySubject = array_key_exists('staffNotifySubject', $in)
+            ? trim((string) $in['staffNotifySubject'])
+            : trim((string) $base['staffNotifySubject']);
+        if ($staffNotifySubject === '') {
+            $staffNotifySubject = $def['staffNotifySubject'];
+        }
+        if (strlen($staffNotifySubject) > 200) {
+            throw new RuntimeException('Staff notify subject too long');
+        }
+
+        $staffNotifyBody = array_key_exists('staffNotifyBody', $in)
+            ? trim((string) $in['staffNotifyBody'])
+            : trim((string) $base['staffNotifyBody']);
+        if ($staffNotifyBody === '') {
+            $staffNotifyBody = $def['staffNotifyBody'];
+        }
+        if (strlen($staffNotifyBody) > 4000) {
+            throw new RuntimeException('Staff notify body too long');
+        }
+
+        $riderWelcomeSubject = array_key_exists('riderWelcomeSubject', $in)
+            ? trim((string) $in['riderWelcomeSubject'])
+            : trim((string) $base['riderWelcomeSubject']);
+        if ($riderWelcomeSubject === '') {
+            $riderWelcomeSubject = $def['riderWelcomeSubject'];
+        }
+        if (strlen($riderWelcomeSubject) > 200) {
+            throw new RuntimeException('Rider welcome subject too long');
+        }
+
+        $riderWelcomeBody = array_key_exists('riderWelcomeBody', $in)
+            ? trim((string) $in['riderWelcomeBody'])
+            : trim((string) $base['riderWelcomeBody']);
+        if ($riderWelcomeBody === '') {
+            $riderWelcomeBody = $def['riderWelcomeBody'];
+        }
+        if (strlen($riderWelcomeBody) > 4000) {
+            throw new RuntimeException('Rider welcome body too long');
+        }
+
+        return [
+            'mailFrom' => $mailFrom,
+            'staffNotifyOnRiderSignup' => array_key_exists('staffNotifyOnRiderSignup', $in)
+                ? self::boolish($in['staffNotifyOnRiderSignup'])
+                : self::boolish($base['staffNotifyOnRiderSignup']),
+            'staffNotifyEmails' => $staffNotifyEmails,
+            'staffNotifySubject' => $staffNotifySubject,
+            'staffNotifyBody' => $staffNotifyBody,
+            'riderWelcomeEnabled' => array_key_exists('riderWelcomeEnabled', $in)
+                ? self::boolish($in['riderWelcomeEnabled'])
+                : self::boolish($base['riderWelcomeEnabled']),
+            'riderWelcomeSubject' => $riderWelcomeSubject,
+            'riderWelcomeBody' => $riderWelcomeBody,
+        ];
     }
 
     /**
-     * OAuth Web client ID for verifying Google ID tokens: .env wins when non-empty.
+     * @return array<string, mixed>
      */
-    public static function effectiveGoogleOAuthClientId(PDO $pdo): string
+    private static function defaultEmail(): array
     {
-        $env = trim(getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '');
-        if ($env !== '') {
-            return $env;
-        }
-
-        return (new self($pdo))->getPublicSettings()['googleWebClientId'];
+        return [
+            'mailFrom' => '',
+            'staffNotifyOnRiderSignup' => true,
+            'staffNotifyEmails' => '',
+            'staffNotifySubject' => 'VP Ride: new rider account',
+            'staffNotifyBody' => "A new rider signed up from the mobile app.\n\nEmail: {email}\nDisplay name: {displayName}\nUser ID: {userId}\n",
+            'riderWelcomeEnabled' => true,
+            'riderWelcomeSubject' => 'Welcome to VP Ride',
+            'riderWelcomeBody' => "{greeting}Thanks for creating your rider account. Open the VP Ride app to book a ride.\n\n— VP Ride",
+        ];
     }
 
-    /**
-     * @return array{googleWebClientId: string, mapsApiKey: string, minimumAppVersion: string, features: array<string, mixed>}
-     */
     /**
      * @param array<string, mixed> $in
      * @param array<string, mixed> $base
@@ -276,6 +455,7 @@ final class AppSettingsRepository
                 'helpCenterUrl' => '',
                 'requireSignInForHome' => true,
             ],
+            'email' => self::defaultEmail(),
         ];
     }
 

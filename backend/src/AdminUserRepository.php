@@ -117,11 +117,18 @@ final class AdminUserRepository
         $stmt->execute([$newHash, $id]);
     }
 
-    public function create(string $email, string $passwordPlain, int $roleId): int
+    public function create(string $email, string $displayName, string $passwordPlain, int $roleId): int
     {
         $email = trim($email);
         if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
             throw new RuntimeException('Valid email required');
+        }
+        $displayName = trim($displayName);
+        if ($displayName === '') {
+            throw new RuntimeException('Full name is required');
+        }
+        if (strlen($displayName) > 255) {
+            throw new RuntimeException('Display name is too long');
         }
         if (strlen($passwordPlain) < 8) {
             throw new RuntimeException('Password must be at least 8 characters');
@@ -137,9 +144,9 @@ final class AdminUserRepository
         $hash = password_hash($passwordPlain, PASSWORD_DEFAULT);
         try {
             $ins = $this->pdo->prepare(
-                'INSERT INTO admins (email, password_hash, role_id) VALUES (?, ?, ?)',
+                'INSERT INTO admins (email, display_name, password_hash, role_id) VALUES (?, ?, ?, ?)',
             );
-            $ins->execute([$email, $hash, $roleId]);
+            $ins->execute([$email, $displayName, $hash, $roleId]);
 
             return (int) $this->pdo->lastInsertId();
         } catch (PDOException $e) {

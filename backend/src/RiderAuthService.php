@@ -28,7 +28,7 @@ final class RiderAuthService
         if ($email === '') {
             throw new RuntimeException('Google token has no email');
         }
-        $name = isset($claims->name) && is_string($claims->name) ? $claims->name : null;
+        $name = self::displayNameFromGoogleClaims($claims);
         $picture = isset($claims->picture) && is_string($claims->picture) ? $claims->picture : null;
 
         $this->pdo->beginTransaction();
@@ -56,6 +56,13 @@ final class RiderAuthService
         if (strlen($password) < self::MIN_PASSWORD_LEN) {
             throw new RuntimeException('password_too_short');
         }
+        $dn = trim((string) ($displayName ?? ''));
+        if ($dn === '') {
+            throw new RuntimeException('display_name_required');
+        }
+        if (mb_strlen($dn) > 255) {
+            throw new RuntimeException('display_name_too_long');
+        }
         $hash = password_hash($password, PASSWORD_DEFAULT);
         if ($hash === false) {
             throw new RuntimeException('hash_failed');
@@ -77,12 +84,12 @@ final class RiderAuthService
             $ins = $this->pdo->prepare(
                 'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (NULL, ?, ?, ?, NULL)',
             );
-            $ins->execute([$hash, $email, $displayName !== null && $displayName !== '' ? $displayName : null]);
+            $ins->execute([$hash, $email, $dn]);
             $userId = (int) $this->pdo->lastInsertId();
             $out = $this->insertSession(
                 $userId,
                 $email,
-                $displayName !== null && $displayName !== '' ? $displayName : null,
+                $dn,
                 null,
             );
             $this->pdo->commit();
@@ -162,6 +169,27 @@ final class RiderAuthService
                 'photoUrl' => $photoUrl,
             ],
         ];
+    }
+
+    /**
+     * Google ID tokens may expose `name`, or `given_name` + `family_name`. A non-empty display name is required for sign-up.
+     *
+     * @param  object{name?: string, given_name?: string, family_name?: string}  $claims
+     */
+    private static function displayNameFromGoogleClaims(object $claims): string
+    {
+        $name = isset($claims->name) && is_string($claims->name) ? trim($claims->name) : '';
+        if ($name !== '') {
+            return mb_substr($name, 0, 255);
+        }
+        $given = isset($claims->given_name) && is_string($claims->given_name) ? trim($claims->given_name) : '';
+        $family = isset($claims->family_name) && is_string($claims->family_name) ? trim($claims->family_name) : '';
+        $combined = trim($given . ' ' . $family);
+        if ($combined !== '') {
+            return mb_substr($combined, 0, 255);
+        }
+
+        throw new RuntimeException('name_required');
     }
 
     private function upsertRiderUserFromGoogle(

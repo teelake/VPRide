@@ -9,8 +9,10 @@ require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
 require_once $backendRoot . '/src/Mailer.php';
+require_once $backendRoot . '/src/AppSettingsRepository.php';
 
 use VprideBackend\ApiMobileCors;
+use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\Mailer;
@@ -68,24 +70,30 @@ try {
         $uid = (int) ($out['user']['id'] ?? 0);
         $riderEmail = (string) ($out['user']['email'] ?? '');
         $riderName = $out['user']['displayName'] ?? null;
-        $notifyList = trim((string) getenv('RIDER_SIGNUP_NOTIFY_EMAIL'));
-        if ($notifyList !== '') {
-            $body = "A new rider signed up on the mobile app.\n\nEmail: {$riderEmail}\n";
-            if (is_string($riderName) && $riderName !== '') {
-                $body .= 'Display name: ' . $riderName . "\n";
-            }
-            $body .= "User ID: {$uid}\n";
-            foreach (array_filter(array_map('trim', explode(',', $notifyList))) as $adminAddr) {
-                if (! Mailer::sendPlain($adminAddr, 'VP Ride: new rider signup', $body)) {
-                    error_log('[vpride] RIDER_SIGNUP_NOTIFY_EMAIL failed for ' . $adminAddr);
+        $dn = is_string($riderName) ? $riderName : '';
+        $greeting = $dn !== '' ? 'Hi ' . $dn . ",\n\n" : "Hello,\n\n";
+        $vars = [
+            'email' => $riderEmail,
+            'displayName' => $dn,
+            'userId' => (string) $uid,
+            'greeting' => $greeting,
+        ];
+        $cfg = AppSettingsRepository::emailOutboundEffective(Database::pdo());
+        $from = $cfg['mailFrom'] !== '' ? $cfg['mailFrom'] : null;
+        if ($cfg['staffNotifyOnRiderSignup'] && trim($cfg['staffNotifyEmails']) !== '') {
+            $subj = Mailer::expandTemplate($cfg['staffNotifySubject'], $vars);
+            $body = Mailer::expandTemplate($cfg['staffNotifyBody'], $vars);
+            foreach (array_filter(array_map('trim', explode(',', $cfg['staffNotifyEmails']))) as $adminAddr) {
+                if (! Mailer::sendPlain($adminAddr, $subj, $body, $from)) {
+                    error_log('[vpride] staff rider-signup notify failed for ' . $adminAddr);
                 }
             }
         }
-        if (trim((string) getenv('RIDER_WELCOME_EMAIL')) === '1' && $riderEmail !== '') {
-            $greet = is_string($riderName) && $riderName !== '' ? 'Hi ' . $riderName . ",\n\n" : "Hello,\n\n";
-            $welcomeBody = $greet . "Thanks for creating an account. Open the VP Ride app to book a ride.\n\n— VP Ride";
-            if (! Mailer::sendPlain($riderEmail, 'Welcome to VP Ride', $welcomeBody)) {
-                error_log('[vpride] RIDER_WELCOME_EMAIL failed for ' . $riderEmail);
+        if ($cfg['riderWelcomeEnabled'] && $riderEmail !== '') {
+            $wSub = Mailer::expandTemplate($cfg['riderWelcomeSubject'], $vars);
+            $wBody = Mailer::expandTemplate($cfg['riderWelcomeBody'], $vars);
+            if (! Mailer::sendPlain($riderEmail, $wSub, $wBody, $from)) {
+                error_log('[vpride] rider welcome email failed for ' . $riderEmail);
             }
         }
     } catch (Throwable $mailEx) {
@@ -97,6 +105,22 @@ try {
     if ($code === 'invalid_email' || $code === 'password_too_short') {
         http_response_code(400);
         echo json_encode(['error' => $code], JSON_THROW_ON_ERROR);
+        exit;
+    }
+    if ($code === 'display_name_required') {
+        http_response_code(400);
+        echo json_encode([
+            'error' => $code,
+            'message' => 'Please enter your full name.',
+        ], JSON_THROW_ON_ERROR);
+        exit;
+    }
+    if ($code === 'display_name_too_long') {
+        http_response_code(400);
+        echo json_encode([
+            'error' => $code,
+            'message' => 'Name is too long (max 255 characters).',
+        ], JSON_THROW_ON_ERROR);
         exit;
     }
     if ($code === 'email_taken') {
