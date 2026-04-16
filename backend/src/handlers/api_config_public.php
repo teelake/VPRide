@@ -29,16 +29,21 @@ try {
     $mapsForApp = AppSettingsRepository::mapsApiKeyWithEnvFallback(
         (string) $settings['mapsApiKey'],
     );
+    if ($mapsForApp === '') {
+        error_log('[vpride] GET /api/v1/config/public: mapsApiKey empty (admin Settings and MAPS_API_KEY / GOOGLE_MAPS_API_KEY in .env); app will show maps placeholder until set.');
+    }
     echo json_encode(
         [
             'googleWebClientId' => $settings['googleWebClientId'],
             'mapsApiKey' => $mapsForApp,
             'minimumAppVersion' => $settings['minimumAppVersion'],
+            'welcome' => $settings['welcome'],
             'features' => $settings['features'],
         ],
         JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
     );
-} catch (Throwable) {
+} catch (Throwable $e) {
+    error_log('[vpride] GET /api/v1/config/public failed: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }

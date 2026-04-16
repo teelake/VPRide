@@ -107,6 +107,11 @@ if ($path === '/api/v1/config/public' && in_array($method, ['GET', 'OPTIONS'], t
     exit;
 }
 
+if ($path === '/api/v1/log/client' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_log_client.php';
+    exit;
+}
+
 if ($path === '/api/v1/auth/google' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_auth_google.php';
     exit;

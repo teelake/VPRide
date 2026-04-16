@@ -8,6 +8,7 @@ class AppPublicFeatures {
     required this.maintenanceMode,
     required this.maintenanceMessage,
     required this.helpCenterUrl,
+    required this.requireSignInForHome,
   });
 
   final bool rideBookingEnabled;
@@ -15,6 +16,7 @@ class AppPublicFeatures {
   final bool maintenanceMode;
   final String maintenanceMessage;
   final String helpCenterUrl;
+  final bool requireSignInForHome;
 
   static const AppPublicFeatures fallback = AppPublicFeatures(
     rideBookingEnabled: true,
@@ -22,6 +24,7 @@ class AppPublicFeatures {
     maintenanceMode: false,
     maintenanceMessage: '',
     helpCenterUrl: '',
+    requireSignInForHome: false,
   );
 
   factory AppPublicFeatures.fromJson(Object? raw) {
@@ -35,6 +38,7 @@ class AppPublicFeatures {
       maintenanceMode: _bool(m['maintenanceMode'], fallback: false),
       maintenanceMessage: '${m['maintenanceMessage'] ?? ''}'.trim(),
       helpCenterUrl: '${m['helpCenterUrl'] ?? ''}'.trim(),
+      requireSignInForHome: _bool(m['requireSignInForHome'], fallback: false),
     );
   }
 

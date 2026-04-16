@@ -32,17 +32,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid session.';
     } else {
         try {
+            $welcomeOpacityPct = (int) ($_POST['welcomeOverlayOpacity'] ?? 78);
+            if ($welcomeOpacityPct < 0) {
+                $welcomeOpacityPct = 0;
+            }
+            if ($welcomeOpacityPct > 100) {
+                $welcomeOpacityPct = 100;
+            }
             $repo->savePublicSettings(
                 [
                     'googleWebClientId' => (string) ($_POST['googleWebClientId'] ?? ''),
                     'mapsApiKey' => (string) ($_POST['mapsApiKey'] ?? ''),
                     'minimumAppVersion' => (string) ($_POST['minimumAppVersion'] ?? ''),
+                    'welcome' => [
+                        'backgroundImageUrl' => (string) ($_POST['welcomeBackgroundImageUrl'] ?? ''),
+                        'overlayColor' => (string) ($_POST['welcomeOverlayColor'] ?? '#F0F0F0'),
+                        'overlayOpacity' => $welcomeOpacityPct / 100.0,
+                    ],
                     'features' => [
                         'rideBookingEnabled' => isset($_POST['feat_ride_booking']),
                         'promoBannerEnabled' => isset($_POST['feat_promo']),
                         'maintenanceMode' => isset($_POST['feat_maintenance']),
                         'maintenanceMessage' => (string) ($_POST['maintenanceMessage'] ?? ''),
                         'helpCenterUrl' => (string) ($_POST['helpCenterUrl'] ?? ''),
+                        'requireSignInForHome' => isset($_POST['feat_require_signin_home']),
                     ],
                 ],
                 $admin[0],
@@ -110,6 +123,28 @@ require __DIR__ . '/includes/app_shell_start.php';
     </div>
   </section>
 
+  <section class="vp-card" aria-labelledby="welcome-heading">
+    <div class="vp-card__pad">
+      <h2 id="welcome-heading" class="vp-section-title">Welcome screen (mobile)</h2>
+      <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Delivered in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">welcome</code>. Use a high-resolution JPG/PNG/WebP URL (HTTPS). The overlay sits on top of the image so text stays readable.</p>
+      <div class="vp-stack-form">
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeBackgroundImageUrl">Background image URL</label>
+          <input class="vp-input vp-input--mono" id="welcomeBackgroundImageUrl" name="welcomeBackgroundImageUrl" type="url" value="<?= vp_h($settings['welcome']['backgroundImageUrl'] ?? '') ?>" placeholder="https://…/hero.jpg" autocomplete="off">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeOverlayColor">Overlay color (hex)</label>
+          <input class="vp-input vp-input--mono" id="welcomeOverlayColor" name="welcomeOverlayColor" type="text" value="<?= vp_h($settings['welcome']['overlayColor'] ?? '#F0F0F0') ?>" placeholder="#F0F0F0" pattern="#[0-9A-Fa-f]{6}" autocomplete="off">
+        </div>
+        <div class="vp-field">
+          <label class="vp-label" for="welcomeOverlayOpacity">Overlay strength (%)</label>
+          <input class="vp-input" id="welcomeOverlayOpacity" name="welcomeOverlayOpacity" type="number" min="0" max="100" step="1" value="<?= (int) round(((float) ($settings['welcome']['overlayOpacity'] ?? 0.78)) * 100) ?>">
+          <p class="vp-field-hint">0 = image only, 100 = solid overlay color.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <section class="vp-card" aria-labelledby="features-heading">
     <div class="vp-card__pad">
       <h2 id="features-heading" class="vp-section-title">Mobile app features</h2>
@@ -129,6 +164,11 @@ require __DIR__ . '/includes/app_shell_start.php';
           <input class="vp-sr-only" type="checkbox" name="feat_maintenance"<?= ! empty($settings['features']['maintenanceMode']) ? ' checked' : '' ?>>
           <span class="vp-toggle__ui"></span>
           <span class="vp-toggle__text"><strong>Maintenance mode</strong><span class="vp-toggle__sub">Blocks new ride requests (503) with optional message</span></span>
+        </label>
+        <label class="vp-toggle">
+          <input class="vp-sr-only" type="checkbox" name="feat_require_signin_home"<?= ! empty($settings['features']['requireSignInForHome']) ? ' checked' : '' ?>>
+          <span class="vp-toggle__ui"></span>
+          <span class="vp-toggle__text"><strong>Require sign-in for Map / Home</strong><span class="vp-toggle__sub">Unsigned users stay on welcome unless they use a guest link in the app</span></span>
         </label>
       </div>
       <div class="vp-field" style="margin-top:1.25rem;">

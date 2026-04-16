@@ -17,19 +17,19 @@ final class AppSettingsRepository
      *   googleWebClientId: string,
      *   mapsApiKey: string,
      *   minimumAppVersion: string,
+     *   welcome: array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float},
      *   features: array{
      *     rideBookingEnabled: bool,
      *     promoBannerEnabled: bool,
      *     maintenanceMode: bool,
      *     maintenanceMessage: string,
-     *     helpCenterUrl: string
+     *     helpCenterUrl: string,
+     *     requireSignInForHome: bool
      *   }
      * }
-     */
-    /**
-     * Value saved in admin (or DB defaults) first; if empty, use MAPS_API_KEY or
-     * GOOGLE_MAPS_API_KEY from the environment so GET /api/v1/config/public can
-     * serve mobile without requiring the key to be duplicated only in MySQL.
+     *
+     * mapsApiKeyWithEnvFallback: DB value first; if empty, MAPS_API_KEY /
+     * GOOGLE_MAPS_API_KEY from the environment.
      */
     public static function mapsApiKeyWithEnvFallback(string $fromDatabase): string
     {
@@ -73,6 +73,7 @@ final class AppSettingsRepository
             'maintenanceMode' => self::boolish($featIn['maintenanceMode'] ?? $featDef['maintenanceMode']),
             'maintenanceMessage' => trim((string) ($featIn['maintenanceMessage'] ?? $featDef['maintenanceMessage'])),
             'helpCenterUrl' => trim((string) ($featIn['helpCenterUrl'] ?? $featDef['helpCenterUrl'])),
+            'requireSignInForHome' => self::boolish($featIn['requireSignInForHome'] ?? $featDef['requireSignInForHome']),
         ];
         if (strlen($features['maintenanceMessage']) > 2000) {
             $features['maintenanceMessage'] = mb_substr($features['maintenanceMessage'], 0, 2000);
@@ -81,10 +82,13 @@ final class AppSettingsRepository
             $features['helpCenterUrl'] = mb_substr($features['helpCenterUrl'], 0, 512);
         }
 
+        $welcomeIn = is_array($decoded['welcome'] ?? null) ? $decoded['welcome'] : [];
+
         return [
             'googleWebClientId' => trim((string) ($decoded['googleWebClientId'] ?? $defaults['googleWebClientId'])),
             'mapsApiKey' => trim((string) ($decoded['mapsApiKey'] ?? $defaults['mapsApiKey'])),
             'minimumAppVersion' => trim((string) ($decoded['minimumAppVersion'] ?? $defaults['minimumAppVersion'])),
+            'welcome' => self::normalizeWelcome($welcomeIn, $defaults['welcome']),
             'features' => $features,
         ];
     }
@@ -94,6 +98,7 @@ final class AppSettingsRepository
      *   googleWebClientId?: string,
      *   mapsApiKey?: string,
      *   minimumAppVersion?: string,
+     *   welcome?: array{backgroundImageUrl?: string, overlayColor?: string, overlayOpacity?: float|int|string},
      *   features?: array<string, mixed>
      * } $patch
      */
@@ -117,6 +122,9 @@ final class AppSettingsRepository
             'helpCenterUrl' => array_key_exists('helpCenterUrl', $featPatch)
                 ? trim((string) $featPatch['helpCenterUrl'])
                 : $current['features']['helpCenterUrl'],
+            'requireSignInForHome' => array_key_exists('requireSignInForHome', $featPatch)
+                ? self::boolish($featPatch['requireSignInForHome'])
+                : $current['features']['requireSignInForHome'],
         ];
         if (strlen($mergedFeatures['maintenanceMessage']) > 2000) {
             throw new RuntimeException('Maintenance message too long');
@@ -124,6 +132,11 @@ final class AppSettingsRepository
         if (strlen($mergedFeatures['helpCenterUrl']) > 512) {
             throw new RuntimeException('Help URL too long');
         }
+        $welcomeMerged = $current['welcome'];
+        if (isset($patch['welcome']) && is_array($patch['welcome'])) {
+            $welcomeMerged = self::normalizeWelcome($patch['welcome'], $current['welcome']);
+        }
+
         $merged = [
             'googleWebClientId' => isset($patch['googleWebClientId'])
                 ? trim((string) $patch['googleWebClientId'])
@@ -134,6 +147,7 @@ final class AppSettingsRepository
             'minimumAppVersion' => isset($patch['minimumAppVersion'])
                 ? trim((string) $patch['minimumAppVersion'])
                 : $current['minimumAppVersion'],
+            'welcome' => $welcomeMerged,
             'features' => $mergedFeatures,
         ];
         if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
@@ -163,18 +177,69 @@ final class AppSettingsRepository
     /**
      * @return array{googleWebClientId: string, mapsApiKey: string, minimumAppVersion: string, features: array<string, mixed>}
      */
+    /**
+     * @param array<string, mixed> $in
+     * @param array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float} $base
+     * @return array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float}
+     */
+    private static function normalizeWelcome(array $in, array $base): array
+    {
+        $url = array_key_exists('backgroundImageUrl', $in)
+            ? trim((string) $in['backgroundImageUrl'])
+            : $base['backgroundImageUrl'];
+        if (strlen($url) > 2048) {
+            throw new RuntimeException('Welcome background URL too long');
+        }
+        $color = array_key_exists('overlayColor', $in)
+            ? trim((string) $in['overlayColor'])
+            : $base['overlayColor'];
+        if (! preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+            $color = $base['overlayColor'];
+        }
+        $op = $base['overlayOpacity'];
+        if (array_key_exists('overlayOpacity', $in)) {
+            $op = (float) $in['overlayOpacity'];
+        }
+        if ($op < 0.0) {
+            $op = 0.0;
+        }
+        if ($op > 1.0) {
+            $op = 1.0;
+        }
+
+        return [
+            'backgroundImageUrl' => $url,
+            'overlayColor' => $color,
+            'overlayOpacity' => $op,
+        ];
+    }
+
+    /**
+     * @return array{backgroundImageUrl: string, overlayColor: string, overlayOpacity: float}
+     */
+    private static function defaultWelcome(): array
+    {
+        return [
+            'backgroundImageUrl' => '',
+            'overlayColor' => '#F0F0F0',
+            'overlayOpacity' => 0.78,
+        ];
+    }
+
     private static function defaultPayload(): array
     {
         return [
             'googleWebClientId' => '',
             'mapsApiKey' => '',
             'minimumAppVersion' => '1.0.0',
+            'welcome' => self::defaultWelcome(),
             'features' => [
                 'rideBookingEnabled' => true,
                 'promoBannerEnabled' => false,
                 'maintenanceMode' => false,
                 'maintenanceMessage' => '',
                 'helpCenterUrl' => '',
+                'requireSignInForHome' => false,
             ],
         ];
     }

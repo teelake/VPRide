@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
+import '../logging/app_error_reporter.dart';
 import 'app_public_features.dart';
+import 'welcome_ui_config.dart';
 
 /// Public keys from [GET /api/v1/config/public] with `--dart-define` fallback.
 class ClientConfigRepository extends ChangeNotifier {
@@ -17,9 +19,12 @@ class ClientConfigRepository extends ChangeNotifier {
   String _remoteMapsApiKey = '';
   String _remoteMinimumAppVersion = '';
   AppPublicFeatures _features = AppPublicFeatures.fallback;
+  WelcomeUiConfig _welcomeUi = WelcomeUiConfig.fallback;
 
   /// Feature flags from the last successful config fetch (or [AppPublicFeatures.fallback]).
   AppPublicFeatures get features => _features;
+
+  WelcomeUiConfig get welcomeUi => _welcomeUi;
 
   /// Non-empty when the last [loadInitial] returned values from the server.
   String get remoteGoogleWebClientId => _remoteGoogleWebClientId;
@@ -66,13 +71,44 @@ class ClientConfigRepository extends ChangeNotifier {
           _remoteMinimumAppVersion =
               '${data['minimumAppVersion'] ?? ''}'.trim();
           _features = AppPublicFeatures.fromJson(data['features']);
+          _welcomeUi = WelcomeUiConfig.fromJson(data['welcome']);
+          if (_remoteMapsApiKey.isEmpty &&
+              AppConfig.mapsApiKey.trim().isEmpty) {
+            AppErrorReporter.report(
+              'warning',
+              'Public config: mapsApiKey empty after fetch',
+              context: {
+                'uri': uri.toString(),
+                'defineMapsKeyEmpty': true,
+              },
+            );
+          }
         }
-      } else if (kDebugMode) {
-        debugPrint(
-          'ClientConfigRepository: HTTP ${response.statusCode} for $uri',
+      } else {
+        final snippet = response.body.length > 400
+            ? '${response.body.substring(0, 400)}…'
+            : response.body;
+        AppErrorReporter.report(
+          'warning',
+          'Public config fetch failed',
+          context: {
+            'uri': uri.toString(),
+            'statusCode': response.statusCode,
+            if (snippet.isNotEmpty) 'bodySnippet': snippet,
+          },
         );
+        if (kDebugMode) {
+          debugPrint(
+            'ClientConfigRepository: HTTP ${response.statusCode} for $uri',
+          );
+        }
       }
     } catch (e, st) {
+      AppErrorReporter.report(
+        'error',
+        'Public config load exception: $e',
+        context: {'uri': uri.toString(), 'stack': '$st'},
+      );
       if (kDebugMode) {
         debugPrint('ClientConfigRepository: load failed: $e\n$st');
       }
