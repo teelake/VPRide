@@ -138,7 +138,6 @@ foreach ($ridersByDay as $pt) {
     $sparkMaxRiders = max($sparkMaxRiders, (int) $pt['c']);
 }
 
-$systemHealth = vp_system_health($pdo, $liveLabel);
 $activityRides = Auth::can('rides.view') ? $rideRepo->listRecent(8) : [];
 $liveRegionOk = $liveLabel !== '—' && $liveLabel !== '';
 $configHealthPct = $liveRegionOk ? 100 : 0;
@@ -153,6 +152,7 @@ $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'dashboard';
 $vpTopbarTitle = 'Dashboard';
 require __DIR__ . '/includes/head.php';
+$systemHealth = vp_system_health($pdo, $liveLabel);
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
