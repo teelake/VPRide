@@ -459,10 +459,9 @@ require __DIR__ . '/includes/app_shell_start.php';
             <?php foreach ($statusRows as $row) {
                 $st = (string) $row['status'];
                 $w = $statusTotal > 0 ? max(1, (int) round(100 * (int) $row['c'] / $statusTotal)) : 0;
-                $segClass = 'vp-dist-stack__seg--' . preg_replace('/[^a-z]/', '', strtolower(str_replace(' ', '', $st)));
-                if ($segClass === 'vp-dist-stack__seg--') {
-                    $segClass = 'vp-dist-stack__seg--other';
-                }
+                $stKey = preg_replace('/[^a-z0-9_]/', '_', strtolower($st));
+                $stKey = trim($stKey, '_') ?: 'other';
+                $segClass = 'vp-dist-stack__seg--' . $stKey;
                 ?>
               <span class="vp-dist-stack__seg <?= vp_h($segClass) ?>" style="width: <?= (string) $w ?>%;" title="<?= vp_h($st . ': ' . (string) (int) $row['c']) ?>"></span>
             <?php } ?>
