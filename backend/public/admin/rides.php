@@ -20,7 +20,7 @@ Auth::requirePermission('rides.view');
 
 $admin = Auth::currentAdmin();
 $pdo = Database::pdo();
-vp_schema_single_table_alert($pdo, 'rides', 'sql/migration_rides.sql', 'Rides');
+vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Rides');
 $rows = \VprideBackend\SchemaInspector::tableExists($pdo, 'rides')
     ? (new RideRepository($pdo))->listRecent(200)
     : [];
@@ -75,7 +75,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'Rides table not installed',
-              'Import sql/migration_rides.sql on this database, then refresh.',
+              'Import backend/sql/migration_rides.sql on this database, then refresh.',
               [],
           );
         ?>

@@ -85,10 +85,10 @@ function vp_schema_migration_alerts(\PDO $pdo): void
     }
     $parts = [];
     if (! $rides) {
-        $parts[] = 'rides (import <code class="vp-inline-code">sql/migration_rides.sql</code>)';
+        $parts[] = 'rides (import <code class="vp-inline-code">backend/sql/migration_rides.sql</code>)';
     }
     if (! $riders) {
-        $parts[] = 'rider_users (import <code class="vp-inline-code">sql/migration_rider_auth.sql</code> or full <code class="vp-inline-code">schema_tables_only.sql</code>)';
+        $parts[] = 'rider_users (import <code class="vp-inline-code">backend/sql/migration_rider_auth.sql</code> or <code class="vp-inline-code">backend/sql/schema_tables_only.sql</code>)';
     }
     echo '<div class="vp-alert vp-alert--warn" role="status">';
     echo '<p class="vp-alert__title">Finish database setup</p>';
@@ -103,7 +103,7 @@ function vp_schema_single_table_alert(\PDO $pdo, string $table, string $migratio
     }
     echo '<div class="vp-alert vp-alert--warn" role="status">';
     echo '<p class="vp-alert__title">' . vp_h($label) . ' unavailable</p>';
-    echo '<p class="vp-alert__body">Create the <code class="vp-inline-code">' . vp_h($table) . '</code> table by importing <code class="vp-inline-code">' . vp_h($migrationFile) . '</code> in phpMyAdmin (or your SQL client).</p>';
+    echo '<p class="vp-alert__body">Create the <code class="vp-inline-code">' . vp_h($table) . '</code> table by importing <code class="vp-inline-code">backend/sql/' . vp_h($migrationFile) . '</code> in phpMyAdmin (or your SQL client).</p>';
     echo '</div>';
 }
 

@@ -21,7 +21,7 @@ Auth::requirePermission('riders.view');
 $admin = Auth::currentAdmin();
 $csrf = Auth::csrfToken();
 $pdo = Database::pdo();
-vp_schema_single_table_alert($pdo, 'rider_users', 'sql/migration_rider_auth.sql', 'Rider directory');
+vp_schema_single_table_alert($pdo, 'rider_users', 'migration_rider_auth.sql', 'Rider directory');
 $repo = new RiderUserRepository($pdo);
 
 $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
@@ -86,7 +86,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'Rider accounts table missing',
-              'Run sql/migration_rider_auth.sql (or the full schema) so Google sign-in can create rider_users rows.',
+              'Run backend/sql/migration_rider_auth.sql (or the full schema) so Google sign-in can create rider_users rows.',
               [],
           );
         ?>

@@ -105,7 +105,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <p class="vp-page-desc">Filter ride activity, paginate results, and export CSV for spreadsheets.</p>
 </header>
 
-<?php vp_schema_single_table_alert($pdo, 'rides', 'sql/migration_rides.sql', 'Ride reports'); ?>
+<?php vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Ride reports'); ?>
 
 <?php vp_reports_tabs('rides'); ?>
 
@@ -171,7 +171,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'Rides table missing',
-              'Import sql/migration_rides.sql, then return to this report.',
+              'Import backend/sql/migration_rides.sql, then return to this report.',
               [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
           );
         ?>

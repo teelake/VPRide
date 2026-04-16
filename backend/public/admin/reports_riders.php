@@ -89,7 +89,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <p class="vp-page-desc">Search the rider directory and export CSV for audits or support workflows.</p>
 </header>
 
-<?php vp_schema_single_table_alert($pdo, 'rider_users', 'sql/migration_rider_auth.sql', 'Rider reports'); ?>
+<?php vp_schema_single_table_alert($pdo, 'rider_users', 'migration_rider_auth.sql', 'Rider reports'); ?>
 
 <?php vp_reports_tabs('riders'); ?>
 
@@ -132,7 +132,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'Rider directory unavailable',
-              'Import sql/migration_rider_auth.sql (or full schema), then try again.',
+              'Import backend/sql/migration_rider_auth.sql (or full schema), then try again.',
               [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
           );
         ?>

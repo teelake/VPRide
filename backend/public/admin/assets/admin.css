@@ -1175,6 +1175,13 @@ html {
   justify-content: center;
 }
 
+.vp-card .vp-empty {
+  margin-top: 0.5rem;
+  padding: 1.5rem 1rem;
+  background: var(--vp-surface-elevated);
+  border-style: solid;
+}
+
 /* ——— Table ——— */
 .vp-table-wrap {
   overflow-x: auto;

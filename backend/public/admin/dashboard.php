@@ -329,7 +329,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'Rides not set up',
-              'Import sql/migration_rides.sql on this database to enable ride history.',
+              'Import backend/sql/migration_rides.sql on this database to enable ride history.',
               [],
           );
         ?>
