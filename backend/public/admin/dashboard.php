@@ -45,13 +45,6 @@ foreach ($configs as $c) {
         break;
     }
 }
-$draftCount = 0;
-foreach ($configs as $c) {
-    if ((int) $c['is_active'] !== 1) {
-        $draftCount++;
-    }
-}
-
 $recentRides = Auth::can('rides.view') ? $rideRepo->listRecent(6) : [];
 
 $dashSettings = (new AppSettingsRepository($pdo))->getPublicSettings();
@@ -372,24 +365,6 @@ require __DIR__ . '/includes/app_shell_start.php';
         </div>
       </div>
 
-      <div class="vp-dash-mini-stats" role="list">
-        <div class="vp-dash-mini-stat" role="listitem">
-          <span class="vp-dash-mini-stat__label">Last 24 hours</span>
-          <span class="vp-dash-mini-stat__value"><?= number_format($rides24h) ?></span>
-          <span class="vp-dash-mini-stat__hint">bookings</span>
-        </div>
-        <div class="vp-dash-mini-stat" role="listitem">
-          <span class="vp-dash-mini-stat__label">Draft regions</span>
-          <span class="vp-dash-mini-stat__value"><?= number_format($draftCount) ?></span>
-          <span class="vp-dash-mini-stat__hint">not live</span>
-        </div>
-        <div class="vp-dash-mini-stat" role="listitem">
-          <span class="vp-dash-mini-stat__label">New riders · 7d</span>
-          <span class="vp-dash-mini-stat__value"><?= number_format($riders7d) ?></span>
-          <span class="vp-dash-mini-stat__hint">sign-ups</span>
-        </div>
-      </div>
-
       <div class="vp-bi-panels">
         <div class="vp-card vp-bi-panel vp-card--dash-surface">
           <div class="vp-card__pad">
@@ -584,18 +559,8 @@ require __DIR__ . '/includes/app_shell_start.php';
     <?php } ?>
   </div>
 
-  <aside class="vp-dash-layout__aside" aria-label="Highlights">
-    <div class="vp-card vp-card--dash-surface">
-      <div class="vp-card__pad">
-        <h3 class="vp-dash-aside-title">Today</h3>
-        <ul class="vp-dash-aside-list">
-          <li><span class="vp-dash-aside-k"><?= number_format($rides24h) ?></span> bookings last 24h</li>
-          <li><span class="vp-dash-aside-k"><?= vp_h($liveLabel) ?></span> live region</li>
-          <li><span class="vp-dash-aside-k"><?= number_format($draftCount) ?></span> draft profiles</li>
-        </ul>
-      </div>
-    </div>
-    <?php if ($insights !== []) { ?>
+  <?php if ($insights !== []) { ?>
+    <aside class="vp-dash-layout__aside" aria-label="Signals">
       <div class="vp-card vp-card--dash-surface">
         <div class="vp-card__pad">
           <h3 class="vp-dash-aside-title">Signals</h3>
@@ -609,28 +574,8 @@ require __DIR__ . '/includes/app_shell_start.php';
           </ul>
         </div>
       </div>
-    <?php } ?>
-    <div class="vp-card vp-card--dash-surface">
-      <div class="vp-card__pad">
-        <h3 class="vp-dash-aside-title">Shortcuts</h3>
-        <nav class="vp-dash-shortcuts" aria-label="Quick links">
-          <?php if (Auth::can('rides.view')) { ?>
-            <a class="vp-dash-shortcut" href="<?= vp_url('/admin/rides') ?>">Bookings</a>
-          <?php } ?>
-          <?php if (Auth::can('riders.view')) { ?>
-            <a class="vp-dash-shortcut" href="<?= vp_url('/admin/riders') ?>">Riders</a>
-          <?php } ?>
-          <?php if (Auth::can('regions.view')) { ?>
-            <a class="vp-dash-shortcut" href="<?= vp_url('/admin/regions') ?>">Regions</a>
-          <?php } ?>
-          <?php if (Auth::can('settings.manage')) { ?>
-            <a class="vp-dash-shortcut" href="<?= vp_url('/admin/settings') ?>">Settings</a>
-          <?php } ?>
-          <a class="vp-dash-shortcut" href="<?= vp_url('/admin/help') ?>">Help</a>
-        </nav>
-      </div>
-    </div>
-  </aside>
+    </aside>
+  <?php } ?>
 </div>
 
 <?php require __DIR__ . '/includes/app_shell_end.php'; ?>
