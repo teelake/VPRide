@@ -133,7 +133,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     <p class="vp-kpi-card__label">Total rides</p>
     <p class="vp-kpi-card__value"><?= number_format($rideCount) ?></p>
     <?php if (Auth::can('rides.view')) { ?>
-      <a class="vp-kpi-card__link" href="<?= vp_url('/admin/rides') ?>">View rides</a>
+      <a class="vp-kpi-card__link" href="<?= vp_url('/admin/rides') ?>">View bookings</a>
     <?php } ?>
   </article>
   <article class="vp-kpi-card vp-kpi-card--tone-mint" role="listitem">
@@ -284,12 +284,12 @@ require __DIR__ . '/includes/app_shell_start.php';
   <section class="vp-card vp-card--flush-top" aria-labelledby="recent-rides-heading">
     <div class="vp-card__pad">
       <div class="vp-card__head-row">
-        <h2 id="recent-rides-heading" class="vp-section-title" style="margin:0;">Recent rides</h2>
+        <h2 id="recent-rides-heading" class="vp-section-title" style="margin:0;">Recent bookings</h2>
         <div class="vp-card__head-actions">
           <?php if (Auth::can('reports.view')) { ?>
             <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_url('/admin/reports/rides') ?>">Reports</a>
           <?php } ?>
-          <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All rides</a>
+          <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
         </div>
       </div>
       <?php if ($recentRides !== []) { ?>
@@ -322,7 +322,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No rides to show yet',
               'Latest requests from the app will appear here once riders start booking.',
-              [['label' => 'View all rides', 'href' => vp_url('/admin/rides'), 'variant' => 'primary']],
+              [['label' => 'View all bookings', 'href' => vp_url('/admin/rides'), 'variant' => 'primary']],
           );
         ?>
       <?php } else { ?>
