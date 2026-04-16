@@ -67,15 +67,15 @@ function vp_google_static_map_booking_url(
     if ($hasDrop) {
         $dropSeg = $dropoffLat . ',' . $dropoffLng;
         $q['visible'] = $pickSeg . '|' . $dropSeg;
-        $markersPickup = 'color:0x2563eb|label:P|' . $pickSeg;
-        $markersDrop = 'color:0xea580c|label:D|' . $dropSeg;
+        $markersPickup = 'color:0xf5b800|label:P|' . $pickSeg;
+        $markersDrop = 'color:0xd9a006|label:D|' . $dropSeg;
         return $base . '?' . http_build_query($q)
             . '&markers=' . rawurlencode($markersPickup)
             . '&markers=' . rawurlencode($markersDrop);
     }
     $q['center'] = $pickSeg;
     $q['zoom'] = '14';
-    $markersPickup = 'color:0x2563eb|label:P|' . $pickSeg;
+    $markersPickup = 'color:0xf5b800|label:P|' . $pickSeg;
 
     return $base . '?' . http_build_query($q) . '&markers=' . rawurlencode($markersPickup);
 }
