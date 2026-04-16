@@ -137,6 +137,85 @@ function vp_ride_status_dot_class(string $status): string
     return 'vp-status-dot--neutral';
 }
 
+/** Human-readable relative time for activity feeds. */
+function vp_relative_time(string $timestamp): string
+{
+    $t = strtotime($timestamp);
+    if ($t === false) {
+        return $timestamp;
+    }
+    $diff = time() - $t;
+    if ($diff < 45) {
+        return 'Just now';
+    }
+    if ($diff < 3600) {
+        $m = (int) floor($diff / 60);
+
+        return $m . ' min ago';
+    }
+    if ($diff < 86400) {
+        $h = (int) floor($diff / 3600);
+
+        return $h . ' hr ago';
+    }
+    if ($diff < 604800) {
+        $d = (int) floor($diff / 86400);
+
+        return $d . ' day' . ($d === 1 ? '' : 's') . ' ago';
+    }
+
+    return date('j M Y, H:i', $t);
+}
+
+/**
+ * @param array<string, mixed> $ride
+ */
+function vp_ride_route_summary(array $ride): string
+{
+    $pick = trim((string) ($ride['pickup_address'] ?? ''));
+    if ($pick === '') {
+        $pick = 'Pickup point';
+    }
+    if (function_exists('mb_strlen') && mb_strlen($pick) > 32) {
+        $pick = mb_substr($pick, 0, 29) . '…';
+    } elseif (strlen($pick) > 32) {
+        $pick = substr($pick, 0, 29) . '…';
+    }
+    $drop = trim((string) ($ride['dropoff_address'] ?? ''));
+    if ($drop === '') {
+        $drop = 'Drop-off TBD';
+    }
+    if (function_exists('mb_strlen') && mb_strlen($drop) > 32) {
+        $drop = mb_substr($drop, 0, 29) . '…';
+    } elseif (strlen($drop) > 32) {
+        $drop = substr($drop, 0, 29) . '…';
+    }
+
+    return $pick . ' → ' . $drop;
+}
+
+/** CSS modifier for activity list status badges (uppercase chips). */
+function vp_ride_activity_badge_mod(string $status): string
+{
+    $s = strtolower(trim($status));
+    if (str_contains($s, 'complete')) {
+        return 'vp-activity-badge--done';
+    }
+    if (str_contains($s, 'cancel')) {
+        return 'vp-activity-badge--cancel';
+    }
+    if (str_contains($s, 'progress') || $s === 'accepted' || $s === 'in_progress') {
+        return 'vp-activity-badge--active';
+    }
+
+    return 'vp-activity-badge--pending';
+}
+
+function vp_nav_icon_bell(): string
+{
+    return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+}
+
 /** Two-letter avatar label from admin email (e.g. "jd" from "jane.doe@x.com"). */
 function vp_admin_initials(string $email): string
 {

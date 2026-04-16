@@ -7,6 +7,54 @@ use VprideBackend\SchemaInspector;
 require_once dirname(__DIR__, 3) . '/src/SchemaInspector.php';
 
 /**
+ * @return array{level: 'active'|'attention'|'degraded', label: string, issues: list<string>}
+ */
+function vp_system_health(\PDO $pdo, string $liveRegionLabel): array
+{
+    $issues = [];
+    $level = 'active';
+    $rides = SchemaInspector::tableExists($pdo, 'rides');
+    $riders = SchemaInspector::tableExists($pdo, 'rider_users');
+    if (! $rides) {
+        $issues[] = 'Rides table not installed';
+        $level = 'degraded';
+    }
+    if (! $riders) {
+        $issues[] = 'Rider accounts table not installed';
+        $level = 'degraded';
+    }
+    $regionMissing = $liveRegionLabel === '—' || $liveRegionLabel === '';
+    if ($rides && $riders && $regionMissing) {
+        $issues[] = 'No live routing region configured';
+        if ($level === 'active') {
+            $level = 'attention';
+        }
+    }
+
+    $label = match ($level) {
+        'degraded' => 'Degraded',
+        'attention' => 'Needs attention',
+        default => 'Active',
+    };
+
+    return ['level' => $level, 'label' => $label, 'issues' => $issues];
+}
+
+/**
+ * @param array{level: string, label: string, issues: list<string>} $health
+ */
+function vp_system_health_render(array $health): void
+{
+    $lvl = preg_match('/^[a-z]+$/', $health['level']) ? $health['level'] : 'active';
+    $tip = $health['issues'] !== [] ? implode(' · ', $health['issues']) : 'Core tables and routing look OK.';
+    echo '<div class="vp-system-health vp-system-health--' . vp_h($lvl) . '" role="status" title="' . vp_h($tip) . '">';
+    echo '<span class="vp-system-health__k">Console health</span>';
+    echo '<span class="vp-system-health__dot" aria-hidden="true"></span>';
+    echo '<span class="vp-system-health__state">' . vp_h($health['label']) . '</span>';
+    echo '</div>';
+}
+
+/**
  * Breadcrumb trail. Last item typically has href null (current page).
  *
  * @param list<array{label: string, href: ?string}> $items
