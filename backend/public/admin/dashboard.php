@@ -138,6 +138,13 @@ foreach ($ridersByDay as $pt) {
     $sparkMaxRiders = max($sparkMaxRiders, (int) $pt['c']);
 }
 
+$systemHealth = vp_system_health($pdo, $liveLabel);
+$activityRides = Auth::can('rides.view') ? $rideRepo->listRecent(8) : [];
+$liveRegionOk = $liveLabel !== '—' && $liveLabel !== '';
+$configHealthPct = $liveRegionOk ? 100 : 0;
+$rides7dAvg = max(0.01, $rides7d / 7.0);
+$pulsePct = (int) min(100, max(0, round(100 * $rides24h / $rides7dAvg)));
+
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
