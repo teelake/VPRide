@@ -192,7 +192,19 @@ if ($path === '/admin/riders' && $method === 'GET') {
     exit;
 }
 
-if ($path === '/admin/drivers' && $method === 'GET') {
+if ($path === '/admin/drivers/new' && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_DRIVER_NEW = true;
+    require $backendRoot . '/public/admin/driver_edit.php';
+    exit;
+}
+
+if (preg_match('#^/admin/drivers/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_DRIVER_ID = (int) $m[1];
+    require $backendRoot . '/public/admin/driver_edit.php';
+    exit;
+}
+
+if ($path === '/admin/drivers' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/drivers.php';
     exit;
 }
@@ -207,7 +219,19 @@ if ($path === '/admin/schedule' && $method === 'GET') {
     exit;
 }
 
-if ($path === '/admin/fleet' && $method === 'GET') {
+if ($path === '/admin/fleet/new' && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_FLEET_VEHICLE_NEW = true;
+    require $backendRoot . '/public/admin/fleet_vehicle_edit.php';
+    exit;
+}
+
+if (preg_match('#^/admin/fleet/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_FLEET_VEHICLE_ID = (int) $m[1];
+    require $backendRoot . '/public/admin/fleet_vehicle_edit.php';
+    exit;
+}
+
+if ($path === '/admin/fleet' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/fleet.php';
     exit;
 }

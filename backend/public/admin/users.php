@@ -51,7 +51,15 @@ require __DIR__ . '/includes/app_shell_start.php';
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_drivers() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Driver directory</span>
-        <span class="vp-hub-card__desc">Operators who fulfill rides — onboarded from this console.</span>
+        <span class="vp-hub-card__desc">Onboard owner-operators and company drivers; assign vehicles here.</span>
+      </span>
+      <span class="vp-hub-card__chev" aria-hidden="true"><?= vp_nav_icon_chevron_right() ?></span>
+    </a>
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/fleet')) ?>" role="listitem">
+      <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_fleet() ?></span>
+      <span class="vp-hub-card__body">
+        <span class="vp-hub-card__title">Car management</span>
+        <span class="vp-hub-card__desc">Personal cars and company / brand fleet vehicles.</span>
       </span>
       <span class="vp-hub-card__chev" aria-hidden="true"><?= vp_nav_icon_chevron_right() ?></span>
     </a>

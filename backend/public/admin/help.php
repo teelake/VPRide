@@ -35,6 +35,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <h2 id="help-console-h" class="vp-section-title">Using the console</h2>
       <ul class="vp-help-list">
         <li><strong>Bookings</strong> lists ride requests synced from rider devices.</li>
+        <li><strong>Driver directory</strong> and <strong>Car management</strong> (under Drivers in the sidebar) are where you onboard drivers and register vehicles. Owner-operators use <em>personal</em> vehicle rows; company drivers use <em>company / brand</em> fleet rows — assign the matching vehicle when editing a driver.</li>
         <li><strong>Riders</strong> and <strong>Drivers</strong> each have their own sidebar menu; <strong>People &amp; access</strong> links to the same destinations in one hub.</li>
         <li><strong>Regions</strong> controls live routing configuration and drafts.</li>
         <li><strong>Reports</strong> offers filtered exports for rides and riders.</li>
