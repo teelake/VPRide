@@ -2679,12 +2679,41 @@ html {
   color: var(--vp-text);
 }
 
-/* Monitor uses full width; recent activity stacks below for a larger featured card. */
+/* 12-column row: live booking ~9 cols, recent activity ~3 cols (stacks on small screens). */
 .vp-dash-ops {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.15rem;
   margin-bottom: 1.25rem;
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .vp-dash-ops {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .vp-dash-ops__monitor {
+    grid-column: span 9;
+    min-width: 0;
+  }
+
+  .vp-dash-ops__feed {
+    grid-column: span 3;
+    min-width: 0;
+  }
+}
+
+/* Roomier activity column on wide desktops (8 + 4). */
+@media (min-width: 1400px) {
+  .vp-dash-ops__monitor {
+    grid-column: span 8;
+  }
+
+  .vp-dash-ops__feed {
+    grid-column: span 4;
+  }
 }
 
 .vp-dash-ops__monitor-head {
