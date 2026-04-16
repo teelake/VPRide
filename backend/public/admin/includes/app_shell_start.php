@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 /** @var array{0:int,1:string,2:string} $admin */
 /** @var string $csrf */
-/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | reports | rbac | region_new | region_edit */
+/** @var string|null $vpNavActive Optional: overview | regions | rides | riders | team | settings | reports | rbac | account | region_new | region_edit */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
 
 use VprideBackend\Auth;
@@ -144,6 +144,9 @@ $initials = vp_admin_initials($admin[1]);
             <div class="vp-profile__panel-head">
               <span class="vp-profile__panel-email"><?= vp_h($admin[1]) ?></span>
               <span class="vp-pill vp-pill--dark"><?= vp_h($admin[2]) ?></span>
+            </div>
+            <div class="vp-profile__actions">
+              <a class="vp-profile__account-link" href="<?= vp_url('/admin/account') ?>">Account settings</a>
             </div>
             <form method="post" action="<?= vp_url('/admin/logout') ?>" class="vp-profile__logout">
               <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">

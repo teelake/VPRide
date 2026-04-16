@@ -134,6 +134,32 @@
   text-transform: uppercase;
 }
 
+.vp-login__forgot {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.vp-login__forgot a {
+  color: var(--vp-gold-dim);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.vp-login__forgot a:hover {
+  text-decoration: underline;
+}
+
+.vp-login__back-link {
+  color: var(--vp-gold-dim);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.vp-login__back-link:hover {
+  text-decoration: underline;
+}
+
 /* ——— App shell (sidebar + top bar) ——— */
 .vp-body--app {
   min-height: 100vh;
@@ -592,6 +618,21 @@
   padding-bottom: 0.85rem;
   margin-bottom: 0.85rem;
   border-bottom: 1px solid var(--vp-border);
+}
+
+.vp-profile__actions {
+  margin-bottom: 0.85rem;
+}
+
+.vp-profile__account-link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vp-gold-dim);
+  text-decoration: none;
+}
+
+.vp-profile__account-link:hover {
+  text-decoration: underline;
 }
 
 .vp-profile__panel-email {

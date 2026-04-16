@@ -139,6 +139,12 @@ final class Auth
         return true;
     }
 
+    public static function setSessionEmail(string $email): void
+    {
+        self::startSession();
+        $_SESSION[self::SESSION_ADMIN_EMAIL] = $email;
+    }
+
     public static function logout(): void
     {
         self::startSession();

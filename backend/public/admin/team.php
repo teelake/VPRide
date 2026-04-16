@@ -52,6 +52,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           <tr>
             <th scope="col">ID</th>
             <th scope="col">Email</th>
+            <th scope="col">Name</th>
             <th scope="col">Role</th>
             <th scope="col">Created</th>
           </tr>
@@ -61,6 +62,7 @@ require __DIR__ . '/includes/app_shell_start.php';
             <tr>
               <td class="vp-table__id"><?= (int) $r['id'] ?></td>
               <td><?= vp_h((string) $r['email']) ?></td>
+              <td class="vp-table__muted"><?= vp_h((string) ($r['display_name'] ?? '') ?: '—') ?></td>
               <td>
                 <span class="vp-pill vp-pill--dark"><?= vp_h((string) ($r['role_label'] ?? $r['role'])) ?></span>
                 <span class="vp-table__mono vp-table__muted" style="font-size:0.6875rem; display:block; margin-top:0.2rem;"><?= vp_h((string) $r['role']) ?></span>

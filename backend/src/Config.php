@@ -73,4 +73,27 @@ final class Config
 
         return $base . $path;
     }
+
+    /**
+     * Full URL for password-reset emails and external links.
+     * Uses PUBLIC_BASE_URL from .env when set; otherwise the current request origin + APP_BASE_PATH.
+     */
+    public static function absoluteUrl(string $path): string
+    {
+        $path = self::url($path);
+        $fromEnv = trim((string) getenv('PUBLIC_BASE_URL'));
+        $fromEnv = rtrim($fromEnv, '/');
+        if ($fromEnv !== '') {
+            return $fromEnv . $path;
+        }
+        $host = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+        if ($host === '') {
+            return $path;
+        }
+        $https = (! empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+            || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string) $_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https');
+        $scheme = $https ? 'https' : 'http';
+
+        return $scheme . '://' . $host . $path;
+    }
 }

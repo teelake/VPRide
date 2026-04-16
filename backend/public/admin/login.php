@@ -15,6 +15,10 @@ Config::load($backendRoot . '/.env');
 Auth::startSession();
 
 $error = '';
+$notice = '';
+if (isset($_GET['reset']) && (string) $_GET['reset'] === '1') {
+    $notice = 'Password updated. Sign in with your new password.';
+}
 
 if (Auth::currentAdmin() !== null) {
     header('Location: ' . Config::url('/admin/dashboard'));
@@ -72,6 +76,9 @@ require __DIR__ . '/includes/head.php';
       <h1 class="vp-login__title">Sign in to console</h1>
       <p class="vp-login__lead">Manage regions, riders, rides, reports, and mobile feature flags for the VP Ride platform.</p>
 
+      <?php if ($notice !== '') { ?>
+        <div class="vp-alert vp-alert--success" role="status"><?= vp_h($notice) ?></div>
+      <?php } ?>
       <?php if ($error !== '') { ?>
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
       <?php } ?>
@@ -88,6 +95,7 @@ require __DIR__ . '/includes/head.php';
         </div>
         <button type="submit" class="vp-btn vp-btn--primary" style="width:100%; margin-top:0.25rem;">Sign in</button>
       </form>
+      <p class="vp-login__forgot"><a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>">Forgot password?</a></p>
     </div>
   </div>
   <p class="vp-login__foot">VP Ride operations console</p>

@@ -5,7 +5,7 @@
 -- Login after import:
 --   Email:    admin@vpride.local
 --   Password: Admin@123
--- Change the password from the admin UI when you add that feature, or update password_hash in DB.
+-- Change the password from Account settings in the console, or update password_hash in DB.
 --
 -- Bcrypt for Admin@123 (PHP password_hash, cost 10):
 -- If you change the password, regenerate: php -r "echo password_hash('YourPass', PASSWORD_BCRYPT);"

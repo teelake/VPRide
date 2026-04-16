@@ -126,6 +126,21 @@ if ($path === '/admin/login' && in_array($method, ['GET', 'POST'], true)) {
     exit;
 }
 
+if ($path === '/admin/forgot-password' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/forgot_password.php';
+    exit;
+}
+
+if ($path === '/admin/reset-password' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/reset_password.php';
+    exit;
+}
+
+if ($path === '/admin/account' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/account.php';
+    exit;
+}
+
 if ($path === '/admin/logout' && $method === 'POST') {
     require $backendRoot . '/public/admin/logout.php';
     exit;
