@@ -49,6 +49,7 @@ function vp_google_static_map_booking_url(
     float $pickupLng,
     ?float $dropoffLat,
     ?float $dropoffLng,
+    string $size = '480x240',
 ): ?string {
     $key = trim($mapsApiKey);
     if ($key === '') {
@@ -56,7 +57,7 @@ function vp_google_static_map_booking_url(
     }
     $base = 'https://maps.googleapis.com/maps/api/staticmap';
     $q = [
-        'size' => '480x240',
+        'size' => preg_match('/^\d{1,4}x\d{1,4}$/', $size) ? $size : '480x240',
         'scale' => '2',
         'maptype' => 'roadmap',
         'key' => $key,

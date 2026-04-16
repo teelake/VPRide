@@ -63,7 +63,7 @@ if ($featuredRide !== null) {
     $dlng = isset($featuredRide['dropoff_lng']) && $featuredRide['dropoff_lng'] !== null && $featuredRide['dropoff_lng'] !== ''
         ? (float) $featuredRide['dropoff_lng']
         : null;
-    $featuredMapUrl = vp_google_static_map_booking_url($mapsApiKey, $plat, $plng, $dlat, $dlng);
+    $featuredMapUrl = vp_google_static_map_booking_url($mapsApiKey, $plat, $plng, $dlat, $dlng, '640x320');
     $featuredPins = vp_booking_map_pin_positions($plat, $plng, $dlat, $dlng);
 }
 $tableRides = $recentRides;
@@ -104,27 +104,6 @@ $completionLine = $statusTotal > 0
 $canceledLine = $canceledN > 0
     ? sprintf('%s canceled (all time)', number_format($canceledN))
     : 'No canceled rides recorded';
-
-$peakRideDay = null;
-$peakRideCount = 0;
-foreach ($ridesByDay as $pt) {
-    if ((int) $pt['c'] > $peakRideCount) {
-        $peakRideCount = (int) $pt['c'];
-        $peakRideDay = $pt['d'];
-    }
-}
-
-$insights = [];
-if ($peakRideDay !== null && $peakRideCount > 0) {
-    $insights[] = 'Busiest day for new rides (last 7 days): ' . date('l j M', strtotime((string) $peakRideDay)) . ' (' . number_format($peakRideCount) . ').';
-}
-if ($riders7d > 0 && $rides7d > 0) {
-    $ratio = $rides7d / $riders7d;
-    $insights[] = 'Roughly ' . number_format($ratio, 1) . ' new rides per new rider sign-up this week (directional only).';
-}
-if ($rides24h === 0 && $rideCount > 0) {
-    $insights[] = 'No rides in the last 24 hours — check demand or app availability.';
-}
 
 $sparkMaxRides = 1;
 foreach ($ridesByDay as $pt) {
@@ -279,8 +258,8 @@ require __DIR__ . '/includes/app_shell_start.php';
                       <img
                         class="vp-dash-featured__map-img"
                         src="<?= vp_h($featuredMapUrl) ?>"
-                        width="480"
-                        height="240"
+                        width="640"
+                        height="320"
                         alt="<?= vp_h($featuredMapAlt) ?>"
                         loading="lazy"
                         decoding="async"
@@ -558,24 +537,6 @@ require __DIR__ . '/includes/app_shell_start.php';
       </section>
     <?php } ?>
   </div>
-
-  <?php if ($insights !== []) { ?>
-    <aside class="vp-dash-layout__aside" aria-label="Signals">
-      <div class="vp-card vp-card--dash-surface">
-        <div class="vp-card__pad">
-          <h3 class="vp-dash-aside-title">Signals</h3>
-          <ul class="vp-dash-timeline">
-            <?php foreach ($insights as $line) { ?>
-              <li class="vp-dash-timeline__item">
-                <span class="vp-dash-timeline__dot" aria-hidden="true"></span>
-                <span class="vp-dash-timeline__text"><?= vp_h($line) ?></span>
-              </li>
-            <?php } ?>
-          </ul>
-        </div>
-      </div>
-    </aside>
-  <?php } ?>
 </div>
 
 <?php require __DIR__ . '/includes/app_shell_end.php'; ?>
