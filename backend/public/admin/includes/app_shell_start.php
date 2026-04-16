@@ -17,7 +17,12 @@ $vpNavActive = $vpNavActive ?? '';
 $vpTopbarTitle = isset($vpTopbarTitle) && $vpTopbarTitle !== ''
     ? $vpTopbarTitle
     : 'Dashboard';
-$initials = vp_admin_initials($admin[1]);
+if (! isset($admin) || ! is_array($admin) || count($admin) < 3) {
+    $hydrated = Auth::currentAdmin();
+    $admin = is_array($hydrated) ? $hydrated : [0, '', ''];
+}
+$adminEmail = isset($admin[1]) && is_string($admin[1]) ? $admin[1] : '';
+$initials = vp_admin_initials($adminEmail);
 $vpSearchPlaceholder = Auth::can('riders.view')
     ? 'Search riders by email…'
     : (Auth::can('rides.view') ? 'Jump to bookings…' : 'Search…');

@@ -18,6 +18,7 @@ Auth::startSession();
 Auth::requireLogin();
 Auth::requirePermission('fleet.manage');
 
+$admin = Auth::currentAdmin();
 $repo = new FleetVehicleRepository(Database::pdo());
 $csrf = Auth::csrfToken();
 

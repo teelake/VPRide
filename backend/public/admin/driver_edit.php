@@ -20,6 +20,7 @@ Auth::startSession();
 Auth::requireLogin();
 Auth::requirePermission('fleet.manage');
 
+$admin = Auth::currentAdmin();
 $pdo = Database::pdo();
 $vehicleRepo = new FleetVehicleRepository($pdo);
 $repo = new ConsoleDriverRepository($pdo, $vehicleRepo);

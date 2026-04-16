@@ -21,6 +21,8 @@ use VprideBackend\RegionRepository;
 use VprideBackend\RideRepository;
 use VprideBackend\RiderUserRepository;
 
+require_once __DIR__ . '/includes/helpers.php';
+
 Config::load($backendRoot . '/.env');
 Auth::startSession();
 Auth::requireLogin();

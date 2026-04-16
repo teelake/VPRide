@@ -7,6 +7,7 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Auth.php';
 
 use VprideBackend\Auth;
+use VprideBackend\Config;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();

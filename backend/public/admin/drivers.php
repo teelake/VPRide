@@ -22,6 +22,7 @@ Auth::startSession();
 Auth::requireLogin();
 Auth::requirePermission('rides.view');
 
+$admin = Auth::currentAdmin();
 $csrf = Auth::csrfToken();
 $pdo = Database::pdo();
 $vehicleRepo = new FleetVehicleRepository($pdo);
