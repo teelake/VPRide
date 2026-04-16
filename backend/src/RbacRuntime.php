@@ -13,6 +13,10 @@ final class RbacRuntime
 {
     public static function can(PDO $pdo, int $roleId, string $permission): bool
     {
+        if (! class_exists(RbacRepository::class, false)) {
+            require_once __DIR__ . '/RbacRepository.php';
+        }
+
         return (new RbacRepository($pdo))->roleCan($roleId, $permission);
     }
 }
