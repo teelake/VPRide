@@ -98,7 +98,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <div class="vp-field">
           <label class="vp-label" for="mapsApiKey">Maps / Geocoding API key</label>
           <input class="vp-input vp-input--mono" id="mapsApiKey" name="mapsApiKey" type="text" value="<?= vp_h($settings['mapsApiKey']) ?>" placeholder="AIza…" autocomplete="off">
-          <p class="vp-field-hint">Returned to the app for geocoding and (with build-time wiring) Maps SDK. Native builds may still mirror this key in Gradle / Info.plist.</p>
+          <p class="vp-field-hint">Returned to the app in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">mapsApiKey</code> (geocoding). If this field is empty, the API can still expose a key from <code class="vp-inline-code">MAPS_API_KEY</code> or <code class="vp-inline-code">GOOGLE_MAPS_API_KEY</code> in <code>.env</code>. Native Maps SDK builds should also set the key in Gradle / iOS (<code>maps.api.key</code> / <code>GMSApiKey</code>).</p>
         </div>
 
         <div class="vp-field">

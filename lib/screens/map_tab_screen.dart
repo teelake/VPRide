@@ -11,6 +11,7 @@ import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/brand/brand_assets.dart';
 import '../core/client/client_config_scope.dart';
+import '../core/config/app_config.dart';
 import '../core/maps/geocode_service.dart';
 import '../core/region/region_config_scope.dart';
 import '../core/region/resolved_region_config.dart';
@@ -38,16 +39,29 @@ class _MapTabScreenState extends State<MapTabScreen>
   LatLng? _cameraTarget;
   bool _rideBusy = false;
   bool _didSeedPickup = false;
+  bool _didAutoRefreshClientConfig = false;
+  bool _configRetryBusy = false;
 
   static const LatLng _fallbackToronto = LatLng(43.6532, -79.3832);
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_didSeedPickup) return;
-    _didSeedPickup = true;
-    final pickupCtrl = RidePickupScope.of(context);
-    pickupCtrl.setFromCamera(_initialTarget(context));
+    if (!_didSeedPickup) {
+      _didSeedPickup = true;
+      final pickupCtrl = RidePickupScope.of(context);
+      pickupCtrl.setFromCamera(_initialTarget(context));
+    }
+    if (!_didAutoRefreshClientConfig &&
+        AppConfig.apiBaseUrl.trim().isNotEmpty) {
+      final cfg = ClientConfigScope.of(context);
+      if (cfg.effectiveMapsApiKey.trim().isEmpty) {
+        _didAutoRefreshClientConfig = true;
+        cfg.refresh().then((_) {
+          if (mounted) setState(() {});
+        });
+      }
+    }
   }
 
   @override
@@ -192,7 +206,24 @@ class _MapTabScreenState extends State<MapTabScreen>
         features.maintenanceMode || !features.rideBookingEnabled;
 
     if (!hasMapsKey) {
-      return _MapPlaceholder(region: region, textTheme: textTheme);
+      return _MapPlaceholder(
+        region: region,
+        textTheme: textTheme,
+        canRetryFromServer: AppConfig.apiBaseUrl.trim().isNotEmpty,
+        retryBusy: _configRetryBusy,
+        onRetryFromServer: AppConfig.apiBaseUrl.trim().isEmpty
+            ? null
+            : () async {
+                setState(() => _configRetryBusy = true);
+                try {
+                  await clientCfg.refresh();
+                } finally {
+                  if (mounted) {
+                    setState(() => _configRetryBusy = false);
+                  }
+                }
+              },
+      );
     }
 
     final initial = _initialTarget(context);
@@ -323,10 +354,16 @@ class _MapPlaceholder extends StatelessWidget {
   const _MapPlaceholder({
     required this.region,
     required this.textTheme,
+    required this.canRetryFromServer,
+    required this.retryBusy,
+    required this.onRetryFromServer,
   });
 
   final ResolvedRegionConfig region;
   final TextTheme textTheme;
+  final bool canRetryFromServer;
+  final bool retryBusy;
+  final Future<void> Function()? onRetryFromServer;
 
   @override
   Widget build(BuildContext context) {
@@ -355,8 +392,9 @@ class _MapPlaceholder extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Add a Maps API key: set it in the admin console (public config), '
-                  'or pass MAPS_API_KEY / maps.api.key (Android) and GMSApiKey (iOS) for native SDK. '
+                  'The app loads your key from GET ${AppConfig.publicConfigPath.startsWith('/') ? AppConfig.publicConfigPath : '/${AppConfig.publicConfigPath}'} '
+                  'on your API (field mapsApiKey). Set it under Admin → Settings, or add MAPS_API_KEY to the server .env. '
+                  'Native maps also need the same key in Android local.properties (maps.api.key) and iOS GMSApiKey. '
                   'Region: ${region.serviceAreaLabel}.',
                   textAlign: TextAlign.center,
                   style: textTheme.bodyMedium?.copyWith(
@@ -364,6 +402,14 @@ class _MapPlaceholder extends StatelessWidget {
                     height: 1.45,
                   ),
                 ),
+                if (canRetryFromServer && onRetryFromServer != null) ...[
+                  const SizedBox(height: 24),
+                  AppPrimaryButton(
+                    label: retryBusy ? 'Loading…' : 'Retry loading config',
+                    isLoading: retryBusy,
+                    onPressed: retryBusy ? null : () => onRetryFromServer!(),
+                  ),
+                ],
               ],
             ),
           ),

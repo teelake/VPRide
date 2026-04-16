@@ -19,18 +19,21 @@ class GoogleAuthService {
   String? _cacheKey;
 
   GoogleSignIn _signIn() {
-    if (_inject != null) return _inject;
+    final inject = _inject;
+    if (inject != null) return inject;
     final id = (_clientConfig?.effectiveGoogleWebClientId ??
             AppConfig.googleOAuthServerClientId)
         .trim();
     final key = id.isEmpty ? '_empty_' : id;
-    if (_cached != null && _cacheKey == key) return _cached;
+    final cached = _cached;
+    if (cached != null && _cacheKey == key) return cached;
     _cacheKey = key;
-    _cached = GoogleSignIn(
+    final created = GoogleSignIn(
       scopes: const <String>['email', 'profile'],
       serverClientId: id.isEmpty ? null : id,
     );
-    return _cached;
+    _cached = created;
+    return created;
   }
 
   /// Silent restore of a previous session (optional — call on startup).

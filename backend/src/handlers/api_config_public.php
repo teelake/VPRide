@@ -26,10 +26,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 
 try {
     $settings = (new AppSettingsRepository(Database::pdo()))->getPublicSettings();
+    $mapsForApp = AppSettingsRepository::mapsApiKeyWithEnvFallback(
+        (string) $settings['mapsApiKey'],
+    );
     echo json_encode(
         [
             'googleWebClientId' => $settings['googleWebClientId'],
-            'mapsApiKey' => $settings['mapsApiKey'],
+            'mapsApiKey' => $mapsForApp,
             'minimumAppVersion' => $settings['minimumAppVersion'],
             'features' => $settings['features'],
         ],

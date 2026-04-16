@@ -26,6 +26,27 @@ final class AppSettingsRepository
      *   }
      * }
      */
+    /**
+     * Value saved in admin (or DB defaults) first; if empty, use MAPS_API_KEY or
+     * GOOGLE_MAPS_API_KEY from the environment so GET /api/v1/config/public can
+     * serve mobile without requiring the key to be duplicated only in MySQL.
+     */
+    public static function mapsApiKeyWithEnvFallback(string $fromDatabase): string
+    {
+        $t = trim($fromDatabase);
+        if ($t !== '') {
+            return $t;
+        }
+        foreach (['MAPS_API_KEY', 'GOOGLE_MAPS_API_KEY'] as $envKey) {
+            $raw = getenv($envKey);
+            if (is_string($raw) && trim($raw) !== '') {
+                return trim($raw);
+            }
+        }
+
+        return '';
+    }
+
     public function getPublicSettings(): array
     {
         $defaults = self::defaultPayload();

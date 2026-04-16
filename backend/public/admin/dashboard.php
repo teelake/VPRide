@@ -53,7 +53,9 @@ foreach ($configs as $c) {
 $recentRides = Auth::can('rides.view') ? $rideRepo->listRecent(6) : [];
 
 $dashSettings = (new AppSettingsRepository($pdo))->getPublicSettings();
-$mapsApiKey = (string) ($dashSettings['mapsApiKey'] ?? '');
+$mapsApiKey = AppSettingsRepository::mapsApiKeyWithEnvFallback(
+    (string) ($dashSettings['mapsApiKey'] ?? ''),
+);
 $featuredRide = (Auth::can('rides.view') && $recentRides !== []) ? $recentRides[0] : null;
 $featuredMapUrl = null;
 $featuredPins = null;

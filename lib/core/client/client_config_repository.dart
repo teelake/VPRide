@@ -52,7 +52,10 @@ class ClientConfigRepository extends ChangeNotifier {
     final uri = Uri.parse('$base$path');
     try {
       final response = await _client
-          .get(uri)
+          .get(
+            uri,
+            headers: const {'Accept': 'application/json'},
+          )
           .timeout(const Duration(seconds: 12));
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
