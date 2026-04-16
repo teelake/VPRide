@@ -79,9 +79,17 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Reports', 'href' => vp_url('/admin/reports/rides')],
+        ['label' => 'Riders', 'href' => null],
+    ]);
+?>
   <h1 class="vp-page-title">Reports</h1>
   <p class="vp-page-desc">Search the rider directory and export CSV for audits or support workflows.</p>
 </header>
+
+<?php vp_schema_single_table_alert($pdo, 'rider_users', 'sql/migration_rider_auth.sql', 'Rider reports'); ?>
 
 <?php vp_reports_tabs('riders'); ?>
 
@@ -120,7 +128,31 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-muted-inline"><?= number_format($total) ?> row(s)</p>
     </div>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No riders match this search.</p>
+      <?php if (! \VprideBackend\SchemaInspector::tableExists($pdo, 'rider_users')) { ?>
+        <?php
+          vp_empty_state(
+              'Rider directory unavailable',
+              'Import sql/migration_rider_auth.sql (or full schema), then try again.',
+              [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+          );
+        ?>
+      <?php } elseif ($q !== '') { ?>
+        <?php
+          vp_empty_state(
+              'No riders match this search',
+              'Try a shorter keyword or search by email prefix.',
+              [['label' => 'Clear search', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']],
+          );
+        ?>
+      <?php } else { ?>
+        <?php
+          vp_empty_state(
+              'No riders in the database',
+              'Accounts appear after Google sign-in from the mobile app.',
+              [['label' => 'Rider directory', 'href' => vp_url('/admin/riders'), 'variant' => 'ghost']],
+          );
+        ?>
+      <?php } ?>
     <?php } else { ?>
       <div class="vp-table-wrap">
         <table class="vp-table vp-table--compact">

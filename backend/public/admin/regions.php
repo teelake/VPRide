@@ -76,7 +76,18 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 id="configs-heading" class="vp-section-title">Configuration versions</h2>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No rows yet. Run <code>php scripts/seed.php</code> or create a draft.</p>
+      <?php
+        vp_empty_state(
+            'No region profiles yet',
+            'Seed the database or create your first draft. Only one profile can be live at a time; riders pick it up on the next app sync.',
+            $canManageRegions
+                ? [['label' => 'New draft', 'href' => vp_url('/admin/region/new'), 'variant' => 'primary']]
+                : [['label' => 'Back to overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+        );
+?>
+      <?php if ($canManageRegions) { ?>
+        <p class="vp-field-hint" style="margin-top:1rem; text-align:center;">CLI: <code class="vp-inline-code">php scripts/seed.php</code> (from the backend folder on your machine or CI).</p>
+      <?php } ?>
     <?php } else { ?>
       <div class="vp-table-wrap">
         <table class="vp-table">
@@ -86,6 +97,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">Label</th>
               <th scope="col">Status</th>
               <th scope="col">Updated</th>
+              <th scope="col">Last edited by</th>
               <th scope="col">Actions</th>
             </tr>
           </thead>
@@ -102,12 +114,13 @@ require __DIR__ . '/includes/app_shell_start.php';
                   <?php } ?>
                 </td>
                 <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['updated_at']) ?></td>
+                <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) ($r['updated_by_email'] ?? '') ?: '—') ?></td>
                 <td>
                   <div class="vp-table__actions">
                     <?php if ($canManageRegions) { ?>
                       <a class="vp-btn vp-btn--inline" href="<?= vp_url('/admin/region/' . (int) $r['id']) ?>">Edit</a>
                       <?php if ((int) $r['is_active'] !== 1) { ?>
-                        <form method="post" action="<?= vp_url('/admin/regions') ?>" class="vp-inline-form">
+                        <form method="post" action="<?= vp_url('/admin/regions') ?>" class="vp-inline-form" onsubmit="return confirm(<?= vp_confirm_attr('Make “' . (string) $r['label'] . '” the live region for all rider apps? They will pick this up on the next config sync.') ?>);">
                           <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
                           <input type="hidden" name="activate_id" value="<?= (int) $r['id'] ?>">
                           <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Go live</button>

@@ -94,7 +94,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <div class="vp-table__actions">
                   <a class="vp-btn vp-btn--inline" href="<?= vp_url('/admin/rbac/role/' . (int) $r['id']) ?>">Edit</a>
                   <?php if ((int) $r['is_system'] !== 1 && (int) $r['admin_count'] === 0) { ?>
-                    <form method="post" action="<?= vp_url('/admin/rbac') ?>" class="vp-inline-form" onsubmit="return confirm('Delete this role?');">
+                    <form method="post" action="<?= vp_url('/admin/rbac') ?>" class="vp-inline-form" onsubmit="return confirm(<?= vp_confirm_attr('Permanently delete role “' . (string) $r['label'] . '” (' . (string) $r['slug'] . ')? Reassign any admins first.') ?>);">
                       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
                       <input type="hidden" name="delete_role_id" value="<?= (int) $r['id'] ?>">
                       <button type="submit" class="vp-btn vp-btn--danger-ghost vp-btn--sm">Delete</button>

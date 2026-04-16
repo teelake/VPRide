@@ -36,15 +36,24 @@ final class RegionRepository
     }
 
     /**
-     * @return list<array{id:int,label:string,is_active:int,updated_at:string}>
+     * @return list<array{id:int,label:string,is_active:int,updated_at:string,updated_by_email:?string}>
      */
     public function listConfigs(): array
     {
-        $stmt = $this->pdo->query(
-            'SELECT id, label, is_active, updated_at FROM region_configs ORDER BY id DESC',
-        );
+        try {
+            $stmt = $this->pdo->query(
+                'SELECT c.id, c.label, c.is_active, c.updated_at, a.email AS updated_by_email '
+                . 'FROM region_configs c '
+                . 'LEFT JOIN admins a ON a.id = c.updated_by_admin_id '
+                . 'ORDER BY c.id DESC',
+            );
+        } catch (\PDOException) {
+            $stmt = $this->pdo->query(
+                'SELECT id, label, is_active, updated_at, NULL AS updated_by_email FROM region_configs ORDER BY id DESC',
+            );
+        }
 
-        return $stmt->fetchAll() ?: [];
+        return $stmt === false ? [] : $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

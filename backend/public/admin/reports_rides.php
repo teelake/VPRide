@@ -95,9 +95,17 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Reports', 'href' => vp_url('/admin/reports/rides')],
+        ['label' => 'Rides', 'href' => null],
+    ]);
+?>
   <h1 class="vp-page-title">Reports</h1>
   <p class="vp-page-desc">Filter ride activity, paginate results, and export CSV for spreadsheets.</p>
 </header>
+
+<?php vp_schema_single_table_alert($pdo, 'rides', 'sql/migration_rides.sql', 'Ride reports'); ?>
 
 <?php vp_reports_tabs('rides'); ?>
 
@@ -151,7 +159,23 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-muted-inline"><?= number_format($total) ?> row(s)</p>
     </div>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No rides match these filters.</p>
+      <?php if (\VprideBackend\SchemaInspector::tableExists($pdo, 'rides')) { ?>
+        <?php
+          vp_empty_state(
+              'No rides match these filters',
+              'Widen the date range, clear status, or export an empty template from CSV if you need headers only.',
+              [['label' => 'Reset filters', 'href' => vp_url('/admin/reports/rides'), 'variant' => 'primary']],
+          );
+        ?>
+      <?php } else { ?>
+        <?php
+          vp_empty_state(
+              'Rides table missing',
+              'Import sql/migration_rides.sql, then return to this report.',
+              [['label' => 'Overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+          );
+        ?>
+      <?php } ?>
     <?php } else { ?>
       <div class="vp-table-wrap">
         <table class="vp-table vp-table--compact">

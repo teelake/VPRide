@@ -40,6 +40,7 @@
   root.addEventListener('click', function (e) {
     const t = e.target;
     if (t.classList.contains('vp-remove-country')) {
+      if (!confirm('Remove this country and all of its cities from this draft?')) return;
       const block = t.closest('.vp-country-block');
       if (block && root.querySelectorAll('.vp-country-block').length > 1) {
         block.remove();
@@ -50,6 +51,7 @@
       if (block) addCity(block);
     }
     if (t.classList.contains('vp-remove-city')) {
+      if (!confirm('Remove this city from the list?')) return;
       const row = t.closest('.vp-city-row');
       const list = row && row.closest('.vp-cities-list');
       if (row && list && list.querySelectorAll('.vp-city-row').length > 1) {

@@ -20,7 +20,9 @@ Auth::requirePermission('riders.view');
 
 $admin = Auth::currentAdmin();
 $csrf = Auth::csrfToken();
-$repo = new RiderUserRepository(Database::pdo());
+$pdo = Database::pdo();
+vp_schema_single_table_alert($pdo, 'rider_users', 'sql/migration_rider_auth.sql', 'Rider directory');
+$repo = new RiderUserRepository($pdo);
 
 $q = isset($_GET['q']) ? trim((string) $_GET['q']) : '';
 $page = max(1, (int) ($_GET['page'] ?? 1));
@@ -80,7 +82,35 @@ require __DIR__ . '/includes/app_shell_start.php';
       </form>
     </div>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No riders match this view yet.</p>
+      <?php if (! \VprideBackend\SchemaInspector::tableExists($pdo, 'rider_users')) { ?>
+        <?php
+          vp_empty_state(
+              'Rider accounts table missing',
+              'Run sql/migration_rider_auth.sql (or the full schema) so Google sign-in can create rider_users rows.',
+              [],
+          );
+        ?>
+      <?php } elseif ($q !== '') { ?>
+        <?php
+          $searchActions = [['label' => 'Clear search', 'href' => vp_url('/admin/riders'), 'variant' => 'ghost']];
+          if (Auth::can('reports.view')) {
+              array_unshift($searchActions, ['label' => 'Rider reports', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']);
+          }
+          vp_empty_state(
+              'No results for this search',
+              'Try another keyword, or open reports to scan the full directory with export.',
+              $searchActions,
+          );
+        ?>
+      <?php } else { ?>
+        <?php
+          vp_empty_state(
+              'No riders yet',
+              'Profiles are created when someone signs in with Google on the VP Ride app.',
+              Auth::can('reports.view') ? [['label' => 'Reports & export', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']] : [],
+          );
+        ?>
+      <?php } ?>
     <?php } else { ?>
       <p class="vp-muted-inline" style="margin-bottom:1rem;">Showing <?= number_format(count($rows)) ?> of <?= number_format($total) ?></p>
       <div class="vp-table-wrap">

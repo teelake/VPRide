@@ -112,5 +112,7 @@ function vp_schema_single_table_alert(\PDO $pdo, string $table, string $migratio
  */
 function vp_confirm_attr(string $message): string
 {
-    return htmlspecialchars(json_encode($message, JSON_THROW_ON_ERROR | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP), ENT_QUOTES, 'UTF-8');
+    $j = json_encode($message, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP);
+
+    return htmlspecialchars($j !== false ? $j : '""', ENT_QUOTES, 'UTF-8');
 }

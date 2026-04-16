@@ -175,3 +175,5 @@ function vp_csv_line(array $fields): string
 
     return implode(',', $out) . "\r\n";
 }
+
+require_once __DIR__ . '/ui_components.php';

@@ -47,6 +47,12 @@ if ($isNew) {
         require __DIR__ . '/includes/app_shell_start.php';
         ?>
         <div class="vp-card"><div class="vp-card__pad">
+          <?php
+            vp_breadcrumbs([
+                ['label' => 'Regions', 'href' => vp_url('/admin/regions')],
+                ['label' => 'Not found', 'href' => null],
+            ]);
+        ?>
           <h1 class="vp-page-title">Configuration not found</h1>
           <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
         </div></div>
@@ -232,6 +238,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero vp-page-hero--editor">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Regions', 'href' => vp_url('/admin/regions')],
+        ['label' => $isNew ? 'New draft' : ('Edit · ' . $label), 'href' => null],
+    ]);
+?>
   <a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
   <h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
   <p class="vp-page-desc">

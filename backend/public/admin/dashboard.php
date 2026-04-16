@@ -113,6 +113,8 @@ require __DIR__ . '/includes/app_shell_start.php';
   <p class="vp-page-desc">Performance signals, live routing, and quick paths into VP Ride operations.</p>
 </header>
 
+<?php vp_schema_migration_alerts($pdo); ?>
+
 <div class="vp-kpi-grid" role="list">
   <article class="vp-kpi-card vp-kpi-card--tone-sand" role="listitem">
     <div class="vp-kpi-card__top">
@@ -278,7 +280,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <?php } ?>
 </section>
 
-<?php if (Auth::can('rides.view') && $recentRides !== []) { ?>
+<?php if (Auth::can('rides.view')) { ?>
   <section class="vp-card vp-card--flush-top" aria-labelledby="recent-rides-heading">
     <div class="vp-card__pad">
       <div class="vp-card__head-row">
@@ -290,30 +292,48 @@ require __DIR__ . '/includes/app_shell_start.php';
           <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All rides</a>
         </div>
       </div>
-      <div class="vp-table-wrap">
-        <table class="vp-table vp-table--compact">
-          <thead>
-            <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Rider</th>
-              <th scope="col">Status</th>
-              <th scope="col">Pickup</th>
-              <th scope="col">Created</th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($recentRides as $row) { ?>
+      <?php if ($recentRides !== []) { ?>
+        <div class="vp-table-wrap">
+          <table class="vp-table vp-table--compact">
+            <thead>
               <tr>
-                <td class="vp-table__id"><?= (int) $row['id'] ?></td>
-                <td><?= vp_h((string) $row['rider_email']) ?></td>
-                <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $row['status']) ?></span></td>
-                <td class="vp-table__muted"><?= vp_h((string) ($row['pickup_address'] ?: (($row['pickup_lat'] ?? '') . ', ' . ($row['pickup_lng'] ?? '')))) ?></td>
-                <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) $row['created_at']) ?></td>
+                <th scope="col">ID</th>
+                <th scope="col">Rider</th>
+                <th scope="col">Status</th>
+                <th scope="col">Pickup</th>
+                <th scope="col">Created</th>
               </tr>
-            <?php } ?>
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              <?php foreach ($recentRides as $row) { ?>
+                <tr>
+                  <td class="vp-table__id"><?= (int) $row['id'] ?></td>
+                  <td><?= vp_h((string) $row['rider_email']) ?></td>
+                  <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $row['status']) ?></span></td>
+                  <td class="vp-table__muted"><?= vp_h((string) ($row['pickup_address'] ?: (($row['pickup_lat'] ?? '') . ', ' . ($row['pickup_lng'] ?? '')))) ?></td>
+                  <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) $row['created_at']) ?></td>
+                </tr>
+              <?php } ?>
+            </tbody>
+          </table>
+        </div>
+      <?php } elseif (\VprideBackend\SchemaInspector::tableExists($pdo, 'rides')) { ?>
+        <?php
+          vp_empty_state(
+              'No rides to show yet',
+              'Latest requests from the app will appear here once riders start booking.',
+              [['label' => 'View all rides', 'href' => vp_url('/admin/rides'), 'variant' => 'primary']],
+          );
+        ?>
+      <?php } else { ?>
+        <?php
+          vp_empty_state(
+              'Rides not set up',
+              'Import sql/migration_rides.sql on this database to enable ride history.',
+              [],
+          );
+        ?>
+      <?php } ?>
     </div>
   </section>
 <?php } ?>

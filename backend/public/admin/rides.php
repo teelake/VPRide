@@ -19,7 +19,11 @@ Auth::requireLogin();
 Auth::requirePermission('rides.view');
 
 $admin = Auth::currentAdmin();
-$rows = (new RideRepository(Database::pdo()))->listRecent(200);
+$pdo = Database::pdo();
+vp_schema_single_table_alert($pdo, 'rides', 'sql/migration_rides.sql', 'Rides');
+$rows = \VprideBackend\SchemaInspector::tableExists($pdo, 'rides')
+    ? (new RideRepository($pdo))->listRecent(200)
+    : [];
 $csrf = Auth::csrfToken();
 
 header('Content-Type: text/html; charset=utf-8');
@@ -52,7 +56,30 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 id="rides-heading" class="vp-section-title">Recent activity</h2>
     <?php if ($rows === []) { ?>
-      <p class="vp-page-desc" style="margin-bottom:0;">No rides yet.</p>
+      <?php if (\VprideBackend\SchemaInspector::tableExists($pdo, 'rides')) { ?>
+        <?php
+          $rideEmptyActions = [];
+          if (Auth::can('reports.view')) {
+              $rideEmptyActions[] = ['label' => 'Open ride reports', 'href' => vp_url('/admin/reports/rides'), 'variant' => 'primary'];
+          }
+          if (Auth::can('settings.manage')) {
+              $rideEmptyActions[] = ['label' => 'Check booking flags', 'href' => vp_url('/admin/settings'), 'variant' => 'ghost'];
+          }
+          vp_empty_state(
+              'No rides in the system yet',
+              'When riders request trips from the mobile app, they will show up here and in reports.',
+              $rideEmptyActions,
+          );
+        ?>
+      <?php } else { ?>
+        <?php
+          vp_empty_state(
+              'Rides table not installed',
+              'Import sql/migration_rides.sql on this database, then refresh.',
+              [],
+          );
+        ?>
+      <?php } ?>
     <?php } else { ?>
       <div class="vp-table-wrap">
         <table class="vp-table">

@@ -65,6 +65,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Overview', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'App settings', 'href' => null],
+    ]);
+?>
   <h1 class="vp-page-title">Public app configuration</h1>
   <p class="vp-page-desc">Keys, version rules, and mobile feature flags delivered to VP Ride apps on each config sync. The app should read the <code class="vp-inline-code">features</code> object from the public config response.</p>
 </header>

@@ -63,6 +63,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero vp-page-hero--editor">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Team', 'href' => vp_url('/admin/team')],
+        ['label' => 'New administrator', 'href' => null],
+    ]);
+?>
   <a class="vp-back" href="<?= vp_url('/admin/team') ?>"><span class="vp-back__arrow">←</span> Team</a>
   <h1 class="vp-page-title">New administrator</h1>
   <p class="vp-page-desc">Create a console login. The person should sign in with this email and password.</p>

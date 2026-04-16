@@ -56,6 +56,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero vp-page-hero--editor">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => 'Permission catalog', 'href' => null],
+    ]);
+?>
   <a class="vp-back" href="<?= vp_url('/admin/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
   <h1 class="vp-page-title">Permission catalog</h1>
   <p class="vp-page-desc">New keys appear in role editors immediately. The mobile app and public APIs do not use these — they only gate the console.</p>

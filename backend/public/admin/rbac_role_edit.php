@@ -38,6 +38,10 @@ if (! $isNew && $roleRow === null) {
     $vpTopbarTitle = 'Not found';
     require __DIR__ . '/includes/head.php';
     require __DIR__ . '/includes/app_shell_start.php';
+    vp_breadcrumbs([
+        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => 'Not found', 'href' => null],
+    ]);
     echo '<p class="vp-page-desc"><a class="vp-back" href="' . vp_h(vp_url('/admin/rbac')) . '"><span class="vp-back__arrow">←</span> Roles</a></p>';
     echo '<p>Role not found.</p>';
     require __DIR__ . '/includes/app_shell_end.php';
@@ -115,6 +119,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <header class="vp-page-hero vp-page-hero--editor">
+  <?php
+    vp_breadcrumbs([
+        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => $isNew ? 'New role' : 'Edit role', 'href' => null],
+    ]);
+?>
   <a class="vp-back" href="<?= vp_url('/admin/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
   <h1 class="vp-page-title"><?= $isNew ? 'New role' : 'Edit role' ?></h1>
   <p class="vp-page-desc"><?= $isSuper ? 'This role has full console access. Permission checkboxes are not used.' : 'Toggle capabilities for this role. Users must sign out and back in for session changes to apply everywhere.' ?></p>
