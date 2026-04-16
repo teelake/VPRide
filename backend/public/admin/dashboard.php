@@ -220,10 +220,144 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <div class="vp-dash-layout">
   <div class="vp-dash-layout__main">
+    <?php if (Auth::can('rides.view')) { ?>
+      <div class="vp-dash-ops" aria-labelledby="ops-monitor-heading">
+        <div class="vp-dash-ops__monitor">
+          <div class="vp-dash-ops__monitor-head">
+            <h2 id="ops-monitor-heading" class="vp-dash-ops__monitor-title">Live booking monitor</h2>
+            <?php if (Auth::can('regions.view')) { ?>
+              <span class="vp-dash-ops__tag"><?= vp_h($liveRegionOk ? $liveLabel : 'No live region') ?></span>
+            <?php } ?>
+          </div>
+          <?php if ($featuredRide !== null && $featuredPins !== null) { ?>
+            <section class="vp-card vp-card--dash-surface vp-dash-featured vp-dash-featured--embedded" aria-labelledby="featured-booking-heading">
+              <div class="vp-card__pad vp-dash-featured__grid">
+                <div class="vp-dash-featured__copy">
+                  <p class="vp-dash-featured__eyebrow">Ride #<?= (int) $featuredRide['id'] ?></p>
+                  <h3 id="featured-booking-heading" class="vp-dash-featured__h">
+                    <span class="vp-dash-featured__rider"><?= vp_h((string) $featuredRide['rider_email']) ?></span>
+                  </h3>
+                  <div class="vp-dash-featured__chips">
+                    <span class="vp-status-cell">
+                      <span class="vp-status-dot <?= vp_h(vp_ride_status_dot_class((string) $featuredRide['status'])) ?>" aria-hidden="true"></span>
+                      <span class="vp-status-cell__text"><?= vp_h((string) $featuredRide['status']) ?></span>
+                    </span>
+                    <span class="vp-dash-featured__time"><?= vp_h(vp_relative_time((string) $featuredRide['created_at'])) ?></span>
+                  </div>
+                  <dl class="vp-dash-featured__route">
+                    <div>
+                      <dt>Pickup</dt>
+                      <dd><?= vp_h((string) ($featuredRide['pickup_address'] !== '' && $featuredRide['pickup_address'] !== null
+                          ? $featuredRide['pickup_address']
+                          : number_format((float) $featuredRide['pickup_lat'], 5) . ', ' . number_format((float) $featuredRide['pickup_lng'], 5))) ?></dd>
+                    </div>
+                    <div>
+                      <dt>Drop-off</dt>
+                      <dd><?= vp_h((string) (($featuredRide['dropoff_address'] ?? '') !== ''
+                          ? $featuredRide['dropoff_address']
+                          : (($featuredRide['dropoff_lat'] ?? null) !== null && ($featuredRide['dropoff_lat'] ?? '') !== ''
+                              ? number_format((float) $featuredRide['dropoff_lat'], 5) . ', ' . number_format((float) $featuredRide['dropoff_lng'], 5)
+                              : '—'))) ?></dd>
+                    </div>
+                  </dl>
+                  <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
+                </div>
+                <div class="vp-dash-featured__visual" aria-hidden="true">
+                  <div class="vp-dash-featured__car" title="Booking preview">
+                    <svg class="vp-dash-featured__car-svg" width="140" height="72" viewBox="0 0 140 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="M8 44h18l8-16h56l14 16h30v8H8v-8z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
+                      <path d="M34 28h48l10 16H38l-4-16z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
+                      <circle cx="36" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
+                      <circle cx="102" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
+                      <path d="M118 36h12l6 8h-10l-8-8z" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
+                    </svg>
+                  </div>
+                  <div class="vp-dash-featured__map">
+                    <?php if ($featuredMapUrl !== null) { ?>
+                      <?php
+                        $featuredMapAlt = 'Map preview: pickup'
+                            . ($featuredPins['drop'] !== null ? ' and drop-off' : '')
+                            . ' for booking #' . (int) $featuredRide['id'] . '.';
+                        ?>
+                      <img
+                        class="vp-dash-featured__map-img"
+                        src="<?= vp_h($featuredMapUrl) ?>"
+                        width="480"
+                        height="240"
+                        alt="<?= vp_h($featuredMapAlt) ?>"
+                        loading="lazy"
+                        decoding="async"
+                      >
+                    <?php } else { ?>
+                      <div class="vp-dash-featured__map-fake">
+                        <svg class="vp-dash-featured__map-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                          <rect width="100" height="100" fill="#eef1f6"/>
+                          <path d="M0 62 Q25 58 50 62 T100 62 V100 H0Z" fill="#e2e8f0"/>
+                          <path d="M38 0 L42 100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
+                          <path d="M72 0 L68 100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
+                          <path d="M0 38 H100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
+                        </svg>
+                        <span
+                          class="vp-dash-featured__pin vp-dash-featured__pin--pick"
+                          style="left: <?= (string) round($featuredPins['pick']['x'], 2) ?>%;top: <?= (string) round($featuredPins['pick']['y'], 2) ?>%;"
+                        ></span>
+                        <?php if ($featuredPins['drop'] !== null) { ?>
+                          <span
+                            class="vp-dash-featured__pin vp-dash-featured__pin--drop"
+                            style="left: <?= (string) round($featuredPins['drop']['x'], 2) ?>%;top: <?= (string) round($featuredPins['drop']['y'], 2) ?>%;"
+                          ></span>
+                        <?php } ?>
+                        <?php if ($mapsApiKey === '') { ?>
+                          <p class="vp-dash-featured__map-hint">Add a Maps API key in Settings for a live map tile.</p>
+                        <?php } ?>
+                      </div>
+                    <?php } ?>
+                  </div>
+                </div>
+              </div>
+            </section>
+          <?php } else { ?>
+            <div class="vp-card vp-card--dash-surface vp-dash-ops__empty">
+              <div class="vp-card__pad">
+                <p class="vp-page-desc" style="margin:0;">No bookings yet — the map and route preview will appear when riders request trips.</p>
+              </div>
+            </div>
+          <?php } ?>
+        </div>
+        <div class="vp-card vp-card--dash-surface vp-dash-ops__feed">
+          <div class="vp-card__pad">
+            <div class="vp-dash-feed__head">
+              <h2 class="vp-dash-feed__title">Recent activity</h2>
+              <a class="vp-dash-feed__all" href="<?= vp_url('/admin/rides') ?>">View all</a>
+            </div>
+            <?php if ($activityRides !== []) { ?>
+              <ul class="vp-activity-feed">
+                <?php foreach ($activityRides as $r) { ?>
+                  <li class="vp-activity-feed__item">
+                    <span class="vp-activity-feed__avatar" aria-hidden="true"><?= vp_h(vp_admin_initials((string) $r['rider_email'])) ?></span>
+                    <div class="vp-activity-feed__body">
+                      <div class="vp-activity-feed__top">
+                        <span class="vp-activity-feed__name"><?= vp_h((string) $r['rider_email']) ?></span>
+                        <span class="vp-activity-badge <?= vp_h(vp_ride_activity_badge_mod((string) $r['status'])) ?>"><?= vp_h(strtoupper(str_replace('_', ' ', (string) $r['status']))) ?></span>
+                      </div>
+                      <p class="vp-activity-feed__route"><?= vp_h(vp_ride_route_summary($r)) ?></p>
+                      <time class="vp-activity-feed__time" datetime="<?= vp_h((string) $r['created_at']) ?>"><?= vp_h(vp_relative_time((string) $r['created_at'])) ?> · #<?= (int) $r['id'] ?></time>
+                    </div>
+                  </li>
+                <?php } ?>
+              </ul>
+            <?php } else { ?>
+              <p class="vp-page-desc" style="margin:0;">No ride activity to show yet.</p>
+            <?php } ?>
+          </div>
+        </div>
+      </div>
+    <?php } ?>
+
     <section class="vp-bi-section vp-bi-section--dash" aria-labelledby="bi-heading">
       <div class="vp-bi-section__head">
         <div>
-          <h2 id="bi-heading" class="vp-bi-section__title">Activity</h2>
+          <h2 id="bi-heading" class="vp-bi-section__title">Volume &amp; mix</h2>
           <p class="vp-bi-section__lede">Seven-day volume and status distribution. Export detail from Reports.</p>
         </div>
         <div class="vp-bi-section__actions">
@@ -316,97 +450,72 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
     </section>
 
-    <?php if (Auth::can('rides.view')) { ?>
-      <?php if ($featuredRide !== null && $featuredPins !== null) { ?>
-        <section class="vp-card vp-card--dash-surface vp-dash-featured" aria-labelledby="featured-booking-heading">
-          <div class="vp-card__pad vp-dash-featured__grid">
-            <div class="vp-dash-featured__copy">
-              <p class="vp-dash-featured__eyebrow">Latest booking</p>
-              <h2 id="featured-booking-heading" class="vp-dash-featured__h">
-                #<?= (int) $featuredRide['id'] ?>
-                <span class="vp-dash-featured__rider"><?= vp_h((string) $featuredRide['rider_email']) ?></span>
-              </h2>
-              <div class="vp-dash-featured__chips">
-                <span class="vp-status-cell">
-                  <span class="vp-status-dot <?= vp_h(vp_ride_status_dot_class((string) $featuredRide['status'])) ?>" aria-hidden="true"></span>
-                  <span class="vp-status-cell__text"><?= vp_h((string) $featuredRide['status']) ?></span>
-                </span>
-                <span class="vp-dash-featured__time"><?= vp_h((string) $featuredRide['created_at']) ?></span>
+    <?php if ($statusTotal > 0 && $statusRows !== []) { ?>
+      <section class="vp-card vp-card--dash-surface vp-dash-distribution" aria-labelledby="dist-heading">
+        <div class="vp-card__pad">
+          <h2 id="dist-heading" class="vp-dash-distribution__title">Booking status mix</h2>
+          <p class="vp-dash-distribution__lede">Share of rides by status (all time in this database).</p>
+          <div class="vp-dist-stack" role="img" aria-label="Status share of all rides">
+            <?php foreach ($statusRows as $row) {
+                $st = (string) $row['status'];
+                $w = $statusTotal > 0 ? max(1, (int) round(100 * (int) $row['c'] / $statusTotal)) : 0;
+                $segClass = 'vp-dist-stack__seg--' . preg_replace('/[^a-z]/', '', strtolower(str_replace(' ', '', $st)));
+                if ($segClass === 'vp-dist-stack__seg--') {
+                    $segClass = 'vp-dist-stack__seg--other';
+                }
+                ?>
+              <span class="vp-dist-stack__seg <?= vp_h($segClass) ?>" style="width: <?= (string) $w ?>%;" title="<?= vp_h($st . ': ' . (string) (int) $row['c']) ?>"></span>
+            <?php } ?>
+          </div>
+          <ul class="vp-dist-legend">
+            <?php foreach ($statusRows as $row) {
+                $st = (string) $row['status'];
+                $pct = $statusTotal > 0 ? (int) round(100 * (int) $row['c'] / $statusTotal) : 0;
+                ?>
+              <li class="vp-dist-legend__item">
+                <span class="vp-status-dot <?= vp_h(vp_ride_status_dot_class($st)) ?>" aria-hidden="true"></span>
+                <span class="vp-dist-legend__name"><?= vp_h($st) ?></span>
+                <span class="vp-dist-legend__pct"><?= (string) $pct ?>%</span>
+              </li>
+            <?php } ?>
+          </ul>
+          <div class="vp-health-meters" role="list">
+            <div class="vp-health-meter" role="listitem">
+              <div class="vp-health-meter__head">
+                <span class="vp-health-meter__label">Live configuration</span>
+                <span class="vp-health-meter__value"><?= (string) $configHealthPct ?>%</span>
               </div>
-              <dl class="vp-dash-featured__route">
-                <div>
-                  <dt>Pickup</dt>
-                  <dd><?= vp_h((string) ($featuredRide['pickup_address'] !== '' && $featuredRide['pickup_address'] !== null
-                      ? $featuredRide['pickup_address']
-                      : number_format((float) $featuredRide['pickup_lat'], 5) . ', ' . number_format((float) $featuredRide['pickup_lng'], 5))) ?></dd>
-                </div>
-                <div>
-                  <dt>Drop-off</dt>
-                  <dd><?= vp_h((string) (($featuredRide['dropoff_address'] ?? '') !== ''
-                      ? $featuredRide['dropoff_address']
-                      : (($featuredRide['dropoff_lat'] ?? null) !== null && ($featuredRide['dropoff_lat'] ?? '') !== ''
-                          ? number_format((float) $featuredRide['dropoff_lat'], 5) . ', ' . number_format((float) $featuredRide['dropoff_lng'], 5)
-                          : '—'))) ?></dd>
-                </div>
-              </dl>
-              <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
+              <div class="vp-health-meter__track" aria-hidden="true">
+                <span class="vp-health-meter__fill" style="width: <?= (string) $configHealthPct ?>%;"></span>
+              </div>
+              <p class="vp-health-meter__hint"><?= $liveRegionOk ? 'A region is live for rider routing.' : 'Promote a region so apps receive live config.' ?></p>
             </div>
-            <div class="vp-dash-featured__visual" aria-hidden="true">
-              <div class="vp-dash-featured__car" title="Booking preview">
-                <svg class="vp-dash-featured__car-svg" width="140" height="72" viewBox="0 0 140 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M8 44h18l8-16h56l14 16h30v8H8v-8z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
-                  <path d="M34 28h48l10 16H38l-4-16z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
-                  <circle cx="36" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
-                  <circle cx="102" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
-                  <path d="M118 36h12l6 8h-10l-8-8z" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
-                </svg>
+            <div class="vp-health-meter" role="listitem">
+              <div class="vp-health-meter__head">
+                <span class="vp-health-meter__label">Completion pipeline</span>
+                <span class="vp-health-meter__value"><?= $statusTotal > 0 ? vp_h((string) $completionPct) . '%' : '—' ?></span>
               </div>
-              <div class="vp-dash-featured__map">
-                <?php if ($featuredMapUrl !== null) { ?>
-                  <?php
-                    $featuredMapAlt = 'Map preview: pickup'
-                        . ($featuredPins['drop'] !== null ? ' and drop-off' : '')
-                        . ' for booking #' . (int) $featuredRide['id'] . '.';
-                    ?>
-                  <img
-                    class="vp-dash-featured__map-img"
-                    src="<?= vp_h($featuredMapUrl) ?>"
-                    width="480"
-                    height="240"
-                    alt="<?= vp_h($featuredMapAlt) ?>"
-                    loading="lazy"
-                    decoding="async"
-                  >
-                <?php } else { ?>
-                  <div class="vp-dash-featured__map-fake">
-                    <svg class="vp-dash-featured__map-bg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                      <rect width="100" height="100" fill="#eef1f6"/>
-                      <path d="M0 62 Q25 58 50 62 T100 62 V100 H0Z" fill="#e2e8f0"/>
-                      <path d="M38 0 L42 100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
-                      <path d="M72 0 L68 100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
-                      <path d="M0 38 H100" stroke="#d8dee9" stroke-width="0.35" vector-effect="non-scaling-stroke"/>
-                    </svg>
-                    <span
-                      class="vp-dash-featured__pin vp-dash-featured__pin--pick"
-                      style="left: <?= (string) round($featuredPins['pick']['x'], 2) ?>%;top: <?= (string) round($featuredPins['pick']['y'], 2) ?>%;"
-                    ></span>
-                    <?php if ($featuredPins['drop'] !== null) { ?>
-                      <span
-                        class="vp-dash-featured__pin vp-dash-featured__pin--drop"
-                        style="left: <?= (string) round($featuredPins['drop']['x'], 2) ?>%;top: <?= (string) round($featuredPins['drop']['y'], 2) ?>%;"
-                      ></span>
-                    <?php } ?>
-                    <?php if ($mapsApiKey === '') { ?>
-                      <p class="vp-dash-featured__map-hint">Add a Maps API key in Settings for a live map tile.</p>
-                    <?php } ?>
-                  </div>
-                <?php } ?>
+              <div class="vp-health-meter__track" aria-hidden="true">
+                <span class="vp-health-meter__fill vp-health-meter__fill--success" style="width: <?= $statusTotal > 0 ? (string) $completionPct : '0'; ?>%;"></span>
               </div>
+              <p class="vp-health-meter__hint">Completed rides vs all recorded statuses.</p>
+            </div>
+            <div class="vp-health-meter" role="listitem">
+              <div class="vp-health-meter__head">
+                <span class="vp-health-meter__label">Demand pulse (24h vs 7d avg)</span>
+                <span class="vp-health-meter__value"><?= (string) $pulsePct ?>%</span>
+              </div>
+              <div class="vp-health-meter__track" aria-hidden="true">
+                <span class="vp-health-meter__fill vp-health-meter__fill--pulse" style="width: <?= (string) $pulsePct ?>%;"></span>
+              </div>
+              <p class="vp-health-meter__hint">100% means today’s last-24h volume matches the daily average over the past week.</p>
             </div>
           </div>
-        </section>
-      <?php } ?>
+        </div>
+      </section>
+    <?php } ?>
 
+    <?php if (Auth::can('rides.view')) { ?>
       <section class="vp-card vp-card--dash-surface vp-card--flush-top" aria-labelledby="recent-rides-heading">
         <div class="vp-card__pad">
           <div class="vp-card__head-row">
