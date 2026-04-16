@@ -3156,8 +3156,80 @@ html {
 }
 
 /* ——— Settings toggles ——— */
-.vp-settings-form .vp-card + .vp-card {
+.vp-settings-form .vp-card + .vp-card,
+.vp-settings-tabs .vp-tab-panel .vp-card + .vp-card {
   margin-top: 1.25rem;
+}
+
+/* Settings category tabs (CSS-only radio tabs) */
+.vp-settings-tabs {
+  margin-bottom: 0;
+}
+
+.vp-settings-tabs .vp-tablist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--vp-border);
+}
+
+.vp-settings-tabs .vp-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.55rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--vp-muted);
+  background: var(--vp-surface-elevated);
+  border: 1px solid var(--vp-border);
+  border-radius: var(--vp-radius-sm) var(--vp-radius-sm) 0 0;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: -1px;
+  transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+
+.vp-settings-tabs .vp-tab:hover {
+  color: var(--vp-text);
+}
+
+#settings_tab_keys:focus-visible ~ .vp-tablist label[for="settings_tab_keys"],
+#settings_tab_welcome:focus-visible ~ .vp-tablist label[for="settings_tab_welcome"],
+#settings_tab_features:focus-visible ~ .vp-tablist label[for="settings_tab_features"] {
+  outline: 2px solid var(--vp-gold);
+  outline-offset: 2px;
+}
+
+#settings_tab_keys:checked ~ .vp-tablist label[for="settings_tab_keys"],
+#settings_tab_welcome:checked ~ .vp-tablist label[for="settings_tab_welcome"],
+#settings_tab_features:checked ~ .vp-tablist label[for="settings_tab_features"] {
+  color: var(--vp-text);
+  background: var(--vp-surface);
+  border-bottom-color: var(--vp-surface);
+  font-weight: 800;
+}
+
+.vp-settings-tabs .vp-tab-panels .vp-tab-panel {
+  display: none;
+  animation: vp-settings-tab-in 0.18s ease;
+}
+
+#settings_tab_keys:checked ~ .vp-tab-panels .vp-tab-panel--keys,
+#settings_tab_welcome:checked ~ .vp-tab-panels .vp-tab-panel--welcome,
+#settings_tab_features:checked ~ .vp-tab-panels .vp-tab-panel--features {
+  display: block;
+}
+
+@keyframes vp-settings-tab-in {
+  from {
+    opacity: 0.88;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .vp-form-actions--page {

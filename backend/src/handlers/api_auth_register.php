@@ -8,10 +8,12 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
+require_once $backendRoot . '/src/Mailer.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\Mailer;
 use VprideBackend\RateLimiter;
 use VprideBackend\RiderAuthService;
 
@@ -62,6 +64,33 @@ if (isset($data['displayName']) && is_string($data['displayName'])) {
 
 try {
     $out = (new RiderAuthService(Database::pdo()))->registerWithPassword($email, $password, $displayName);
+    try {
+        $uid = (int) ($out['user']['id'] ?? 0);
+        $riderEmail = (string) ($out['user']['email'] ?? '');
+        $riderName = $out['user']['displayName'] ?? null;
+        $notifyList = trim((string) getenv('RIDER_SIGNUP_NOTIFY_EMAIL'));
+        if ($notifyList !== '') {
+            $body = "A new rider signed up on the mobile app.\n\nEmail: {$riderEmail}\n";
+            if (is_string($riderName) && $riderName !== '') {
+                $body .= 'Display name: ' . $riderName . "\n";
+            }
+            $body .= "User ID: {$uid}\n";
+            foreach (array_filter(array_map('trim', explode(',', $notifyList))) as $adminAddr) {
+                if (! Mailer::sendPlain($adminAddr, 'VP Ride: new rider signup', $body)) {
+                    error_log('[vpride] RIDER_SIGNUP_NOTIFY_EMAIL failed for ' . $adminAddr);
+                }
+            }
+        }
+        if (trim((string) getenv('RIDER_WELCOME_EMAIL')) === '1' && $riderEmail !== '') {
+            $greet = is_string($riderName) && $riderName !== '' ? 'Hi ' . $riderName . ",\n\n" : "Hello,\n\n";
+            $welcomeBody = $greet . "Thanks for creating an account. Open the VP Ride app to book a ride.\n\n— VP Ride";
+            if (! Mailer::sendPlain($riderEmail, 'Welcome to VP Ride', $welcomeBody)) {
+                error_log('[vpride] RIDER_WELCOME_EMAIL failed for ' . $riderEmail);
+            }
+        }
+    } catch (Throwable $mailEx) {
+        error_log('[vpride] rider signup notification: ' . $mailEx->getMessage());
+    }
     echo json_encode($out, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (RuntimeException $e) {
     $code = $e->getMessage();
