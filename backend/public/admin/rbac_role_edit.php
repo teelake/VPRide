@@ -7,6 +7,7 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/RbacRepository.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace VprideBackend;
 
 use PDO;
+use PDOException;
+use RuntimeException;
 
 final class RideRepository
 {
@@ -16,23 +18,41 @@ final class RideRepository
         float $pickupLng,
         ?string $pickupAddress,
     ): int {
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO rides (rider_user_id, status, pickup_lat, pickup_lng, pickup_address) '
-            . 'VALUES (?, \'requested\', ?, ?, ?)',
-        );
-        $stmt->execute([
-            $riderUserId,
-            round($pickupLat, 7),
-            round($pickupLng, 7),
-            $pickupAddress !== null && $pickupAddress !== '' ? $pickupAddress : null,
-        ]);
+        try {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO rides (rider_user_id, status, pickup_lat, pickup_lng, pickup_address) '
+                . 'VALUES (?, \'requested\', ?, ?, ?)',
+            );
+            $stmt->execute([
+                $riderUserId,
+                round($pickupLat, 7),
+                round($pickupLng, 7),
+                $pickupAddress !== null && $pickupAddress !== '' ? $pickupAddress : null,
+            ]);
 
-        return (int) $this->pdo->lastInsertId();
+            return (int) $this->pdo->lastInsertId();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                throw new RuntimeException(
+                    'The rides table is missing. Import backend/sql/migration_rides.sql (or full schema) on this database.',
+                    0,
+                    $e,
+                );
+            }
+            throw $e;
+        }
     }
 
     public function countAll(): int
     {
-        return (int) $this->pdo->query('SELECT COUNT(*) FROM rides')->fetchColumn();
+        try {
+            return (int) $this->pdo->query('SELECT COUNT(*) FROM rides')->fetchColumn();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return 0;
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -60,7 +80,14 @@ final class RideRepository
             $type = is_int($p) ? PDO::PARAM_INT : PDO::PARAM_STR;
             $stmt->bindValue($i++, $p, $type);
         }
-        $stmt->execute();
+        try {
+            $stmt->execute();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return [];
+            }
+            throw $e;
+        }
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -68,10 +95,26 @@ final class RideRepository
     public function countFiltered(?string $status, ?string $fromDate, ?string $toDate): int
     {
         [$sql, $params] = $this->buildFilterQuery($status, $fromDate, $toDate, true);
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
 
-        return (int) $stmt->fetchColumn();
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return 0;
+            }
+            throw $e;
+        }
+    }
+
+    private static function isMissingTable(PDOException $e): bool
+    {
+        $m = $e->getMessage();
+
+        return str_contains($m, '42S02')
+            || str_contains($m, "doesn't exist")
+            || str_contains($m, 'Base table or view not found');
     }
 
     /**

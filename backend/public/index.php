@@ -76,6 +76,12 @@ if ($path === '') {
 }
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+// Preload RBAC so Auth::can() always resolves (guards against partial deploys / opcache oddities).
+if (str_starts_with($path, '/admin')) {
+    require_once $backendRoot . '/src/RbacRepository.php';
+    require_once $backendRoot . '/src/RbacRuntime.php';
+}
+
 if ($path === '/' && $method === 'GET') {
     header('Location: ' . Config::url('/admin/login'));
     exit;

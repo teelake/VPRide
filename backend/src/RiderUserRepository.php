@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace VprideBackend;
 
 use PDO;
+use PDOException;
 
 final class RiderUserRepository
 {
@@ -12,7 +13,14 @@ final class RiderUserRepository
 
     public function countAll(): int
     {
-        return (int) $this->pdo->query('SELECT COUNT(*) FROM rider_users')->fetchColumn();
+        try {
+            return (int) $this->pdo->query('SELECT COUNT(*) FROM rider_users')->fetchColumn();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return 0;
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -40,7 +48,14 @@ final class RiderUserRepository
             $type = is_int($p) ? PDO::PARAM_INT : PDO::PARAM_STR;
             $stmt->bindValue($i++, $p, $type);
         }
-        $stmt->execute();
+        try {
+            $stmt->execute();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return [];
+            }
+            throw $e;
+        }
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
@@ -48,10 +63,26 @@ final class RiderUserRepository
     public function countFiltered(?string $q): int
     {
         [$sql, $params] = $this->buildSearchQuery($q, true);
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->execute($params);
+        try {
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
 
-        return (int) $stmt->fetchColumn();
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return 0;
+            }
+            throw $e;
+        }
+    }
+
+    private static function isMissingTable(PDOException $e): bool
+    {
+        $m = $e->getMessage();
+
+        return str_contains($m, '42S02')
+            || str_contains($m, "doesn't exist")
+            || str_contains($m, 'Base table or view not found');
     }
 
     /**
