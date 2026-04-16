@@ -40,7 +40,7 @@ class ProfileTabScreen extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 signedIn
-                    ? 'Signed in with your Pride account.'
+                    ? 'Signed in with your VP Ride account.'
                     : 'You are browsing as a guest. Sign in to sync trips across devices.',
                 style: textTheme.bodyMedium?.copyWith(
                   color: AppColors.secondary.withValues(alpha: 0.65),

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
@@ -14,12 +16,34 @@ import 'core/region/region_config_repository.dart';
 import 'core/region/region_config_scope.dart';
 import 'core/ride/ride_pickup_controller.dart';
 import 'core/ride/ride_pickup_scope.dart';
+import 'core/logging/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/home_shell_screen.dart';
 import 'screens/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    AppErrorReporter.report(
+      'fatal',
+      details.exceptionAsString(),
+      context: {
+        'library': '${details.library}',
+        'stack': AppErrorReporter.trimStack(details.stack?.toString()),
+      },
+    );
+  };
+
+  PlatformDispatcher.instance.onError = (error, stack) {
+    AppErrorReporter.report(
+      'fatal',
+      error.toString(),
+      context: {'stack': AppErrorReporter.trimStack(stack.toString())},
+    );
+    return true;
+  };
 
   final clientConfigRepository = ClientConfigRepository();
   await clientConfigRepository.loadInitial();
@@ -42,7 +66,22 @@ Future<void> main() async {
 
   final router = GoRouter(
     initialLocation: initialLocation,
-    refreshListenable: authRepository,
+    refreshListenable: Listenable.merge([
+      authRepository,
+      clientConfigRepository,
+    ]),
+    redirect: (context, state) {
+      final path = state.uri.path;
+      if (path == '/welcome' && authRepository.isSignedIn) {
+        return '/home';
+      }
+      if ((path == '/home' || path.startsWith('/home/')) &&
+          !authRepository.isSignedIn &&
+          clientConfigRepository.features.requireSignInForHome) {
+        return '/welcome';
+      }
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/welcome',
@@ -93,7 +132,7 @@ class VprideApp extends StatelessWidget {
         final region = regionRepository.resolved;
         return MaterialApp.router(
           routerConfig: router,
-          title: 'Pride',
+          title: 'VP Ride',
           theme: buildAppTheme(),
           locale: region.materialDefaultLocale,
           supportedLocales: region.supportedLocales,
