@@ -80,9 +80,6 @@ $insights = [];
 if ($peakRideDay !== null && $peakRideCount > 0) {
     $insights[] = 'Busiest day for new rides (last 7 days): ' . date('l j M', strtotime((string) $peakRideDay)) . ' (' . number_format($peakRideCount) . ').';
 }
-if ($rideCount > 0 && $statusTotal > 0) {
-    $insights[] = number_format($completionPct) . '% of recorded rides are marked completed (snapshot of current data).';
-}
 if ($riders7d > 0 && $rides7d > 0) {
     $ratio = $rides7d / $riders7d;
     $insights[] = 'Roughly ' . number_format($ratio, 1) . ' new rides per new rider sign-up this week (directional only).';
