@@ -62,7 +62,7 @@ final class AuthRepository extends ChangeNotifier {
   Future<String?> registerWithEmail({
     required String email,
     required String password,
-    String? displayName,
+    required String displayName,
   }) async {
     _busy = true;
     notifyListeners();
@@ -168,6 +168,9 @@ final class AuthRepository extends ChangeNotifier {
       notifyListeners();
       return null;
     } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        return e.message;
+      }
       if (e.statusCode == 409) {
         return 'This email already has a password account. Sign in with email, '
             'or use a different Google account.';

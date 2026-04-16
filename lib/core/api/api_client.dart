@@ -28,13 +28,12 @@ final class ApiClient {
   Future<Map<String, dynamic>> postAuthRegister({
     required String email,
     required String password,
-    String? displayName,
+    required String displayName,
   }) async {
     final body = <String, dynamic>{
       'email': email,
       'password': password,
-      if (displayName != null && displayName.trim().isNotEmpty)
-        'displayName': displayName.trim(),
+      'displayName': displayName.trim(),
     };
     final res = await _client
         .post(
