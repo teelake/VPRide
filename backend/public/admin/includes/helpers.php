@@ -40,6 +40,83 @@ function vp_console_public_url(): string
     return rtrim($origin . \VprideBackend\Config::url('/'), '/');
 }
 
+/**
+ * Google Static Maps URL for pickup / optional drop-off (returns null if API key empty).
+ */
+function vp_google_static_map_booking_url(
+    string $mapsApiKey,
+    float $pickupLat,
+    float $pickupLng,
+    ?float $dropoffLat,
+    ?float $dropoffLng,
+): ?string {
+    $key = trim($mapsApiKey);
+    if ($key === '') {
+        return null;
+    }
+    $base = 'https://maps.googleapis.com/maps/api/staticmap';
+    $q = [
+        'size' => '480x240',
+        'scale' => '2',
+        'maptype' => 'roadmap',
+        'key' => $key,
+    ];
+    $hasDrop = $dropoffLat !== null && $dropoffLng !== null
+        && abs($dropoffLat) <= 90 && abs($dropoffLng) <= 180;
+    $pickSeg = $pickupLat . ',' . $pickupLng;
+    if ($hasDrop) {
+        $dropSeg = $dropoffLat . ',' . $dropoffLng;
+        $q['visible'] = $pickSeg . '|' . $dropSeg;
+        $markersPickup = 'color:0x2563eb|label:P|' . $pickSeg;
+        $markersDrop = 'color:0xea580c|label:D|' . $dropSeg;
+        return $base . '?' . http_build_query($q)
+            . '&markers=' . rawurlencode($markersPickup)
+            . '&markers=' . rawurlencode($markersDrop);
+    }
+    $q['center'] = $pickSeg;
+    $q['zoom'] = '14';
+    $markersPickup = 'color:0x2563eb|label:P|' . $pickSeg;
+
+    return $base . '?' . http_build_query($q) . '&markers=' . rawurlencode($markersPickup);
+}
+
+/**
+ * Normalized pin positions (percent) for a simple CSS/SVG fallback map.
+ *
+ * @return array{pick: array{x: float, y: float}, drop: ?array{x: float, y: float}}
+ */
+function vp_booking_map_pin_positions(
+    float $pickupLat,
+    float $pickupLng,
+    ?float $dropoffLat,
+    ?float $dropoffLng,
+): array {
+    if ($dropoffLat === null || $dropoffLng === null) {
+        return [
+            'pick' => ['x' => 50.0, 'y' => 50.0],
+            'drop' => null,
+        ];
+    }
+    $minLat = min($pickupLat, $dropoffLat);
+    $maxLat = max($pickupLat, $dropoffLat);
+    $minLng = min($pickupLng, $dropoffLng);
+    $maxLng = max($pickupLng, $dropoffLng);
+    $latSpan = max(0.00015, $maxLat - $minLat);
+    $lngSpan = max(0.00015, $maxLng - $minLng);
+    $pad = 18;
+    $toX = static function (float $lng) use ($minLng, $lngSpan, $pad): float {
+        return $pad + (100 - 2 * $pad) * ($lng - $minLng) / $lngSpan;
+    };
+    $toY = static function (float $lat) use ($minLat, $latSpan, $pad): float {
+        return $pad + (100 - 2 * $pad) * (1 - ($lat - $minLat) / $latSpan);
+    };
+
+    return [
+        'pick' => ['x' => $toX($pickupLng), 'y' => $toY($pickupLat)],
+        'drop' => ['x' => $toX($dropoffLng), 'y' => $toY($dropoffLat)],
+    ];
+}
+
 /** CSS modifier for ride status dots (dashboard / tables). */
 function vp_ride_status_dot_class(string $status): string
 {

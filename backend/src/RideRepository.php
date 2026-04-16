@@ -144,7 +144,7 @@ final class RideRepository
 
         return [
             'SELECT r.id, r.status, r.pickup_lat, r.pickup_lng, r.pickup_address, '
-            . 'r.dropoff_address, r.created_at, u.email AS rider_email '
+            . 'r.dropoff_lat, r.dropoff_lng, r.dropoff_address, r.created_at, u.email AS rider_email '
             . "FROM rides r INNER JOIN rider_users u ON u.id = r.rider_user_id WHERE {$w}",
             $params,
         ];
