@@ -40,6 +40,26 @@ function vp_console_public_url(): string
     return rtrim($origin . \VprideBackend\Config::url('/'), '/');
 }
 
+/** CSS modifier for ride status dots (dashboard / tables). */
+function vp_ride_status_dot_class(string $status): string
+{
+    $s = strtolower(trim($status));
+    if ($s === '') {
+        return 'vp-status-dot--neutral';
+    }
+    if (str_contains($s, 'complete')) {
+        return 'vp-status-dot--success';
+    }
+    if (str_contains($s, 'cancel')) {
+        return 'vp-status-dot--danger';
+    }
+    if (str_contains($s, 'pending') || str_contains($s, 'request') || str_contains($s, 'progress') || str_contains($s, 'active')) {
+        return 'vp-status-dot--warn';
+    }
+
+    return 'vp-status-dot--neutral';
+}
+
 /** Two-letter avatar label from admin email (e.g. "jd" from "jane.doe@x.com"). */
 function vp_admin_initials(string $email): string
 {
