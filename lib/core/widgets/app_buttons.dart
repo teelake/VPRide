@@ -107,7 +107,9 @@ class AppSecondaryButton extends StatelessWidget {
   }
 }
 
-/// Multicolor Google mark for “Continue with Google” (see Google branding guidelines).
+/// Pre-approved **icon-only** mark from Google’s Sign in with Google asset pack (Android,
+/// neutral / rounded). Source: https://developers.google.com/identity/branding-guidelines
+/// → “Download Pre-Approved Brand Icons” (`signin-assets.zip`, `android_neutral_rd_na@3x.png`).
 class GoogleSignInMark extends StatelessWidget {
   const GoogleSignInMark({super.key, this.size = 22});
 
@@ -119,7 +121,7 @@ class GoogleSignInMark extends StatelessWidget {
       width: size,
       height: size,
       child: Image.asset(
-        'assets/brand/google_g_logo.png',
+        'assets/brand/google_signin_mark_official.png',
         fit: BoxFit.contain,
         filterQuality: FilterQuality.medium,
       ),
