@@ -2461,32 +2461,7 @@ html {
 }
 
 .vp-dash-featured__visual {
-  display: grid;
-  gap: 1rem;
-  align-items: stretch;
-}
-
-@media (min-width: 520px) {
-  .vp-dash-featured__visual {
-    grid-template-columns: minmax(0, 0.42fr) minmax(0, 1fr);
-    align-items: center;
-  }
-}
-
-.vp-dash-featured__car {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  background: linear-gradient(165deg, #f8fafc 0%, #f1f5f9 100%);
-  border: 1px solid var(--vp-border);
-  border-radius: var(--vp-radius);
-  min-height: 8rem;
-}
-
-.vp-dash-featured__car-svg {
-  max-width: 100%;
-  height: auto;
+  min-width: 0;
 }
 
 .vp-dash-featured__map {

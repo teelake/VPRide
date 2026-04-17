@@ -238,16 +238,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                   </dl>
                   <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
                 </div>
-                <div class="vp-dash-featured__visual" aria-hidden="true">
-                  <div class="vp-dash-featured__car" title="Booking preview">
-                    <svg class="vp-dash-featured__car-svg" width="140" height="72" viewBox="0 0 140 72" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M8 44h18l8-16h56l14 16h30v8H8v-8z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="1.5"/>
-                      <path d="M34 28h48l10 16H38l-4-16z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="1.2"/>
-                      <circle cx="36" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
-                      <circle cx="102" cy="48" r="7" fill="#334155" stroke="#1e293b" stroke-width="1.5"/>
-                      <path d="M118 36h12l6 8h-10l-8-8z" fill="#fef3c7" stroke="#f59e0b" stroke-width="1"/>
-                    </svg>
-                  </div>
+                <div class="vp-dash-featured__visual">
                   <div class="vp-dash-featured__map">
                     <?php if ($featuredMapUrl !== null) { ?>
                       <?php
