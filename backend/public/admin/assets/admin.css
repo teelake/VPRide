@@ -2393,7 +2393,7 @@ html {
 
 @media (min-width: 900px) {
   .vp-dash-featured__grid {
-    grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.35fr);
+    grid-template-columns: minmax(0, 0.88fr) minmax(340px, 1.65fr);
     gap: 1.75rem 2.25rem;
   }
 }
@@ -2469,8 +2469,8 @@ html {
   position: relative;
   width: 100%;
   aspect-ratio: 2 / 1;
-  min-height: 12rem;
-  max-height: 24rem;
+  min-height: 15rem;
+  max-height: 38rem;
   border-radius: var(--vp-radius);
   overflow: hidden;
   border: 1px solid var(--vp-border);
