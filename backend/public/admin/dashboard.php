@@ -114,7 +114,11 @@ foreach ($ridersByDay as $pt) {
     $sparkMaxRiders = max($sparkMaxRiders, (int) $pt['c']);
 }
 
-$activityRides = Auth::can('rides.view') ? $rideRepo->listRecent(8) : [];
+/** Dashboard preview only — full history is on Bookings. */
+$dashActivityPreviewLimit = 2;
+$activityRides = Auth::can('rides.view')
+    ? $rideRepo->listRecent($dashActivityPreviewLimit)
+    : [];
 $liveRegionOk = $liveLabel !== '—' && $liveLabel !== '';
 $configHealthPct = $liveRegionOk ? 100 : 0;
 $rides7dAvg = max(0.01, $rides7d / 7.0);
@@ -298,7 +302,8 @@ require __DIR__ . '/includes/app_shell_start.php';
               <a class="vp-dash-feed__all" href="<?= vp_url('/admin/rides') ?>">View all</a>
             </div>
             <?php if ($activityRides !== []) { ?>
-              <ul class="vp-activity-feed">
+              <p class="vp-dash-feed__preview-note">Latest <?= (int) $dashActivityPreviewLimit ?> rides · full queue in Bookings.</p>
+              <ul class="vp-activity-feed vp-activity-feed--dash-preview">
                 <?php foreach ($activityRides as $r) { ?>
                   <li class="vp-activity-feed__item">
                     <span class="vp-activity-feed__avatar" aria-hidden="true"><?= vp_h(vp_admin_initials((string) $r['rider_email'])) ?></span>

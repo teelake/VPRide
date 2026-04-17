@@ -2654,7 +2654,7 @@ html {
   color: var(--vp-text);
 }
 
-/* 12-column row: live booking ~9 cols, recent activity ~3 cols (stacks on small screens). */
+/* 12-column row: monitor gets the story; activity is a wider preview (7+5), stacks on small screens. */
 .vp-dash-ops {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -2666,28 +2666,38 @@ html {
 @media (min-width: 1024px) {
   .vp-dash-ops {
     grid-template-columns: repeat(12, minmax(0, 1fr));
-    align-items: start;
+    align-items: stretch;
   }
 
   .vp-dash-ops__monitor {
-    grid-column: span 9;
+    grid-column: span 7;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .vp-dash-ops__monitor > .vp-card {
+    flex: 1 1 auto;
+    min-height: 0;
   }
 
   .vp-dash-ops__feed {
-    grid-column: span 3;
+    grid-column: span 5;
     min-width: 0;
-  }
-}
-
-/* Roomier activity column on wide desktops (8 + 4). */
-@media (min-width: 1400px) {
-  .vp-dash-ops__monitor {
-    grid-column: span 8;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
   }
 
-  .vp-dash-ops__feed {
-    grid-column: span 4;
+  .vp-dash-ops__feed > .vp-card__pad {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .vp-dash-ops__feed .vp-activity-feed--dash-preview {
+    flex: 0 0 auto;
   }
 }
 
@@ -2753,6 +2763,13 @@ html {
 
 .vp-dash-feed__all:hover {
   text-decoration: underline;
+}
+
+.vp-dash-feed__preview-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--vp-muted);
 }
 
 .vp-activity-feed {
