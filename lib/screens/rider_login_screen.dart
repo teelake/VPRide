@@ -146,7 +146,24 @@ class _RiderLoginScreenState extends State<RiderLoginScreen> {
                             textInputAction: TextInputAction.done,
                             onSubmitted: (_) => _submit(),
                           ),
-                          const SizedBox(height: 28),
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: auth.isBusy
+                                  ? null
+                                  : () => context.push('/welcome/forgot-password'),
+                              child: Text(
+                                'Forgot password?',
+                                style: textTheme.labelLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.secondary.withValues(
+                                    alpha: 0.65,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
                           AppPrimaryButton(
                             label: 'Sign in',
                             isLoading: auth.isBusy,

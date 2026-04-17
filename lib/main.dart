@@ -19,8 +19,10 @@ import 'core/ride/ride_pickup_scope.dart';
 import 'core/logging/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
 import 'screens/home_shell_screen.dart';
+import 'screens/rider_forgot_password_screen.dart';
 import 'screens/rider_login_screen.dart';
 import 'screens/rider_register_screen.dart';
+import 'screens/rider_reset_password_screen.dart';
 import 'screens/welcome_screen.dart';
 
 Future<void> main() async {
@@ -76,7 +78,9 @@ Future<void> main() async {
       final path = state.uri.path;
       if ((path == '/welcome' ||
               path == '/welcome/register' ||
-              path == '/welcome/login') &&
+              path == '/welcome/login' ||
+              path == '/welcome/forgot-password' ||
+              path == '/welcome/reset-password') &&
           authRepository.isSignedIn) {
         return '/home';
       }
@@ -99,6 +103,16 @@ Future<void> main() async {
       GoRoute(
         path: '/welcome/login',
         builder: (context, state) => const RiderLoginScreen(),
+      ),
+      GoRoute(
+        path: '/welcome/forgot-password',
+        builder: (context, state) => const RiderForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: '/welcome/reset-password',
+        builder: (context, state) => RiderResetPasswordScreen(
+          initialToken: state.uri.queryParameters['token'],
+        ),
       ),
       GoRoute(
         path: '/home',

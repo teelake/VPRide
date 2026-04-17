@@ -269,6 +269,51 @@ SQL;
         $stmt->execute([$hash]);
     }
 
+    /**
+     * Email/password accounts only (excludes Google-only riders with no password).
+     */
+    public function findRiderIdWithPasswordByEmail(string $email): ?int
+    {
+        $email = trim(strtolower($email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM rider_users WHERE email = ? AND password_hash IS NOT NULL AND password_hash != \'\' LIMIT 1',
+        );
+        $stmt->execute([$email]);
+        $row = $stmt->fetch();
+        if ($row === false) {
+            return null;
+        }
+
+        return (int) $row['id'];
+    }
+
+    public function setPasswordFromReset(int $riderUserId, string $newPlain): void
+    {
+        if (strlen($newPlain) < self::MIN_PASSWORD_LEN) {
+            throw new RuntimeException('password_too_short');
+        }
+        $newHash = password_hash($newPlain, PASSWORD_DEFAULT);
+        if ($newHash === false) {
+            throw new RuntimeException('hash_failed');
+        }
+        $this->pdo->beginTransaction();
+        try {
+            $stmt = $this->pdo->prepare('UPDATE rider_users SET password_hash = ? WHERE id = ?');
+            $stmt->execute([$newHash, $riderUserId]);
+            $rev = $this->pdo->prepare(
+                'UPDATE rider_sessions SET revoked_at = UTC_TIMESTAMP() WHERE rider_user_id = ? AND revoked_at IS NULL',
+            );
+            $rev->execute([$riderUserId]);
+            $this->pdo->commit();
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
     public static function readBearerFromRequest(): ?string
     {
         $h = $_SERVER['HTTP_AUTHORIZATION'] ?? '';

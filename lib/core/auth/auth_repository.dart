@@ -103,6 +103,76 @@ final class AuthRepository extends ChangeNotifier {
     }
   }
 
+  /// Returns null on success (email sent if account exists), or an error for UI.
+  Future<String?> requestPasswordReset({required String email}) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      await _api.postAuthForgotPassword(email: email);
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        return e.message;
+      }
+      if (e.statusCode == 429) {
+        return 'Too many requests. Try again later.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Returns null on success, or an error message for UI.
+  Future<String?> resetPasswordWithToken({
+    required String token,
+    required String password,
+    required String passwordConfirm,
+  }) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      await _api.postAuthResetPassword(
+        token: token,
+        password: password,
+        passwordConfirm: passwordConfirm,
+      );
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        final m = e.message;
+        if (m == 'password_mismatch') {
+          return 'Passwords do not match.';
+        }
+        if (m == 'invalid_or_expired_token') {
+          return 'This reset link is invalid or expired. Request a new one.';
+        }
+        if (m == 'password_too_short') {
+          return 'Password must be at least 8 characters.';
+        }
+        return m;
+      }
+      if (e.statusCode == 429) {
+        return 'Too many requests. Try again later.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
   /// Returns null on success, or an error message for UI.
   Future<String?> signInWithEmail({
     required String email,

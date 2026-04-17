@@ -68,6 +68,44 @@ final class ApiClient {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> postAuthForgotPassword({
+    required String email,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/auth/forgot-password'),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({'email': email.trim()}),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postAuthResetPassword({
+    required String token,
+    required String password,
+    required String passwordConfirm,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/auth/reset-password'),
+          headers: const {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: jsonEncode({
+            'token': token.trim(),
+            'password': password,
+            'passwordConfirm': passwordConfirm,
+          }),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postAuthGoogle(String idToken) async {
     final res = await _client
         .post(
