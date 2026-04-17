@@ -115,7 +115,7 @@ foreach ($ridersByDay as $pt) {
 }
 
 /** Dashboard preview only — full history is on Bookings. */
-$dashActivityPreviewLimit = 2;
+$dashActivityPreviewLimit = 3;
 $activityRides = Auth::can('rides.view')
     ? $rideRepo->listRecent($dashActivityPreviewLimit)
     : [];
