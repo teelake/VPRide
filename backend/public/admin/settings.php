@@ -169,7 +169,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <div class="vp-field">
                 <label class="vp-label" for="mapsApiKey">Maps / Geocoding API key</label>
                 <input class="vp-input vp-input--mono" id="mapsApiKey" name="mapsApiKey" type="text" value="<?= vp_h($settings['mapsApiKey']) ?>" placeholder="AIza…" maxlength="512" pattern="([A-Za-z0-9_-]{30,512})?" title="Leave blank to use .env, or enter an alphanumeric key (about 30+ characters)" autocomplete="off">
-                <p class="vp-field-hint">Returned to the app in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">mapsApiKey</code> (geocoding). If this field is empty, the API can still expose a key from <code class="vp-inline-code">MAPS_API_KEY</code> or <code class="vp-inline-code">GOOGLE_MAPS_API_KEY</code> in <code>.env</code>. Native Maps SDK builds should also set the key in Gradle / iOS (<code>maps.api.key</code> / <code>GMSApiKey</code>).</p>
+                <p class="vp-field-hint">Returned to the app in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">mapsApiKey</code> (geocoding). The dashboard &quot;Live booking monitor&quot; map uses the <strong>Maps JavaScript API</strong> (pan, zoom, fullscreen); enable that API on the same key. Static Maps is used as a fallback when JavaScript is off. If this field is empty, the API can still expose a key from <code class="vp-inline-code">MAPS_API_KEY</code> or <code class="vp-inline-code">GOOGLE_MAPS_API_KEY</code> in <code>.env</code>. Native Maps SDK builds should also set the key in Gradle / iOS (<code>maps.api.key</code> / <code>GMSApiKey</code>).</p>
               </div>
 
               <div class="vp-field">

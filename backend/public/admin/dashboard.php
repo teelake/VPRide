@@ -244,12 +244,36 @@ require __DIR__ . '/includes/app_shell_start.php';
                 </div>
                 <div class="vp-dash-featured__visual">
                   <div class="vp-dash-featured__map">
-                    <?php if ($featuredMapUrl !== null) { ?>
-                      <?php
-                        $featuredMapAlt = 'Map preview: pickup'
-                            . ($featuredPins['drop'] !== null ? ' and drop-off' : '')
-                            . ' for booking #' . (int) $featuredRide['id'] . '.';
-                        ?>
+                    <?php
+                      $featuredMapAlt = 'Map: pickup'
+                          . ($featuredPins['drop'] !== null ? ' and drop-off' : '')
+                          . ' for booking #' . (int) $featuredRide['id'] . '.';
+                    ?>
+                    <?php if ($mapsApiKey !== '') { ?>
+                      <div
+                        id="vp-dash-featured-map"
+                        class="vp-dash-featured__map-canvas"
+                        role="region"
+                        aria-label="<?= vp_h($featuredMapAlt) ?>"
+                        data-pickup-lat="<?= vp_h((string) $plat) ?>"
+                        data-pickup-lng="<?= vp_h((string) $plng) ?>"
+                        data-drop-lat="<?= $dlat !== null ? vp_h((string) $dlat) : '' ?>"
+                        data-drop-lng="<?= $dlng !== null ? vp_h((string) $dlng) : '' ?>"
+                      ></div>
+                      <?php if ($featuredMapUrl !== null) { ?>
+                        <noscript>
+                          <img
+                            class="vp-dash-featured__map-img"
+                            src="<?= vp_h($featuredMapUrl) ?>"
+                            width="640"
+                            height="320"
+                            alt="<?= vp_h($featuredMapAlt) ?>"
+                            loading="lazy"
+                            decoding="async"
+                          >
+                        </noscript>
+                      <?php } ?>
+                    <?php } elseif ($featuredMapUrl !== null) { ?>
                       <img
                         class="vp-dash-featured__map-img"
                         src="<?= vp_h($featuredMapUrl) ?>"
@@ -278,15 +302,89 @@ require __DIR__ . '/includes/app_shell_start.php';
                             style="left: <?= (string) round($featuredPins['drop']['x'], 2) ?>%;top: <?= (string) round($featuredPins['drop']['y'], 2) ?>%;"
                           ></span>
                         <?php } ?>
-                        <?php if ($mapsApiKey === '') { ?>
-                          <p class="vp-dash-featured__map-hint">Add a Maps API key in Settings for a live map tile.</p>
-                        <?php } ?>
+                        <p class="vp-dash-featured__map-hint">Add a Maps API key in Settings for an interactive map (pan, zoom).</p>
                       </div>
                     <?php } ?>
                   </div>
                 </div>
               </div>
             </section>
+            <?php if ($mapsApiKey !== '') { ?>
+              <script>
+                window.initVpDashFeaturedMap = function () {
+                  var el = document.getElementById('vp-dash-featured-map');
+                  if (!el || typeof google === 'undefined' || !google.maps) {
+                    return;
+                  }
+                  var plat = parseFloat(el.dataset.pickupLat, 10);
+                  var plng = parseFloat(el.dataset.pickupLng, 10);
+                  var dlatRaw = el.dataset.dropLat || '';
+                  var dlngRaw = el.dataset.dropLng || '';
+                  var dlat = dlatRaw !== '' ? parseFloat(dlatRaw, 10) : NaN;
+                  var dlng = dlngRaw !== '' ? parseFloat(dlngRaw, 10) : NaN;
+                  var hasDrop = !isNaN(dlat) && !isNaN(dlng)
+                    && Math.abs(dlat) <= 90 && Math.abs(dlng) <= 180;
+
+                  var map = new google.maps.Map(el, {
+                    center: { lat: plat, lng: plng },
+                    zoom: 14,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: true,
+                    zoomControl: true,
+                    gestureHandling: 'greedy',
+                  });
+
+                  var markerOpts = function (label, fill, ttl) {
+                    return {
+                      position: null,
+                      map: map,
+                      title: ttl,
+                      label: { text: label, color: '#ffffff', fontSize: '11px', fontWeight: '700' },
+                      icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 9,
+                        fillColor: fill,
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                      },
+                    };
+                  };
+
+                  var pick = markerOpts('P', '#f5b800', 'Pickup');
+                  pick.position = { lat: plat, lng: plng };
+                  new google.maps.Marker(pick);
+
+                  var bounds = null;
+                  if (hasDrop) {
+                    var drop = markerOpts('D', '#c99206', 'Drop-off');
+                    drop.position = { lat: dlat, lng: dlng };
+                    new google.maps.Marker(drop);
+                    bounds = new google.maps.LatLngBounds();
+                    bounds.extend({ lat: plat, lng: plng });
+                    bounds.extend({ lat: dlat, lng: dlng });
+                    map.fitBounds(bounds, 48);
+                  }
+
+                  var fixResize = function () {
+                    google.maps.event.trigger(map, 'resize');
+                    if (bounds) {
+                      map.fitBounds(bounds, 48);
+                    } else {
+                      map.setCenter({ lat: plat, lng: plng });
+                      map.setZoom(14);
+                    }
+                  };
+                  window.requestAnimationFrame(function () {
+                    window.setTimeout(fixResize, 0);
+                  });
+                };
+              </script>
+              <script async defer src="<?= vp_h(
+                  'https://maps.googleapis.com/maps/api/js?key=' . rawurlencode($mapsApiKey) . '&callback=initVpDashFeaturedMap',
+              ) ?>"></script>
+            <?php } ?>
           <?php } else { ?>
             <div class="vp-card vp-card--dash-surface vp-dash-ops__empty">
               <div class="vp-card__pad">

@@ -2477,6 +2477,16 @@ html {
   background: var(--vp-surface-muted);
 }
 
+/* Interactive map (Google Maps JS) — same frame as static / fallback. */
+.vp-dash-featured__map-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  z-index: 1;
+}
+
 .vp-dash-featured__map-img {
   position: absolute;
   inset: 0;
