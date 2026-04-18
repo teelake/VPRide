@@ -707,19 +707,20 @@ html {
   }
 }
 
-.vp-profile__email {
+.vp-profile__primary {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--vp-black);
-  max-width: 180px;
+  max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 
 @media (min-width: 640px) {
-  .vp-profile__email {
-    max-width: 240px;
+  .vp-profile__primary {
+    max-width: 140px;
   }
 }
 

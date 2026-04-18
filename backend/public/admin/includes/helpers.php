@@ -217,7 +217,7 @@ function vp_nav_icon_bell(): string
     return '<svg class="vp-icon-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
 }
 
-/** Two-letter avatar label from admin email (e.g. "jd" from "jane.doe@x.com"). */
+/** Two-letter avatar label from admin email (e.g. "JD" from "jane.doe@x.com"). */
 function vp_admin_initials(string $email): string
 {
     $local = strstr($email, '@', true);
@@ -236,6 +236,30 @@ function vp_admin_initials(string $email): string
     }
 
     return function_exists('mb_strtoupper') ? mb_strtoupper($pair) : strtoupper($pair);
+}
+
+/**
+ * Topbar primary label: initials from the email local part only (no full address).
+ * e.g. alake.oluwatobipeter@… → "A. O."; single segment → same two letters as avatar (e.g. "JD").
+ */
+function vp_admin_profile_initials_label(string $email): string
+{
+    $local = strstr($email, '@', true);
+    if ($local === false || $local === '') {
+        $local = $email;
+    }
+    $parts = preg_split('/[\s._-]+/', $local, -1, PREG_SPLIT_NO_EMPTY);
+    $up = static function (string $ch): string {
+        return function_exists('mb_strtoupper') ? mb_strtoupper($ch) : strtoupper($ch);
+    };
+    if (is_array($parts) && count($parts) >= 2) {
+        $a = function_exists('mb_substr') ? mb_substr($parts[0], 0, 1) : substr($parts[0], 0, 1);
+        $b = function_exists('mb_substr') ? mb_substr($parts[1], 0, 1) : substr($parts[1], 0, 1);
+
+        return $up($a) . '. ' . $up($b) . '.';
+    }
+
+    return vp_admin_initials($email);
 }
 
 function vp_nav_icon_grid(): string

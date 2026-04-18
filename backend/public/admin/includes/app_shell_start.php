@@ -23,6 +23,7 @@ if (! isset($admin) || ! is_array($admin) || count($admin) < 3) {
 }
 $adminEmail = isset($admin[1]) && is_string($admin[1]) ? $admin[1] : '';
 $initials = vp_admin_initials($adminEmail);
+$profileInitialsLabel = $adminEmail !== '' ? vp_admin_profile_initials_label($adminEmail) : '';
 $vpSearchPlaceholder = Auth::can('riders.view')
     ? 'Search riders by email…'
     : (Auth::can('rides.view') ? 'Jump to bookings…' : 'Search…');
@@ -236,10 +237,10 @@ $vpSearchPlaceholder = Auth::can('riders.view')
           <?php } ?>
         </div>
         <details class="vp-profile" data-vp-profile>
-          <summary class="vp-profile__summary">
+          <summary class="vp-profile__summary"<?= $adminEmail !== '' ? ' title="' . vp_h($adminEmail) . '"' : '' ?> aria-label="<?= vp_h($profileInitialsLabel !== '' ? $profileInitialsLabel . ', ' . str_replace('_', ' ', $admin[2]) : 'Account menu') ?>">
             <span class="vp-profile__avatar" aria-hidden="true"><?= vp_h($initials) ?></span>
             <span class="vp-profile__meta">
-              <span class="vp-profile__email"><?= vp_h($admin[1]) ?></span>
+              <span class="vp-profile__primary"><?= vp_h($profileInitialsLabel) ?></span>
               <span class="vp-profile__role"><?= vp_h(str_replace('_', ' ', $admin[2])) ?></span>
             </span>
             <span class="vp-profile__chev" aria-hidden="true"><?= vp_nav_icon_chevron() ?></span>
