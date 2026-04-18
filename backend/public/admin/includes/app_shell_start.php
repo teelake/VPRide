@@ -23,7 +23,7 @@ if (! isset($admin) || ! is_array($admin) || count($admin) < 3) {
 }
 $adminEmail = isset($admin[1]) && is_string($admin[1]) ? $admin[1] : '';
 $initials = vp_admin_initials($adminEmail);
-$profileInitialsLabel = $adminEmail !== '' ? vp_admin_profile_initials_label($adminEmail) : '';
+$profileDisplayName = $adminEmail !== '' ? vp_admin_profile_display_name($adminEmail) : '';
 $vpSearchPlaceholder = Auth::can('riders.view')
     ? 'Search riders by email…'
     : (Auth::can('rides.view') ? 'Jump to bookings…' : 'Search…');
@@ -237,18 +237,22 @@ $vpSearchPlaceholder = Auth::can('riders.view')
           <?php } ?>
         </div>
         <details class="vp-profile" data-vp-profile>
-          <summary class="vp-profile__summary"<?= $adminEmail !== '' ? ' title="' . vp_h($adminEmail) . '"' : '' ?> aria-label="<?= vp_h($profileInitialsLabel !== '' ? $profileInitialsLabel . ', ' . str_replace('_', ' ', $admin[2]) : 'Account menu') ?>">
+          <summary class="vp-profile__summary"<?= $adminEmail !== '' ? ' title="' . vp_h($adminEmail) . '"' : '' ?> aria-label="<?= vp_h($profileDisplayName !== '' ? $profileDisplayName . ', ' . str_replace('_', ' ', $admin[2]) : 'Account menu') ?>">
             <span class="vp-profile__avatar" aria-hidden="true"><?= vp_h($initials) ?></span>
             <span class="vp-profile__meta">
-              <span class="vp-profile__primary"><?= vp_h($profileInitialsLabel) ?></span>
               <span class="vp-profile__role"><?= vp_h(str_replace('_', ' ', $admin[2])) ?></span>
             </span>
             <span class="vp-profile__chev" aria-hidden="true"><?= vp_nav_icon_chevron() ?></span>
           </summary>
           <div class="vp-profile__panel">
             <div class="vp-profile__panel-head">
-              <span class="vp-profile__panel-email"><?= vp_h($admin[1]) ?></span>
-              <span class="vp-pill vp-pill--dark"><?= vp_h($admin[2]) ?></span>
+              <div class="vp-profile__panel-user">
+                <span class="vp-profile__panel-avatar" aria-hidden="true"><?= vp_h($initials) ?></span>
+                <div class="vp-profile__panel-user-text">
+                  <span class="vp-profile__panel-name"><?= vp_h($profileDisplayName) ?></span>
+                  <span class="vp-pill vp-pill--dark"><?= vp_h(str_replace('_', ' ', $admin[2])) ?></span>
+                </div>
+              </div>
             </div>
             <div class="vp-profile__actions">
               <a class="vp-profile__account-link" href="<?= vp_url('/admin/account') ?>">Account settings</a>

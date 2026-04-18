@@ -239,27 +239,30 @@ function vp_admin_initials(string $email): string
 }
 
 /**
- * Topbar primary label: initials from the email local part only (no full address).
- * e.g. alake.oluwatobipeter@… → "A. O."; single segment → same two letters as avatar (e.g. "JD").
+ * Readable profile name from admin email local part (no domain).
+ * e.g. alake.oluwatobipeter@… → "Alake Oluwatobipeter".
  */
-function vp_admin_profile_initials_label(string $email): string
+function vp_admin_profile_display_name(string $email): string
 {
     $local = strstr($email, '@', true);
     if ($local === false || $local === '') {
         $local = $email;
     }
     $parts = preg_split('/[\s._-]+/', $local, -1, PREG_SPLIT_NO_EMPTY);
-    $up = static function (string $ch): string {
-        return function_exists('mb_strtoupper') ? mb_strtoupper($ch) : strtoupper($ch);
-    };
-    if (is_array($parts) && count($parts) >= 2) {
-        $a = function_exists('mb_substr') ? mb_substr($parts[0], 0, 1) : substr($parts[0], 0, 1);
-        $b = function_exists('mb_substr') ? mb_substr($parts[1], 0, 1) : substr($parts[1], 0, 1);
-
-        return $up($a) . '. ' . $up($b) . '.';
+    if (! is_array($parts) || $parts === []) {
+        return $local;
+    }
+    $words = [];
+    foreach ($parts as $p) {
+        if ($p === '') {
+            continue;
+        }
+        $words[] = function_exists('mb_convert_case')
+            ? mb_convert_case($p, MB_CASE_TITLE, 'UTF-8')
+            : ucfirst(strtolower($p));
     }
 
-    return vp_admin_initials($email);
+    return implode(' ', $words);
 }
 
 function vp_nav_icon_grid(): string
