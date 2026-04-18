@@ -116,26 +116,27 @@ require __DIR__ . '/includes/app_shell_start.php';
         ?>
       <?php } ?>
     <?php } else { ?>
-      <div class="vp-table-wrap">
-        <table class="vp-table">
+      <p class="vp-table-hint">Swipe or scroll horizontally to see every column. Hover a pickup or drop-off cell for the full text.</p>
+      <div class="vp-table-wrap vp-table-wrap--readable">
+        <table class="vp-table vp-table--readable">
           <thead>
             <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Rider</th>
-              <th scope="col">Status</th>
+              <th scope="col" class="vp-table__id">ID</th>
+              <th scope="col" class="vp-table__col-rider">Rider</th>
+              <th scope="col" class="vp-table__col-status">Status</th>
               <?php if ($hasDriverCol) { ?>
-                <th scope="col">Driver</th>
+                <th scope="col" class="vp-table__col-tight">Driver</th>
               <?php } ?>
               <?php if ($hasPayCol) { ?>
-                <th scope="col">Payment</th>
-                <th scope="col">Fare</th>
+                <th scope="col" class="vp-table__col-tight">Payment</th>
+                <th scope="col" class="vp-table__col-tight">Fare</th>
               <?php } ?>
               <?php if ($hasCancelFeeCol) { ?>
-                <th scope="col">Cancel fee</th>
+                <th scope="col" class="vp-table__col-tight">Cancel fee</th>
               <?php } ?>
-              <th scope="col">Pickup</th>
-              <th scope="col">Drop-off</th>
-              <th scope="col">Created</th>
+              <th scope="col" class="vp-table__col-route">Pickup</th>
+              <th scope="col" class="vp-table__col-route">Drop-off</th>
+              <th scope="col" class="vp-table__col-when">Created</th>
               <?php if ($hasPayCol || ($hasDriverCol && $canDispatch)) { ?><th scope="col" class="vp-table__actions-col"><span class="vp-sr-only">Actions</span></th><?php } ?>
             </tr>
           </thead>
@@ -143,24 +144,24 @@ require __DIR__ . '/includes/app_shell_start.php';
             <?php foreach ($rows as $r) { ?>
               <tr>
                 <td class="vp-table__id"><?= (int) $r['id'] ?></td>
-                <td><?= vp_h((string) $r['rider_email']) ?></td>
-                <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $r['status']) ?></span></td>
+                <td class="vp-table__label vp-table__col-rider"><?= vp_h((string) $r['rider_email']) ?></td>
+                <td class="vp-table__col-status"><span class="vp-pill vp-pill--neutral"><?= vp_h(vp_admin_ride_status_label((string) $r['status'])) ?></span></td>
                 <?php if ($hasDriverCol) { ?>
-                  <td class="vp-table__muted"><?php
+                  <td class="vp-table__muted vp-table__col-tight"><?php
                     $du = $r['driver_rider_user_id'] ?? null;
                     echo $du !== null && $du !== '' ? '#' . (int) $du : '—';
                   ?></td>
                 <?php } ?>
                 <?php if ($hasPayCol) { ?>
-                  <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) ($r['payment_status'] ?? '—')) ?></span></td>
-                  <td class="vp-table__muted"><?php
+                  <td class="vp-table__col-tight"><span class="vp-pill vp-pill--neutral"><?= vp_h(vp_admin_ride_status_label((string) ($r['payment_status'] ?? 'pending'))) ?></span></td>
+                  <td class="vp-table__muted vp-table__col-tight"><?php
                     $cur = (string) ($r['fare_currency'] ?? '');
                     $ff = $r['final_fare_amount'] ?? null;
                     echo $ff !== null ? vp_h($cur . ' ' . (string) $ff) : '—';
                   ?></td>
                 <?php } ?>
                 <?php if ($hasCancelFeeCol) { ?>
-                  <td class="vp-table__muted"><?php
+                  <td class="vp-table__muted vp-table__col-tight"><?php
                     $cf = $r['cancellation_fee_amount'] ?? null;
                     $cst = (string) ($r['status'] ?? '');
                     if ($cst === 'cancelled' && $cf !== null && $cf !== '' && (float) $cf > 0) {
@@ -171,9 +172,17 @@ require __DIR__ . '/includes/app_shell_start.php';
                     }
                   ?></td>
                 <?php } ?>
-                <td class="vp-table__muted"><?= vp_h((string) ($r['pickup_address'] ?: (($r['pickup_lat'] ?? '') . ', ' . ($r['pickup_lng'] ?? '')))) ?></td>
-                <td class="vp-table__muted"><?= vp_h((string) ($r['dropoff_address'] ?? '—')) ?></td>
-                <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
+                <?php
+                  $pickLine = vp_admin_ride_route_cell_text($r, 'pickup');
+                  $dropLine = vp_admin_ride_route_cell_text($r, 'dropoff');
+                ?>
+                <td class="vp-table__muted vp-table__col-route"><?php if ($pickLine !== '—') { ?>
+                  <span class="vp-table__route-line" title="<?= vp_h($pickLine) ?>"><?= vp_h($pickLine) ?></span>
+                <?php } else { ?>—<?php } ?></td>
+                <td class="vp-table__muted vp-table__col-route"><?php if ($dropLine !== '—') { ?>
+                  <span class="vp-table__route-line" title="<?= vp_h($dropLine) ?>"><?= vp_h($dropLine) ?></span>
+                <?php } else { ?>—<?php } ?></td>
+                <td class="vp-table__col-when"><?= vp_h(vp_admin_booking_datetime((string) ($r['created_at'] ?? ''))) ?></td>
                 <?php if ($hasPayCol || ($hasDriverCol && $canDispatch)) { ?>
                   <td class="vp-table__actions-col">
                     <?php

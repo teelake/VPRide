@@ -177,25 +177,29 @@ require __DIR__ . '/includes/app_shell_start.php';
         ?>
       <?php } ?>
     <?php } else { ?>
-      <div class="vp-table-wrap">
-        <table class="vp-table vp-table--compact">
+      <p class="vp-table-hint">Scroll horizontally on small screens to see all columns.</p>
+      <div class="vp-table-wrap vp-table-wrap--readable">
+        <table class="vp-table vp-table--readable vp-table--compact">
           <thead>
             <tr>
-              <th scope="col">ID</th>
-              <th scope="col">Status</th>
-              <th scope="col">Rider</th>
-              <th scope="col">Pickup</th>
-              <th scope="col">Created</th>
+              <th scope="col" class="vp-table__id">ID</th>
+              <th scope="col" class="vp-table__col-status">Status</th>
+              <th scope="col" class="vp-table__col-rider">Rider</th>
+              <th scope="col" class="vp-table__col-route">Pickup</th>
+              <th scope="col" class="vp-table__col-when">Created</th>
             </tr>
           </thead>
           <tbody>
             <?php foreach ($rows as $row) { ?>
+              <?php $pickLine = vp_admin_ride_route_cell_text($row, 'pickup'); ?>
               <tr>
                 <td class="vp-table__id"><?= (int) $row['id'] ?></td>
-                <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $row['status']) ?></span></td>
-                <td><?= vp_h((string) $row['rider_email']) ?></td>
-                <td class="vp-table__muted"><?= vp_h((string) ($row['pickup_address'] ?: (($row['pickup_lat'] ?? '') . ', ' . ($row['pickup_lng'] ?? '')))) ?></td>
-                <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) $row['created_at']) ?></td>
+                <td class="vp-table__col-status"><span class="vp-pill vp-pill--neutral"><?= vp_h(vp_admin_ride_status_label((string) $row['status'])) ?></span></td>
+                <td class="vp-table__label vp-table__col-rider"><?= vp_h((string) $row['rider_email']) ?></td>
+                <td class="vp-table__muted vp-table__col-route"><?php if ($pickLine !== '—') { ?>
+                  <span class="vp-table__route-line" title="<?= vp_h($pickLine) ?>"><?= vp_h($pickLine) ?></span>
+                <?php } else { ?>—<?php } ?></td>
+                <td class="vp-table__col-when"><?= vp_h(vp_admin_booking_datetime((string) ($row['created_at'] ?? ''))) ?></td>
               </tr>
             <?php } ?>
           </tbody>

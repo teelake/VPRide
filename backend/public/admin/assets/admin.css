@@ -1925,6 +1925,77 @@ select.vp-input {
   text-overflow: ellipsis;
 }
 
+/* Wide ride / booking tables: scroll horizontally, full addresses, no clipped status */
+.vp-table-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--vp-muted);
+}
+
+.vp-table-wrap--readable {
+  overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.vp-table--readable {
+  table-layout: auto;
+  min-width: 64rem;
+}
+
+.vp-table--readable th,
+.vp-table--readable td {
+  vertical-align: top;
+}
+
+.vp-table--readable td {
+  overflow: visible;
+  text-overflow: unset;
+}
+
+.vp-table--readable .vp-table__id {
+  width: auto;
+  white-space: nowrap;
+}
+
+.vp-table--readable .vp-table__col-rider {
+  min-width: 10.5rem;
+  max-width: 18rem;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.vp-table--readable .vp-table__col-status {
+  white-space: nowrap;
+}
+
+.vp-table--readable .vp-table__col-tight {
+  white-space: nowrap;
+}
+
+.vp-table--readable .vp-table__col-route {
+  min-width: 13rem;
+  max-width: 26rem;
+}
+
+.vp-table--readable .vp-table__route-line {
+  display: block;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.vp-table--readable .vp-table__col-when {
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  color: var(--vp-muted);
+}
+
+.vp-table--readable .vp-table__actions-col {
+  white-space: nowrap;
+}
+
 .vp-pill--neutral {
   background: var(--vp-surface-elevated);
   color: var(--vp-black);

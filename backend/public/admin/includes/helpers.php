@@ -391,6 +391,58 @@ function vp_reports_tabs(string $active): void
 }
 
 /**
+ * Trim MySQL datetime to minutes for compact admin tables (… "Y-m-d H:i:s" → "Y-m-d H:i").
+ */
+function vp_admin_booking_datetime(?string $mysqlDatetime): string
+{
+    if ($mysqlDatetime === null || trim($mysqlDatetime) === '') {
+        return '—';
+    }
+    $s = trim($mysqlDatetime);
+    if (preg_match('/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $s) === 1) {
+        return substr($s, 0, 16);
+    }
+
+    return $s;
+}
+
+/** Human-readable ride status (e.g. in_progress → In Progress). */
+function vp_admin_ride_status_label(string $raw): string
+{
+    $s = strtolower(trim($raw));
+
+    return ucwords(str_replace('_', ' ', $s));
+}
+
+/**
+ * Pickup or drop-off line for tables: prefer address, else coordinates.
+ */
+function vp_admin_ride_route_cell_text(array $r, string $which): string
+{
+    if ($which === 'dropoff') {
+        $addr = trim((string) ($r['dropoff_address'] ?? ''));
+        if ($addr !== '') {
+            return $addr;
+        }
+        $lat = $r['dropoff_lat'] ?? null;
+        $lng = $r['dropoff_lng'] ?? null;
+        if ($lat !== null && $lat !== '' && $lng !== null && $lng !== '') {
+            return trim((string) $lat) . ', ' . trim((string) $lng);
+        }
+
+        return '—';
+    }
+    $addr = trim((string) ($r['pickup_address'] ?? ''));
+    if ($addr !== '') {
+        return $addr;
+    }
+    $lat = $r['pickup_lat'] ?? '';
+    $lng = $r['pickup_lng'] ?? '';
+
+    return trim((string) $lat) . ', ' . trim((string) $lng);
+}
+
+/**
  * @param list<string> $fields
  */
 function vp_csv_line(array $fields): string
