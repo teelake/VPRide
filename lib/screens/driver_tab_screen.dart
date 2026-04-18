@@ -9,6 +9,13 @@ import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/theme/app_colors.dart';
 
+/// Result of fare confirmation dialog (console / manual-dispatch trips).
+class _FareChoice {
+  const _FareChoice({required this.cancelled, this.fare});
+  final bool cancelled;
+  final double? fare;
+}
+
 String _mapDriverApiMessage(String code) {
   switch (code) {
     case 'not_a_driver':
@@ -30,6 +37,11 @@ String _mapDriverApiMessage(String code) {
     case 'cannot_confirm_payment':
       return 'Payment cannot be confirmed yet. The rider may still be entering details, '
           'or this trip is not in the right state.';
+    case 'fare_not_allowed':
+      return 'You cannot change the fare on this trip. It was booked in the app with a fixed price.';
+    case 'invalid_fare':
+    case 'invalid_json':
+      return 'Invalid fare amount. Enter a positive number using digits only.';
     default:
       return code;
   }
@@ -334,14 +346,130 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     }
   }
 
+  Future<_FareChoice?> _showFareConfirmDialog(
+    BuildContext context,
+    Map<String, dynamic> ride,
+  ) async {
+    final pricing = ride['pricing'];
+    double? suggested;
+    if (pricing is Map) {
+      final f = pricing['finalFare'] ?? pricing['estimatedFare'];
+      if (f is num) {
+        suggested = f.toDouble();
+      } else if (f != null) {
+        suggested = double.tryParse(f.toString());
+      }
+    }
+    final currency = pricing is Map
+        ? (pricing['currency']?.toString() ?? '')
+        : '';
+    final ctrl = TextEditingController(
+      text: suggested != null && suggested > 0
+          ? suggested.toStringAsFixed(2)
+          : '',
+    );
+    try {
+      return showDialog<_FareChoice>(
+        context: context,
+        barrierDismissible: true,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text('Confirm final fare'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'This trip came from the operations console or manual dispatch. '
+                    'Confirm the fare to charge, or adjust if you agreed a different amount with the rider.',
+                    style: Theme.of(ctx).textTheme.bodySmall?.copyWith(height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: ctrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    decoration: InputDecoration(
+                      labelText: currency.isNotEmpty
+                          ? 'Final fare ($currency)'
+                          : 'Final fare',
+                      border: const OutlineInputBorder(),
+                      hintText: 'Leave as shown or edit',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(ctx, const _FareChoice(cancelled: true)),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  final t = ctrl.text.trim();
+                  if (t.isEmpty) {
+                    Navigator.pop(
+                      ctx,
+                      const _FareChoice(cancelled: false, fare: null),
+                    );
+                    return;
+                  }
+                  final normalized = t.replaceAll(',', '.');
+                  final v = double.tryParse(normalized);
+                  if (v == null || v <= 0) {
+                    ScaffoldMessenger.of(ctx).showSnackBar(
+                      const SnackBar(
+                        content: Text('Enter a valid positive amount.'),
+                      ),
+                    );
+                    return;
+                  }
+                  Navigator.pop(
+                    ctx,
+                    _FareChoice(cancelled: false, fare: v),
+                  );
+                },
+                child: const Text('Complete trip'),
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
+      ctrl.dispose();
+    }
+  }
+
   Future<void> _complete(int rideId) async {
     final auth = AuthScope.of(context);
     final api = ApiScope.of(context);
     final token = auth.sessionToken;
     if (token == null) return;
+
+    double? finalFareArg;
+    final active = _active;
+    if (active != null &&
+        _rideId(active) == rideId &&
+        active['driverMaySetFinalFare'] == true) {
+      if (!mounted) return;
+      final choice = await _showFareConfirmDialog(context, active);
+      if (choice == null || choice.cancelled) {
+        return;
+      }
+      finalFareArg = choice.fare;
+    }
+
     setState(() => _busyRideId = rideId);
     try {
-      await api.postDriverRideComplete(token, rideId);
+      await api.postDriverRideComplete(
+        token,
+        rideId,
+        finalFare: finalFareArg,
+      );
       await auth.refreshProfile();
       if (mounted) await _load();
     } on ApiException catch (e) {

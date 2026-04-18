@@ -37,7 +37,7 @@ DELIMITER ;
 CALL vpride_console_booking_add_column(
   'rides',
   'console_booking',
-  'TINYINT(1) NOT NULL DEFAULT 0 AFTER assign_source'
+  'TINYINT(1) NOT NULL DEFAULT 0'
 );
 
 DROP PROCEDURE IF EXISTS vpride_console_booking_add_column;
