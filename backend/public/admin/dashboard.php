@@ -90,8 +90,6 @@ $completedN = $statusMap['completed'] ?? 0;
 $canceledN = $statusMap['canceled'] ?? $statusMap['cancelled'] ?? 0;
 $completionPct = $statusTotal > 0 ? (int) round(100 * $completedN / $statusTotal) : 0;
 
-$dashDateLabel = date('D j M');
-
 $sparkMaxRides = 1;
 foreach ($ridesByDay as $pt) {
     $sparkMaxRides = max($sparkMaxRides, (int) $pt['c']);
@@ -126,8 +124,6 @@ require __DIR__ . '/includes/app_shell_start.php';
 <div class="vp-dash-overview">
   <div class="vp-dash-overview__intro">
     <h1 class="vp-dash-overview__title">Operations overview</h1>
-    <p class="vp-dash-overview__desc">Routing health, booking flow, and rider demand — backed by live data from this console.</p>
-    <p class="vp-dash-overview__meta"><span class="vp-dash-overview__date"><?= vp_h($dashDateLabel) ?></span><span class="vp-dash-overview__sep" aria-hidden="true">·</span><span class="vp-dash-overview__hint">Use the top search for riders; tools link to help and settings.</span></p>
   </div>
   <div class="vp-dash-overview__status">
     <?php vp_system_health_render($systemHealth); ?>
@@ -137,7 +133,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <?php vp_schema_migration_alerts($pdo); ?>
 
 <div class="vp-kpi-grid vp-kpi-grid--dash" role="list">
-  <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
+  <article class="vp-kpi-card vp-kpi-card--dash vp-kpi-card--dash-tone-a" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-a" aria-hidden="true"><?= vp_kpi_icon_riders() ?></span>
     </div>
@@ -146,7 +142,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
     </div>
   </article>
-  <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
+  <article class="vp-kpi-card vp-kpi-card--dash vp-kpi-card--dash-tone-b" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-b" aria-hidden="true"><?= vp_kpi_icon_rides() ?></span>
     </div>
@@ -155,7 +151,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-kpi-card__value"><?= number_format($rideCount) ?></p>
     </div>
   </article>
-  <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
+  <article class="vp-kpi-card vp-kpi-card--dash vp-kpi-card--dash-tone-c" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-c" aria-hidden="true"><?= vp_kpi_icon_globe() ?></span>
     </div>
@@ -164,7 +160,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <p class="vp-kpi-card__value"><?= $statusTotal > 0 ? vp_h((string) $completionPct) . '%' : '—' ?></p>
     </div>
   </article>
-  <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
+  <article class="vp-kpi-card vp-kpi-card--dash vp-kpi-card--dash-tone-d" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-d" aria-hidden="true"><?= vp_kpi_icon_layers() ?></span>
     </div>

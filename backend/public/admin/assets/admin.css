@@ -2299,6 +2299,27 @@ select.vp-input {
   box-shadow: 0 8px 32px rgba(12, 12, 13, 0.07), 0 2px 6px rgba(12, 12, 13, 0.04);
 }
 
+/* Dashboard KPI cards — soft tinted panels (match icon bubbles, stay readable) */
+.vp-kpi-card--dash-tone-a {
+  background: linear-gradient(145deg, rgba(245, 184, 0, 0.12) 0%, var(--vp-surface) 52%);
+  border-color: rgba(245, 184, 0, 0.28);
+}
+
+.vp-kpi-card--dash-tone-b {
+  background: linear-gradient(145deg, rgba(245, 184, 0, 0.18) 0%, var(--vp-surface) 55%);
+  border-color: rgba(212, 160, 0, 0.32);
+}
+
+.vp-kpi-card--dash-tone-c {
+  background: linear-gradient(145deg, rgba(5, 150, 105, 0.1) 0%, var(--vp-surface) 52%);
+  border-color: rgba(5, 150, 105, 0.22);
+}
+
+.vp-kpi-card--dash-tone-d {
+  background: linear-gradient(145deg, rgba(180, 35, 24, 0.07) 0%, var(--vp-surface) 52%);
+  border-color: rgba(180, 35, 24, 0.18);
+}
+
 .vp-kpi-card__dash-top {
   margin-bottom: 0;
   flex-shrink: 0;
