@@ -18,6 +18,9 @@ import 'core/ride/ride_pickup_controller.dart';
 import 'core/ride/ride_pickup_scope.dart';
 import 'core/logging/app_error_reporter.dart';
 import 'core/theme/app_theme.dart';
+import 'core/navigation/home_shell_route.dart';
+import 'screens/change_password_screen.dart';
+import 'screens/edit_profile_screen.dart';
 import 'screens/home_shell_screen.dart';
 import 'screens/rider_forgot_password_screen.dart';
 import 'screens/rider_login_screen.dart';
@@ -76,10 +79,22 @@ Future<void> main() async {
     ]),
     redirect: (context, state) {
       final path = state.uri.path;
+      if (path.startsWith('/account/') && !authRepository.isSignedIn) {
+        return '/welcome';
+      }
+      if (authRepository.isSignedIn &&
+          authRepository.profile?.mustChangePassword == true) {
+        final allowed = path == '/account/force-password' ||
+            path == '/welcome/forgot-password' ||
+            path == '/welcome/reset-password';
+        if (!allowed) {
+          return '/account/force-password';
+        }
+      }
+      // Allow /welcome/forgot-password while signed in (e.g. from Change password).
       if ((path == '/welcome' ||
               path == '/welcome/register' ||
               path == '/welcome/login' ||
-              path == '/welcome/forgot-password' ||
               path == '/welcome/reset-password') &&
           authRepository.isSignedIn) {
         return '/home';
@@ -117,10 +132,29 @@ Future<void> main() async {
       GoRoute(
         path: '/home',
         builder: (context, state) {
-          final tabRaw = int.tryParse(state.uri.queryParameters['tab'] ?? '');
-          final tab = (tabRaw ?? 0).clamp(0, 3);
-          return HomeShellScreen(initialTab: tab);
+          final hasDriver = authRepository.driverProfile != null;
+          final driverOnly = authRepository.profile?.driverAccountOnly == true &&
+              hasDriver;
+          final route = HomeShellRoute.fromUri(
+            state.uri,
+            hasDriverProfile: hasDriver,
+            driverAccountOnly: driverOnly,
+          );
+          return HomeShellScreen(initialRoute: route);
         },
+      ),
+      GoRoute(
+        path: '/account/edit-profile',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/account/change-password',
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/account/force-password',
+        builder: (context, state) =>
+            const ChangePasswordScreen(forceEnrollment: true),
       ),
     ],
   );

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -130,6 +131,73 @@ final class ApiClient {
           },
         )
         .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> patchMe({
+    required String bearerToken,
+    required String displayName,
+  }) async {
+    final res = await _client
+        .patch(
+          _uri('/api/v1/me'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode({'displayName': displayName.trim()}),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postAuthChangePassword({
+    required String bearerToken,
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirm,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/auth/change-password'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode({
+            'currentPassword': currentPassword,
+            'newPassword': newPassword,
+            'newPasswordConfirm': newPasswordConfirm,
+          }),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  /// Multipart upload: field name `photo` (JPEG, PNG, WebP; max 2 MB on server).
+  Future<Map<String, dynamic>> postMePhoto({
+    required String bearerToken,
+    required String filePath,
+  }) async {
+    final file = File(filePath);
+    if (!await file.exists()) {
+      throw ApiException(0, 'Photo file not found');
+    }
+    final uri = _uri('/api/v1/me/photo');
+    final req = http.MultipartRequest('POST', uri);
+    req.headers['Authorization'] = 'Bearer $bearerToken';
+    req.headers['Accept'] = 'application/json';
+    req.files.add(
+      await http.MultipartFile.fromPath(
+        'photo',
+        filePath,
+        filename: file.path.split(Platform.pathSeparator).last,
+      ),
+    );
+    final streamed = await req.send().timeout(_timeout);
+    final res = await http.Response.fromStream(streamed);
     return _decode(res);
   }
 

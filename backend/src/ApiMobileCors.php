@@ -22,7 +22,7 @@ final class ApiMobileCors
         self::applyCorsHeaders();
         header('Content-Type: application/json; charset=utf-8');
         header('X-Content-Type-Options: nosniff');
-        header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+        header('Access-Control-Allow-Methods: GET, POST, PATCH, OPTIONS');
         header('Access-Control-Allow-Headers: Authorization, Content-Type, Accept');
         header('Access-Control-Max-Age: 86400');
         http_response_code(204);

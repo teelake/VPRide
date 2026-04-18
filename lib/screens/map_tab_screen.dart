@@ -63,6 +63,8 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _estimateBusy = false;
   Map<String, dynamic>? _lastEstimate;
   final TextEditingController _destSearchCtrl = TextEditingController();
+  final TextEditingController _pickupSearchCtrl = TextEditingController();
+  final FocusNode _pickupSearchFocusNode = FocusNode();
   RidePickupController? _pickupListenTarget;
 
   static const LatLng _fallbackToronto = LatLng(43.6532, -79.3832);
@@ -113,6 +115,8 @@ class _MapTabScreenState extends State<MapTabScreen>
     _geocoder.close();
     _promoCodeCtrl.dispose();
     _destSearchCtrl.dispose();
+    _pickupSearchCtrl.dispose();
+    _pickupSearchFocusNode.dispose();
     super.dispose();
   }
 
@@ -519,16 +523,37 @@ class _MapTabScreenState extends State<MapTabScreen>
     }
   }
 
+  /// Same key as destination: [ClientConfigRepository.effectiveMapsApiKey]
+  /// (public `mapsApiKey` with `MAPS_API_KEY` / dart-define fallback).
+  static String _normalizeMapsGeocodingKey(String mapsApiKey) =>
+      mapsApiKey.trim();
+
+  /// Forward geocode for pickup/destination search — always pass
+  /// [_normalizeMapsGeocodingKey] of [ClientConfigScope.of].effectiveMapsApiKey.
+  Future<({double lat, double lng, String address})?> _geocodeQuery(
+    String rawQuery,
+    String mapsApiKey,
+  ) {
+    final q = rawQuery.trim();
+    final key = _normalizeMapsGeocodingKey(mapsApiKey);
+    if (q.isEmpty || key.isEmpty) return Future.value(null);
+    return _geocoder.geocodeAddress(q, apiKey: key);
+  }
+
   void _scheduleGeocode(
     RidePickupController pickupCtrl,
     LatLng p,
     String mapsApiKey,
   ) {
     _geoDebounce?.cancel();
-    if (mapsApiKey.trim().isEmpty) {
-      pickupCtrl.setAddressLabel(
-        '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}',
-      );
+    final key = _normalizeMapsGeocodingKey(mapsApiKey);
+    if (key.isEmpty) {
+      final coords =
+          '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
+      pickupCtrl.setAddressLabel(coords);
+      if (!_pickupSearchFocusNode.hasFocus) {
+        _pickupSearchCtrl.text = coords;
+      }
       return;
     }
     pickupCtrl.setAddressLabel('Finding address…', geocoding: true);
@@ -536,20 +561,25 @@ class _MapTabScreenState extends State<MapTabScreen>
       final label = await _geocoder.reverseFormattedAddress(
         p.latitude,
         p.longitude,
-        apiKey: mapsApiKey,
+        apiKey: key,
       );
       if (!mounted) return;
+      final resolved = label ??
+          '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
       pickupCtrl.setAddressLabel(
-        label ??
-            '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}',
+        resolved,
         geocoding: false,
       );
+      if (!_pickupSearchFocusNode.hasFocus) {
+        _pickupSearchCtrl.text = resolved;
+      }
     });
   }
 
   void _scheduleDestGeocode(LatLng p, String mapsApiKey) {
     _destGeoDebounce?.cancel();
-    if (mapsApiKey.trim().isEmpty) {
+    final key = _normalizeMapsGeocodingKey(mapsApiKey);
+    if (key.isEmpty) {
       setState(() {
         _destLabel =
             '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
@@ -562,7 +592,7 @@ class _MapTabScreenState extends State<MapTabScreen>
       final label = await _geocoder.reverseFormattedAddress(
         p.latitude,
         p.longitude,
-        apiKey: mapsApiKey,
+        apiKey: key,
       );
       if (!mounted) return;
       setState(() {
@@ -574,15 +604,46 @@ class _MapTabScreenState extends State<MapTabScreen>
   }
 
   Future<void> _searchDestination(String mapsApiKey) async {
-    final q = _destSearchCtrl.text.trim();
-    if (q.isEmpty || mapsApiKey.isEmpty) return;
-    final hit = await _geocoder.geocodeAddress(q, apiKey: mapsApiKey);
-    if (!mounted || hit == null) return;
+    final hit = await _geocodeQuery(_destSearchCtrl.text, mapsApiKey);
+    if (!mounted) return;
+    if (hit == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No results for that destination')),
+      );
+      return;
+    }
     setState(() {
       _destPoint = LatLng(hit.lat, hit.lng);
       _destLabel = hit.address;
       _pinPickup = false;
     });
+    try {
+      final c = await _mapController.future;
+      await c.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(hit.lat, hit.lng), 14.5),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _searchPickup(
+    RidePickupController pickupCtrl,
+    String mapsApiKey,
+  ) async {
+    final hit = await _geocodeQuery(_pickupSearchCtrl.text, mapsApiKey);
+    if (!mounted) return;
+    if (hit == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No results for that pickup address')),
+      );
+      return;
+    }
+    setState(() => _pinPickup = true);
+    pickupCtrl.setFromCamera(LatLng(hit.lat, hit.lng));
+    pickupCtrl.setAddressLabel(hit.address);
+    _pickupSearchCtrl.value = TextEditingValue(
+      text: hit.address,
+      selection: TextSelection.collapsed(offset: hit.address.length),
+    );
     try {
       final c = await _mapController.future;
       await c.animateCamera(
@@ -764,8 +825,10 @@ class _MapTabScreenState extends State<MapTabScreen>
     final pickupCtrl = RidePickupScope.of(context);
     final textTheme = Theme.of(context).textTheme;
     final clientCfg = ClientConfigScope.of(context);
-    final mapsKey = clientCfg.effectiveMapsApiKey.trim();
-    final hasMapsKey = mapsKey.isNotEmpty;
+    // Pickup + destination search and reverse geocode all use this key.
+    final mapsApiKeyForGeocoding =
+        _normalizeMapsGeocodingKey(clientCfg.effectiveMapsApiKey);
+    final hasMapsKey = mapsApiKeyForGeocoding.isNotEmpty;
     final features = clientCfg.features;
     final rideDisabled =
         features.maintenanceMode || !features.rideBookingEnabled;
@@ -836,10 +899,10 @@ class _MapTabScreenState extends State<MapTabScreen>
               if (t == null) return;
               if (_pinPickup) {
                 pickupCtrl.setFromCamera(t);
-                _scheduleGeocode(pickupCtrl, t, mapsKey);
+                _scheduleGeocode(pickupCtrl, t, mapsApiKeyForGeocoding);
               } else {
                 setState(() => _destPoint = t);
-                _scheduleDestGeocode(t, mapsKey);
+                _scheduleDestGeocode(t, mapsApiKeyForGeocoding);
               }
             },
           ),
@@ -935,8 +998,17 @@ class _MapTabScreenState extends State<MapTabScreen>
                           ChoiceChip(
                             label: const Text('Pickup pin'),
                             selected: _pinPickup,
-                            onSelected: (_) =>
-                                setState(() => _pinPickup = true),
+                            onSelected: (_) {
+                              setState(() {
+                                _pinPickup = true;
+                                final cur =
+                                    pickupCtrl.addressLabel?.trim() ?? '';
+                                if (_pickupSearchCtrl.text.trim().isEmpty &&
+                                    cur.isNotEmpty) {
+                                  _pickupSearchCtrl.text = cur;
+                                }
+                              });
+                            },
                           ),
                           const SizedBox(width: 8),
                           ChoiceChip(
@@ -965,16 +1037,48 @@ class _MapTabScreenState extends State<MapTabScreen>
                         ),
                       ),
                       const SizedBox(height: 6),
-                      if (_pinPickup)
+                      if (_pinPickup) ...[
+                        TextField(
+                          controller: _pickupSearchCtrl,
+                          focusNode: _pickupSearchFocusNode,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(
+                            labelText: 'Search pickup',
+                            isDense: true,
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              tooltip: 'Search',
+                              icon: const Icon(Icons.search_rounded),
+                              onPressed: mapsApiKeyForGeocoding.isEmpty
+                                  ? null
+                                  : () => unawaited(
+                                        _searchPickup(
+                                          pickupCtrl,
+                                          mapsApiKeyForGeocoding,
+                                        ),
+                                      ),
+                            ),
+                          ),
+                          onSubmitted: (_) {
+                            if (mapsApiKeyForGeocoding.isNotEmpty) {
+                              unawaited(
+                                _searchPickup(
+                                  pickupCtrl,
+                                  mapsApiKeyForGeocoding,
+                                ),
+                              );
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 8),
                         ListenableBuilder(
                           listenable: pickupCtrl,
                           builder: (context, _) {
-                            final label = pickupCtrl.addressLabel ??
-                                'Move map to adjust pin';
                             return Text(
                               pickupCtrl.isGeocoding
                                   ? 'Finding address…'
-                                  : label,
+                                  : (pickupCtrl.addressLabel ??
+                                        'Move map to set pickup pin'),
                               style: textTheme.titleSmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 height: 1.3,
@@ -983,8 +1087,8 @@ class _MapTabScreenState extends State<MapTabScreen>
                               overflow: TextOverflow.ellipsis,
                             );
                           },
-                        )
-                      else ...[
+                        ),
+                      ] else ...[
                         TextField(
                           controller: _destSearchCtrl,
                           textCapitalization: TextCapitalization.sentences,
@@ -995,12 +1099,15 @@ class _MapTabScreenState extends State<MapTabScreen>
                             suffixIcon: IconButton(
                               tooltip: 'Search',
                               icon: const Icon(Icons.search_rounded),
-                              onPressed: mapsKey.isEmpty
+                              onPressed: mapsApiKeyForGeocoding.isEmpty
                                   ? null
-                                  : () => _searchDestination(mapsKey),
+                                  : () => _searchDestination(
+                                        mapsApiKeyForGeocoding,
+                                      ),
                             ),
                           ),
-                          onSubmitted: (_) => _searchDestination(mapsKey),
+                          onSubmitted: (_) =>
+                              _searchDestination(mapsApiKeyForGeocoding),
                         ),
                         const SizedBox(height: 8),
                         Text(

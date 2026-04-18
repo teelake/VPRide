@@ -85,7 +85,8 @@ final class RiderAuthService
             }
 
             $ins = $this->pdo->prepare(
-                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (NULL, ?, ?, ?, NULL)',
+                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url, must_change_password) '
+                . 'VALUES (NULL, ?, ?, ?, NULL, 0)',
             );
             $ins->execute([$hash, $email, $dn]);
             $userId = (int) $this->pdo->lastInsertId();
@@ -147,7 +148,8 @@ final class RiderAuthService
 
         try {
             $ins = $this->pdo->prepare(
-                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (NULL, ?, ?, ?, NULL)',
+                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url, must_change_password, driver_account_only) '
+                . 'VALUES (NULL, ?, ?, ?, NULL, 1, 1)',
             );
             $ins->execute([$hash, $email, $dn]);
 
@@ -292,7 +294,8 @@ final class RiderAuthService
         }
 
         $ins = $this->pdo->prepare(
-            'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (?, NULL, ?, ?, ?)',
+            'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url, must_change_password) '
+            . 'VALUES (?, NULL, ?, ?, ?, 0)',
         );
         $ins->execute([$googleSub, $email, $displayName, $photoUrl]);
 
@@ -369,7 +372,9 @@ SQL;
         }
         $this->pdo->beginTransaction();
         try {
-            $stmt = $this->pdo->prepare('UPDATE rider_users SET password_hash = ? WHERE id = ?');
+            $stmt = $this->pdo->prepare(
+                'UPDATE rider_users SET password_hash = ?, must_change_password = 0 WHERE id = ?',
+            );
             $stmt->execute([$newHash, $riderUserId]);
             $rev = $this->pdo->prepare(
                 'UPDATE rider_sessions SET revoked_at = UTC_TIMESTAMP() WHERE rider_user_id = ? AND revoked_at IS NULL',
@@ -380,6 +385,138 @@ SQL;
             $this->pdo->rollBack();
             throw $e;
         }
+    }
+
+    public function updateDisplayName(int $riderUserId, string $displayName): void
+    {
+        if ($riderUserId < 1) {
+            throw new RuntimeException('invalid_user');
+        }
+        $dn = trim($displayName);
+        if ($dn === '') {
+            throw new RuntimeException('display_name_required');
+        }
+        if (mb_strlen($dn) > 255) {
+            throw new RuntimeException('display_name_too_long');
+        }
+        $stmt = $this->pdo->prepare('UPDATE rider_users SET display_name = ? WHERE id = ?');
+        $stmt->execute([$dn, $riderUserId]);
+        if ($stmt->rowCount() < 1) {
+            $chk = $this->pdo->prepare('SELECT id FROM rider_users WHERE id = ? LIMIT 1');
+            $chk->execute([$riderUserId]);
+            if ($chk->fetchColumn() === false) {
+                throw new RuntimeException('user_not_found');
+            }
+        }
+    }
+
+    /**
+     * Verifies current password, sets a new one, revokes all sessions, returns a fresh session (same shape as login).
+     *
+     * @return array{sessionToken: string, user: array<string, mixed>}
+     */
+    public function changePasswordAuthenticated(int $riderUserId, string $currentPlain, string $newPlain): array
+    {
+        if ($riderUserId < 1) {
+            throw new RuntimeException('invalid_user');
+        }
+        if ($currentPlain === '' || $newPlain === '') {
+            throw new RuntimeException('invalid_credentials');
+        }
+        if (strlen($newPlain) < self::MIN_PASSWORD_LEN) {
+            throw new RuntimeException('password_too_short');
+        }
+        if ($currentPlain === $newPlain) {
+            throw new RuntimeException('password_unchanged');
+        }
+        $sel = $this->pdo->prepare(
+            'SELECT id, email, display_name, photo_url, password_hash FROM rider_users WHERE id = ? LIMIT 1',
+        );
+        $sel->execute([$riderUserId]);
+        $row = $sel->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            throw new RuntimeException('user_not_found');
+        }
+        $hash = $row['password_hash'] ?? null;
+        if ($hash === null || $hash === '' || ! is_string($hash)) {
+            throw new RuntimeException('no_password_account');
+        }
+        if (! password_verify($currentPlain, $hash)) {
+            throw new RuntimeException('invalid_credentials');
+        }
+        $newHash = password_hash($newPlain, PASSWORD_DEFAULT);
+        if ($newHash === false) {
+            throw new RuntimeException('hash_failed');
+        }
+
+        $this->pdo->beginTransaction();
+        try {
+            $up = $this->pdo->prepare(
+                'UPDATE rider_users SET password_hash = ?, must_change_password = 0 WHERE id = ?',
+            );
+            $up->execute([$newHash, $riderUserId]);
+            $rev = $this->pdo->prepare(
+                'UPDATE rider_sessions SET revoked_at = UTC_TIMESTAMP() WHERE rider_user_id = ? AND revoked_at IS NULL',
+            );
+            $rev->execute([$riderUserId]);
+            $email = (string) $row['email'];
+            $dn = $row['display_name'] !== null ? (string) $row['display_name'] : null;
+            $photo = $row['photo_url'] !== null ? (string) $row['photo_url'] : null;
+            $out = $this->insertSession($riderUserId, $email, $dn, $photo);
+            $this->pdo->commit();
+
+            return $out;
+        } catch (Throwable $e) {
+            $this->pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Mobile /me user object (requires must_change_password, driver_account_only — run migrations).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getUserPayloadForMe(int $riderUserId): ?array
+    {
+        if ($riderUserId < 1) {
+            return null;
+        }
+        $st = $this->pdo->prepare(
+            'SELECT id, email, display_name, photo_url, password_hash, must_change_password, driver_account_only FROM rider_users WHERE id = ? LIMIT 1',
+        );
+        $st->execute([$riderUserId]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        if ($row === false) {
+            return null;
+        }
+        $h = $row['password_hash'] ?? null;
+        $hasPassword = is_string($h) && $h !== '';
+        $mc = $row['must_change_password'] ?? 0;
+        $dao = $row['driver_account_only'] ?? 0;
+
+        return [
+            'id' => (int) $row['id'],
+            'email' => (string) $row['email'],
+            'displayName' => $row['display_name'] !== null ? (string) $row['display_name'] : null,
+            'photoUrl' => $row['photo_url'] !== null ? (string) $row['photo_url'] : null,
+            'hasPassword' => $hasPassword,
+            'mustChangePassword' => (int) $mc === 1,
+            'driverAccountOnly' => (int) $dao === 1,
+        ];
+    }
+
+    public function setPhotoUrl(int $riderUserId, string $photoUrl): void
+    {
+        if ($riderUserId < 1) {
+            throw new RuntimeException('invalid_user');
+        }
+        $url = trim($photoUrl);
+        if ($url === '' || strlen($url) > 512) {
+            throw new RuntimeException('invalid_photo_url');
+        }
+        $stmt = $this->pdo->prepare('UPDATE rider_users SET photo_url = ? WHERE id = ?');
+        $stmt->execute([$url, $riderUserId]);
     }
 
     public static function readBearerFromRequest(): ?string

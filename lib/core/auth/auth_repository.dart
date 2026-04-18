@@ -294,6 +294,126 @@ final class AuthRepository extends ChangeNotifier {
     }
   }
 
+  /// Uploads a profile photo ([POST /api/v1/me/photo]). Returns null on success.
+  Future<String?> uploadProfilePhoto(String filePath) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      final t = _token;
+      if (t == null) return 'Not signed in.';
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      final body = await _api.postMePhoto(
+        bearerToken: t,
+        filePath: filePath,
+      );
+      final user = body['user'];
+      if (user is Map<String, dynamic>) {
+        _profile = RiderProfile.fromJson(user);
+      }
+      notifyListeners();
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        return e.message;
+      }
+      if (e.statusCode == 429) {
+        return 'Too many requests. Try again later.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Updates display name via [PATCH /api/v1/me]. Returns null on success.
+  Future<String?> updateDisplayName(String displayName) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      final t = _token;
+      if (t == null) return 'Not signed in.';
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      final body = await _api.patchMe(
+        bearerToken: t,
+        displayName: displayName,
+      );
+      final user = body['user'];
+      if (user is Map<String, dynamic>) {
+        _profile = RiderProfile.fromJson(user);
+      }
+      notifyListeners();
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 400) {
+        return e.message;
+      }
+      if (e.statusCode == 429) {
+        return 'Too many requests. Try again later.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
+  /// Changes password; rotates session token. Returns null on success.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirm,
+  }) async {
+    _busy = true;
+    notifyListeners();
+    try {
+      final t = _token;
+      if (t == null) return 'Not signed in.';
+      if (AppConfig.apiBaseUrl.trim().isEmpty) {
+        return 'Set API_BASE_URL when building the app.';
+      }
+      final out = await _api.postAuthChangePassword(
+        bearerToken: t,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        newPasswordConfirm: newPasswordConfirm,
+      );
+      final token = out['sessionToken'] as String?;
+      if (token == null || token.isEmpty) {
+        return 'Server did not return a session.';
+      }
+      await _sessionStore.writeToken(token);
+      _token = token;
+      notifyListeners();
+      await refreshProfile();
+      return null;
+    } on ApiException catch (e) {
+      if (e.statusCode == 401) {
+        return e.message;
+      }
+      if (e.statusCode == 400) {
+        return e.message;
+      }
+      if (e.statusCode == 429) {
+        return 'Too many requests. Try again later.';
+      }
+      return e.message;
+    } catch (e) {
+      return e.toString();
+    } finally {
+      _busy = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> signOut() async {
     final t = _token;
     if (t != null && AppConfig.apiBaseUrl.trim().isNotEmpty) {

@@ -4,7 +4,10 @@ import 'package:http/http.dart' as http;
 
 import '../config/app_config.dart';
 
-/// Google Geocoding API (same key as Maps — enable Geocoding API in Cloud Console).
+/// Google Geocoding API (same key as Maps SDK — enable Geocoding API in Cloud Console).
+///
+/// Rider map passes [ClientConfigRepository.effectiveMapsApiKey] for both pickup and
+/// destination so REST geocoding matches the app’s configured `mapsApiKey` / `MAPS_API_KEY`.
 final class GeocodeService {
   GeocodeService({http.Client? client}) : _client = client ?? http.Client();
 

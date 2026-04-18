@@ -142,13 +142,23 @@ if ($path === '/api/v1/auth/reset-password' && in_array($method, ['POST', 'OPTIO
     exit;
 }
 
+if ($path === '/api/v1/auth/change-password' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_auth_change_password.php';
+    exit;
+}
+
 if ($path === '/rider/reset-password' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/rider/reset_password.php';
     exit;
 }
 
-if ($path === '/api/v1/me' && in_array($method, ['GET', 'OPTIONS'], true)) {
+if ($path === '/api/v1/me' && in_array($method, ['GET', 'PATCH', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_me.php';
+    exit;
+}
+
+if ($path === '/api/v1/me/photo' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_me_photo.php';
     exit;
 }
 
