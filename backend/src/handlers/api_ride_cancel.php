@@ -59,17 +59,35 @@ try {
     $out = $rides->riderCancelRide($rideId, $user['rider_user_id'], (float) $fee);
     if ($out === 'not_found') {
         http_response_code(404);
-        echo json_encode(['error' => 'not_found'], JSON_THROW_ON_ERROR);
+        echo json_encode(
+            [
+                'error' => 'not_found',
+                'message' => 'Ride not found.',
+            ],
+            JSON_THROW_ON_ERROR,
+        );
         exit;
     }
     if ($out === 'not_rider') {
         http_response_code(403);
-        echo json_encode(['error' => 'forbidden'], JSON_THROW_ON_ERROR);
+        echo json_encode(
+            [
+                'error' => 'forbidden',
+                'message' => 'You cannot cancel this ride.',
+            ],
+            JSON_THROW_ON_ERROR,
+        );
         exit;
     }
     if ($out === 'cannot_cancel') {
         http_response_code(409);
-        echo json_encode(['error' => 'cannot_cancel'], JSON_THROW_ON_ERROR);
+        echo json_encode(
+            [
+                'error' => 'cannot_cancel',
+                'message' => 'This ride can no longer be cancelled. It may have already finished or been cancelled.',
+            ],
+            JSON_THROW_ON_ERROR,
+        );
         exit;
     }
     $ride = $rides->findByIdForRiderUser($rideId, $user['rider_user_id']);

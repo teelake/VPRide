@@ -42,10 +42,10 @@ class _RiderResetPasswordScreenState extends State<RiderResetPasswordScreen> {
     final t = _token.text.trim();
     final p1 = _pass.text;
     final p2 = _pass2.text;
-    if (t.length < 64) {
+    if (t.length < 8) {
       messenger.showSnackBar(
         const SnackBar(
-          content: Text('Paste the full token from your reset link.'),
+          content: Text('Paste the reset token from your email link.'),
         ),
       );
       return;

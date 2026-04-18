@@ -47,6 +47,16 @@ String _mapDriverApiMessage(String code) {
   }
 }
 
+Future<(Map<String, dynamic>?, Object?)> _driverApiPair(
+  Future<Map<String, dynamic>> future,
+) async {
+  try {
+    return (await future, null);
+  } catch (e) {
+    return (null, e);
+  }
+}
+
 /// Driver operations: availability, incoming offers, active trip, history, earnings.
 class DriverTabScreen extends StatefulWidget {
   const DriverTabScreen({super.key, this.isActive = false});
@@ -188,53 +198,83 @@ class _DriverTabScreenState extends State<DriverTabScreen>
 
     final api = ApiScope.of(context);
     try {
-      final results = await Future.wait([
-        api.getDriverRidesIncoming(token),
-        api.getDriverRidesActive(token),
-        api.getDriverRidesHistory(token),
-        api.getDriverEarningsSummary(token),
+      final pairs = await Future.wait([
+        _driverApiPair(api.getDriverRidesIncoming(token)),
+        _driverApiPair(api.getDriverRidesActive(token)),
+        _driverApiPair(api.getDriverRidesHistory(token)),
+        _driverApiPair(api.getDriverEarningsSummary(token)),
       ]);
 
-      final incRaw = results[0]['rides'];
-      final actRaw = results[1]['ride'];
-      final histRaw = results[2]['rides'];
-
-      final incoming = <Map<String, dynamic>>[];
-      if (incRaw is List) {
-        for (final e in incRaw) {
-          if (e is Map<String, dynamic>) incoming.add(e);
-        }
-      }
-      Map<String, dynamic>? active;
-      if (actRaw is Map<String, dynamic>) {
-        active = actRaw;
-      }
-      final history = <Map<String, dynamic>>[];
-      if (histRaw is List) {
-        for (final e in histRaw) {
-          if (e is Map<String, dynamic>) history.add(e);
-        }
+      Object? tripErr;
+      for (var i = 0; i < 3; i++) {
+        tripErr ??= pairs[i].$2;
       }
 
       if (mounted) {
         setState(() {
-          _incoming = incoming;
-          _active = active;
-          _history = history;
-          _earnings = results[3];
+          final totalTripFail =
+              pairs[0].$1 == null && pairs[1].$1 == null && pairs[2].$1 == null;
+
+          final incMap = pairs[0].$1;
+          if (incMap != null) {
+            final incRaw = incMap['rides'];
+            final incoming = <Map<String, dynamic>>[];
+            if (incRaw is List) {
+              for (final e in incRaw) {
+                if (e is Map<String, dynamic>) incoming.add(e);
+              }
+            }
+            _incoming = incoming;
+          } else if (!silent && totalTripFail) {
+            _incoming = [];
+          }
+
+          final actMap = pairs[1].$1;
+          if (actMap != null) {
+            final actRaw = actMap['ride'];
+            _active = actRaw is Map<String, dynamic> ? actRaw : null;
+          } else if (!silent && totalTripFail) {
+            _active = null;
+          }
+
+          final histMap = pairs[2].$1;
+          if (histMap != null) {
+            final histRaw = histMap['rides'];
+            final history = <Map<String, dynamic>>[];
+            if (histRaw is List) {
+              for (final e in histRaw) {
+                if (e is Map<String, dynamic>) history.add(e);
+              }
+            }
+            _history = history;
+          } else if (!silent && totalTripFail) {
+            _history = [];
+          }
+
+          final earnMap = pairs[3].$1;
+          if (earnMap != null) {
+            _earnings = earnMap;
+          } else if (!silent && totalTripFail) {
+            _earnings = null;
+          }
+
+          if (!silent) {
+            final okAny = !totalTripFail;
+            if (!okAny && tripErr != null) {
+              if (tripErr is ApiException) {
+                _error = _mapDriverApiMessage(tripErr.message);
+              } else {
+                _error = tripErr.toString();
+              }
+            } else if (okAny) {
+              _error = null;
+            }
+          }
         });
       }
+
       await auth.refreshProfile();
       if (mounted) _syncLocationBroadcastTimer();
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      if (silent) {
-        if (e.statusCode == 403 && e.message == 'not_a_driver') {
-          await auth.refreshProfile();
-        }
-      } else {
-        setState(() => _error = _mapDriverApiMessage(e.message));
-      }
     } catch (e) {
       if (mounted && !silent) setState(() => _error = e.toString());
     } finally {

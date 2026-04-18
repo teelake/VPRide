@@ -42,7 +42,16 @@ class RegionConfigRepository extends ChangeNotifier {
           .get(uri)
           .timeout(const Duration(seconds: 15));
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        final json = jsonDecode(response.body);
+        final Object? json;
+        try {
+          json = jsonDecode(response.body);
+        } on FormatException {
+          if (kDebugMode) {
+            debugPrint('RegionConfigRepository: invalid JSON for $uri');
+          }
+          notifyListeners();
+          return;
+        }
         if (json is Map<String, dynamic>) {
           _dto = RegionConfigDto.fromJson(json);
         }

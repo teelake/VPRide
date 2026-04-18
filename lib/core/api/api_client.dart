@@ -595,7 +595,12 @@ final class ApiClient {
       }
       return {};
     }
-    final decoded = jsonDecode(raw);
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } on FormatException {
+      throw ApiException(res.statusCode, 'Invalid response from server');
+    }
     if (decoded is! Map<String, dynamic>) {
       throw ApiException(res.statusCode, 'Invalid response');
     }

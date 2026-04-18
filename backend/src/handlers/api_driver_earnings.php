@@ -30,31 +30,37 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     exit;
 }
 
-$pdo = Database::pdo();
-$ctx = DriverApiContext::requireFleetDriver($pdo);
-$rides = new RideRepository($pdo);
-$riderUserId = $ctx['riderUserId'];
-$gross = $rides->sumCompletedGrossFareForDriver($riderUserId);
-$globalPct = DriverEarningsPolicy::globalPercent($pdo);
-$driverShare = $rides->sumCompletedDriverShareForDriver($riderUserId, $globalPct);
-$effectivePct = DriverEarningsPolicy::effectivePercentForDriverRiderUserId($pdo, $riderUserId);
-$count = $rides->countCompletedTripsForDriver($riderUserId);
-$cur = 'NGN';
-$decimals = 2;
-if (PlatformPromoSettingsRepository::tableExists($pdo)) {
-    $s = (new PlatformPromoSettingsRepository($pdo))->getSettings();
-    $cur = $s['currency_code'];
-    $decimals = $s['decimal_places'];
+try {
+    $pdo = Database::pdo();
+    $ctx = DriverApiContext::requireFleetDriver($pdo);
+    $rides = new RideRepository($pdo);
+    $riderUserId = $ctx['riderUserId'];
+    $gross = $rides->sumCompletedGrossFareForDriver($riderUserId);
+    $globalPct = DriverEarningsPolicy::globalPercent($pdo);
+    $driverShare = $rides->sumCompletedDriverShareForDriver($riderUserId, $globalPct);
+    $effectivePct = DriverEarningsPolicy::effectivePercentForDriverRiderUserId($pdo, $riderUserId);
+    $count = $rides->countCompletedTripsForDriver($riderUserId);
+    $cur = 'NGN';
+    $decimals = 2;
+    if (PlatformPromoSettingsRepository::tableExists($pdo)) {
+        $s = (new PlatformPromoSettingsRepository($pdo))->getSettings();
+        $cur = $s['currency_code'];
+        $decimals = $s['decimal_places'];
+    }
+
+    $platformApprox = max(0.0, round($gross - $driverShare, $decimals));
+
+    echo json_encode([
+        'completedTrips' => $count,
+        'grossFareTotal' => round($gross, $decimals),
+        'driverShareTotal' => round($driverShare, $decimals),
+        'platformShareApprox' => $platformApprox,
+        'driverEarningsPercentEffective' => $effectivePct,
+        'driverEarningsPercentGlobal' => $globalPct,
+        'currency' => $cur,
+    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+} catch (Throwable $e) {
+    error_log('[vpride] GET /api/v1/driver/earnings/summary: ' . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }
-
-$platformApprox = max(0.0, round($gross - $driverShare, $decimals));
-
-echo json_encode([
-    'completedTrips' => $count,
-    'grossFareTotal' => round($gross, $decimals),
-    'driverShareTotal' => round($driverShare, $decimals),
-    'platformShareApprox' => $platformApprox,
-    'driverEarningsPercentEffective' => $effectivePct,
-    'driverEarningsPercentGlobal' => $globalPct,
-    'currency' => $cur,
-], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);

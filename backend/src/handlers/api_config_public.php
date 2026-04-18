@@ -17,6 +17,7 @@ Config::load($backendRoot . '/.env');
 
 ApiMobileCors::sendPreflightIfOptions();
 ApiMobileCors::headers();
+header('Cache-Control: public, max-age=120, stale-while-revalidate=300');
 
 if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     http_response_code(405);

@@ -758,22 +758,55 @@ final class RideRepository
     }
 
     /**
-     * Sum final fares for completed trips (rider gross / trip total).
+     * Sum rider-side gross for completed trips: final fare when set, else estimated minus promo
+     * (aligned with [DriverEarningsPolicy::grossFareForEarnings]).
      */
     public function sumCompletedGrossFareForDriver(int $driverRiderUserId): float
     {
-        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')
-            || ! SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
             return 0.0;
         }
-        $stmt = $this->pdo->prepare(
-            'SELECT COALESCE(SUM(final_fare_amount), 0) FROM rides '
-            . "WHERE driver_rider_user_id = ? AND status = 'completed' "
-            . 'AND final_fare_amount IS NOT NULL',
-        );
-        $stmt->execute([$driverRiderUserId]);
+        $hasFinal = SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount');
+        $hasEst = SchemaInspector::columnExists($this->pdo, 'rides', 'estimated_fare_amount');
+        $hasPromo = SchemaInspector::columnExists($this->pdo, 'rides', 'promo_discount_amount');
 
-        return round((float) $stmt->fetchColumn(), 4);
+        if ($hasFinal && $hasEst && $hasPromo) {
+            $stmt = $this->pdo->prepare(
+                'SELECT COALESCE(SUM(CASE '
+                . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 THEN final_fare_amount '
+                . 'WHEN estimated_fare_amount IS NOT NULL '
+                . 'THEN GREATEST(0, estimated_fare_amount - COALESCE(promo_discount_amount, 0)) '
+                . 'ELSE 0 END), 0) FROM rides '
+                . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+            );
+            $stmt->execute([$driverRiderUserId]);
+
+            return round((float) $stmt->fetchColumn(), 4);
+        }
+        if ($hasFinal && $hasEst) {
+            $stmt = $this->pdo->prepare(
+                'SELECT COALESCE(SUM(CASE '
+                . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 THEN final_fare_amount '
+                . 'WHEN estimated_fare_amount IS NOT NULL THEN GREATEST(0, estimated_fare_amount) '
+                . 'ELSE 0 END), 0) FROM rides '
+                . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+            );
+            $stmt->execute([$driverRiderUserId]);
+
+            return round((float) $stmt->fetchColumn(), 4);
+        }
+        if ($hasFinal) {
+            $stmt = $this->pdo->prepare(
+                'SELECT COALESCE(SUM(final_fare_amount), 0) FROM rides '
+                . "WHERE driver_rider_user_id = ? AND status = 'completed' "
+                . 'AND final_fare_amount IS NOT NULL',
+            );
+            $stmt->execute([$driverRiderUserId]);
+
+            return round((float) $stmt->fetchColumn(), 4);
+        }
+
+        return 0.0;
     }
 
     /**
@@ -788,15 +821,43 @@ final class RideRepository
         $pct = max(0.0, min(100.0, $globalPercentFallback));
         if (SchemaInspector::columnExists($this->pdo, 'rides', 'driver_earnings_amount')
             && SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
-            $stmt = $this->pdo->prepare(
-                'SELECT COALESCE(SUM(CASE '
-                . 'WHEN driver_earnings_amount IS NOT NULL THEN driver_earnings_amount '
-                . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 '
-                . 'THEN ROUND(final_fare_amount * (? / 100), 2) '
-                . 'ELSE 0 END), 0) FROM rides '
-                . "WHERE driver_rider_user_id = ? AND status = 'completed'",
-            );
-            $stmt->execute([$pct, $driverRiderUserId]);
+            $hasEst = SchemaInspector::columnExists($this->pdo, 'rides', 'estimated_fare_amount');
+            $hasPromo = SchemaInspector::columnExists($this->pdo, 'rides', 'promo_discount_amount');
+            if ($hasEst && $hasPromo) {
+                $stmt = $this->pdo->prepare(
+                    'SELECT COALESCE(SUM(CASE '
+                    . 'WHEN driver_earnings_amount IS NOT NULL THEN driver_earnings_amount '
+                    . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 '
+                    . 'THEN ROUND(final_fare_amount * (? / 100), 2) '
+                    . 'WHEN estimated_fare_amount IS NOT NULL THEN ROUND('
+                    . 'GREATEST(0, estimated_fare_amount - COALESCE(promo_discount_amount, 0)) * (? / 100), 2) '
+                    . 'ELSE 0 END), 0) FROM rides '
+                    . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+                );
+                $stmt->execute([$pct, $pct, $driverRiderUserId]);
+            } elseif ($hasEst) {
+                $stmt = $this->pdo->prepare(
+                    'SELECT COALESCE(SUM(CASE '
+                    . 'WHEN driver_earnings_amount IS NOT NULL THEN driver_earnings_amount '
+                    . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 '
+                    . 'THEN ROUND(final_fare_amount * (? / 100), 2) '
+                    . 'WHEN estimated_fare_amount IS NOT NULL '
+                    . 'THEN ROUND(GREATEST(0, estimated_fare_amount) * (? / 100), 2) '
+                    . 'ELSE 0 END), 0) FROM rides '
+                    . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+                );
+                $stmt->execute([$pct, $pct, $driverRiderUserId]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'SELECT COALESCE(SUM(CASE '
+                    . 'WHEN driver_earnings_amount IS NOT NULL THEN driver_earnings_amount '
+                    . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 '
+                    . 'THEN ROUND(final_fare_amount * (? / 100), 2) '
+                    . 'ELSE 0 END), 0) FROM rides '
+                    . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+                );
+                $stmt->execute([$pct, $driverRiderUserId]);
+            }
 
             return round((float) $stmt->fetchColumn(), 4);
         }

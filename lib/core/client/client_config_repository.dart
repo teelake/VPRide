@@ -67,7 +67,18 @@ class ClientConfigRepository extends ChangeNotifier {
           )
           .timeout(const Duration(seconds: 12));
       if (response.statusCode == 200 && response.body.isNotEmpty) {
-        final data = jsonDecode(response.body);
+        final Object? data;
+        try {
+          data = jsonDecode(response.body);
+        } on FormatException {
+          AppErrorReporter.report(
+            'warning',
+            'Public config: invalid JSON',
+            context: {'uri': uri.toString()},
+          );
+          notifyListeners();
+          return;
+        }
         if (data is Map<String, dynamic>) {
           _remoteGoogleWebClientId =
               '${data['googleWebClientId'] ?? ''}'.trim();

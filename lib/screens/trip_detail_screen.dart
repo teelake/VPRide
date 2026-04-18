@@ -88,6 +88,10 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
         }
       }
     } on ApiException catch (e) {
+      if (e.statusCode == 404) {
+        _poll?.cancel();
+        _poll = null;
+      }
       if (mounted && !silent) setState(() => _error = e.message);
     } catch (e) {
       if (mounted && !silent) setState(() => _error = e.toString());
@@ -111,6 +115,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     final feeLine = fee > 0
         ? 'A cancellation fee of $currency ${fee.toStringAsFixed(2)} applies and will be recorded on this ride.'
         : 'No cancellation fee is configured for your area.';
+    final api = ApiScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -127,9 +133,8 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
     );
     if (ok != true || !mounted) return;
     setState(() => _cancelBusy = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      final res = await ApiScope.of(context).postRideCancel(
+      final res = await api.postRideCancel(
         bearerToken: token,
         rideId: widget.rideId,
       );
