@@ -27,11 +27,17 @@ final class FarePromoService
      *   reward_grant_id: ?int
      * }
      */
-    public function computeForNewRide(int $riderUserId, ?string $couponCodeRaw): array
-    {
+    public function computeForNewRide(
+        int $riderUserId,
+        ?string $couponCodeRaw,
+        ?float $baseFareOverride = null,
+        bool $skipLoyaltyGrants = false,
+    ): array {
         $settings = (new PlatformPromoSettingsRepository($this->pdo))->getSettings();
         $decimals = $settings['decimal_places'];
-        $base = $this->roundMoney((float) $settings['default_ride_estimate'], $decimals);
+        $base = $baseFareOverride !== null
+            ? $this->roundMoney((float) $baseFareOverride, $decimals)
+            : $this->roundMoney((float) $settings['default_ride_estimate'], $decimals);
         $currency = $settings['currency_code'];
 
         if (! PromotionRepository::tableExists($this->pdo)) {
@@ -57,16 +63,18 @@ final class FarePromoService
         $candidates = [];
 
         $grantRepo = new RiderRewardGrantRepository($this->pdo);
-        foreach ($grantRepo->listAvailableGrantsWithPromotions($riderUserId) as $g) {
-            $p = $g['promotion'];
-            $d = $this->evaluatePromotionRow($p, $base, $now, $isNewUser, $riderUserId, $promoRepo, null, true);
-            if ($d !== null && $d['discount'] > 0) {
-                $candidates[] = [
-                    'discount' => $d['discount'],
-                    'promotion_id' => (int) $p['id'],
-                    'code' => null,
-                    'grant_id' => $g['grant_id'],
-                ];
+        if (! $skipLoyaltyGrants) {
+            foreach ($grantRepo->listAvailableGrantsWithPromotions($riderUserId) as $g) {
+                $p = $g['promotion'];
+                $d = $this->evaluatePromotionRow($p, $base, $now, $isNewUser, $riderUserId, $promoRepo, null, true);
+                if ($d !== null && $d['discount'] > 0) {
+                    $candidates[] = [
+                        'discount' => $d['discount'],
+                        'promotion_id' => (int) $p['id'],
+                        'code' => null,
+                        'grant_id' => $g['grant_id'],
+                    ];
+                }
             }
         }
 

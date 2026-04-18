@@ -194,11 +194,15 @@ final class ApiClient {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> postRide({
+  Future<Map<String, dynamic>> postRideEstimate({
     required String bearerToken,
     required double pickupLat,
     required double pickupLng,
     String? pickupAddress,
+    double? destLat,
+    double? destLng,
+    String? destAddress,
+    bool roundTrip = false,
     String? promoCode,
   }) async {
     final body = <String, dynamic>{
@@ -208,12 +212,125 @@ final class ApiClient {
         if (pickupAddress != null && pickupAddress.trim().isNotEmpty)
           'address': pickupAddress.trim(),
       },
+      if (destLat != null &&
+          destLng != null &&
+          !(destLat == 0 && destLng == 0))
+        'destination': <String, dynamic>{
+          'latitude': destLat,
+          'longitude': destLng,
+          if (destAddress != null && destAddress.trim().isNotEmpty)
+            'address': destAddress.trim(),
+        },
+      'roundTrip': roundTrip,
+      if (promoCode != null && promoCode.trim().isNotEmpty)
+        'promoCode': promoCode.trim(),
+    };
+    final res = await _client
+        .post(
+          _uri('/api/v1/rides/estimate'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postRide({
+    required String bearerToken,
+    required double pickupLat,
+    required double pickupLng,
+    String? pickupAddress,
+    double? destLat,
+    double? destLng,
+    String? destAddress,
+    bool roundTrip = false,
+    String? scheduledPickupAtIso,
+    String? promoCode,
+  }) async {
+    final body = <String, dynamic>{
+      'pickup': <String, dynamic>{
+        'latitude': pickupLat,
+        'longitude': pickupLng,
+        if (pickupAddress != null && pickupAddress.trim().isNotEmpty)
+          'address': pickupAddress.trim(),
+      },
+      if (destLat != null &&
+          destLng != null &&
+          !(destLat == 0 && destLng == 0))
+        'destination': <String, dynamic>{
+          'latitude': destLat,
+          'longitude': destLng,
+          if (destAddress != null && destAddress.trim().isNotEmpty)
+            'address': destAddress.trim(),
+        },
+      'roundTrip': roundTrip,
+      if (scheduledPickupAtIso != null &&
+          scheduledPickupAtIso.trim().isNotEmpty)
+        'scheduledPickupAt': scheduledPickupAtIso.trim(),
       if (promoCode != null && promoCode.trim().isNotEmpty)
         'promoCode': promoCode.trim(),
     };
     final res = await _client
         .post(
           _uri('/api/v1/rides'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getRidesMine(String bearerToken) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/rides/mine'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getRide(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/rides/$rideId'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postRideRating({
+    required String bearerToken,
+    required int rideId,
+    required int stars,
+    String? feedback,
+  }) async {
+    final body = <String, dynamic>{
+      'stars': stars,
+      if (feedback != null && feedback.trim().isNotEmpty)
+        'feedback': feedback.trim(),
+    };
+    final res = await _client
+        .post(
+          _uri('/api/v1/rides/$rideId/rating'),
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',

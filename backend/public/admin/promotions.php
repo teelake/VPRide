@@ -46,6 +46,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 'currency_code' => (string) ($_POST['currency_code'] ?? 'NGN'),
                 'decimal_places' => (int) ($_POST['decimal_places'] ?? 2),
                 'default_ride_estimate' => (float) ($_POST['default_ride_estimate'] ?? 1500),
+                'pricing_base_fare' => (float) ($_POST['pricing_base_fare'] ?? 500),
+                'pricing_per_km' => (float) ($_POST['pricing_per_km'] ?? 350),
+                'pricing_minimum_fare' => (float) ($_POST['pricing_minimum_fare'] ?? 0),
+                'advance_booking_max_days' => (int) ($_POST['advance_booking_max_days'] ?? 30),
                 'promo_timezone' => (string) ($_POST['promo_timezone'] ?? 'Africa/Lagos'),
                 'loyalty_enabled' => isset($_POST['loyalty_enabled']),
                 'loyalty_trips_per_reward' => (int) ($_POST['loyalty_trips_per_reward'] ?? 5),
@@ -203,8 +207,24 @@ require __DIR__ . '/includes/app_shell_start.php';
         <input class="vp-input" id="decimal_places" name="decimal_places" type="number" min="0" max="4" value="<?= (int) $platform['decimal_places'] ?>">
       </div>
       <div class="vp-field">
-        <label class="vp-label" for="default_ride_estimate">Default ride estimate (before route pricing)</label>
+        <label class="vp-label" for="default_ride_estimate">Default ride estimate (flat fare when per-km is 0)</label>
         <input class="vp-input" id="default_ride_estimate" name="default_ride_estimate" type="number" step="0.01" value="<?= vp_h((string) $platform['default_ride_estimate']) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="pricing_base_fare">Distance pricing — base fare</label>
+        <input class="vp-input" id="pricing_base_fare" name="pricing_base_fare" type="number" step="0.01" value="<?= vp_h((string) ($platform['pricing_base_fare'] ?? 500)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="pricing_per_km">Distance pricing — amount per km (0 = always use flat estimate)</label>
+        <input class="vp-input" id="pricing_per_km" name="pricing_per_km" type="number" step="0.0001" value="<?= vp_h((string) ($platform['pricing_per_km'] ?? 350)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="pricing_minimum_fare">Distance pricing — minimum total fare</label>
+        <input class="vp-input" id="pricing_minimum_fare" name="pricing_minimum_fare" type="number" step="0.01" value="<?= vp_h((string) ($platform['pricing_minimum_fare'] ?? 0)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="advance_booking_max_days">Advance booking — max days ahead (rider app)</label>
+        <input class="vp-input" id="advance_booking_max_days" name="advance_booking_max_days" type="number" min="1" max="365" value="<?= (int) ($platform['advance_booking_max_days'] ?? 30) ?>">
       </div>
       <div class="vp-field">
         <label class="vp-label" for="promo_timezone">Promo timezone (IANA)</label>

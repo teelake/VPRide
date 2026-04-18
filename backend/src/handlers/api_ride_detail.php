@@ -28,6 +28,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
     exit;
 }
 
+$rideId = (int) ($GLOBALS['vpride_ride_path_id'] ?? 0);
+if ($rideId < 1) {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_ride'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
 $token = RiderAuthService::readBearerFromRequest();
 if ($token === null || $token === '') {
     http_response_code(401);
@@ -44,16 +51,17 @@ if ($user === null) {
 }
 
 try {
-    $ride = (new RideRepository(Database::pdo()))->findActiveRideForRiderUser($user['rider_user_id']);
+    $ride = (new RideRepository(Database::pdo()))->findByIdForRiderUser($rideId, $user['rider_user_id']);
     if ($ride === null) {
-        echo json_encode(['ride' => null], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        http_response_code(404);
+        echo json_encode(['error' => 'not_found'], JSON_THROW_ON_ERROR);
         exit;
     }
     echo json_encode([
         'ride' => RideJsonPresenter::toPublicArray($ride),
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
-    error_log('[vpride] GET /api/v1/rides/current: ' . $e->getMessage());
+    error_log('[vpride] GET /api/v1/rides/{id}: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }

@@ -118,7 +118,7 @@ Future<void> main() async {
         path: '/home',
         builder: (context, state) {
           final tabRaw = int.tryParse(state.uri.queryParameters['tab'] ?? '');
-          final tab = (tabRaw ?? 0).clamp(0, 1);
+          final tab = (tabRaw ?? 0).clamp(0, 2);
           return HomeShellScreen(initialTab: tab);
         },
       ),

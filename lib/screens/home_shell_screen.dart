@@ -5,6 +5,7 @@ import '../core/client/client_config_scope.dart';
 import '../core/region/region_config_scope.dart';
 import 'map_tab_screen.dart';
 import 'profile_tab_screen.dart';
+import 'trips_tab_screen.dart';
 
 /// Main shell after onboarding — keeps tab state with [IndexedStack] for performance.
 class HomeShellScreen extends StatefulWidget {
@@ -22,14 +23,14 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
   @override
   void initState() {
     super.initState();
-    _index = widget.initialTab.clamp(0, 1);
+    _index = widget.initialTab.clamp(0, 2);
   }
 
   @override
   void didUpdateWidget(HomeShellScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.initialTab != widget.initialTab) {
-      _index = widget.initialTab.clamp(0, 1);
+      _index = widget.initialTab.clamp(0, 2);
     }
   }
 
@@ -92,7 +93,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             child: IndexedStack(
               index: _index,
               sizing: StackFit.expand,
-              children: const [MapTabScreen(), ProfileTabScreen()],
+              children: const [
+                MapTabScreen(),
+                TripsTabScreen(),
+                ProfileTabScreen(),
+              ],
             ),
           ),
         ],
@@ -106,6 +111,11 @@ class _HomeShellScreenState extends State<HomeShellScreen> {
             icon: Icon(Icons.map_outlined),
             selectedIcon: Icon(Icons.map_rounded),
             label: 'Map',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.history_outlined),
+            selectedIcon: Icon(Icons.history_rounded),
+            label: 'Trips',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),

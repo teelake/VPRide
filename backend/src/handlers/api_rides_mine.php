@@ -44,16 +44,14 @@ if ($user === null) {
 }
 
 try {
-    $ride = (new RideRepository(Database::pdo()))->findActiveRideForRiderUser($user['rider_user_id']);
-    if ($ride === null) {
-        echo json_encode(['ride' => null], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        exit;
+    $rows = (new RideRepository(Database::pdo()))->listForRiderUser($user['rider_user_id'], 50);
+    $rides = [];
+    foreach ($rows as $row) {
+        $rides[] = RideJsonPresenter::toPublicArray($row);
     }
-    echo json_encode([
-        'ride' => RideJsonPresenter::toPublicArray($ride),
-    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    echo json_encode(['rides' => $rides], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
-    error_log('[vpride] GET /api/v1/rides/current: ' . $e->getMessage());
+    error_log('[vpride] GET /api/v1/rides/mine: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['error' => 'server_error'], JSON_THROW_ON_ERROR);
 }

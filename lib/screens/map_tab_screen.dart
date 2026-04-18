@@ -47,11 +47,38 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _sosBusy = false;
   bool _ridePollBusy = false;
 
+  /// When true, the map pin adjusts pickup; when false, destination.
+  bool _pinPickup = true;
+  LatLng? _destPoint;
+  String? _destLabel;
+  bool _destGeocoding = false;
+  Timer? _destGeoDebounce;
+  bool _roundTrip = false;
+  DateTime? _scheduledPickupUtc;
+  bool _estimateBusy = false;
+  Map<String, dynamic>? _lastEstimate;
+  final TextEditingController _destSearchCtrl = TextEditingController();
+  RidePickupController? _pickupListenTarget;
+
   static const LatLng _fallbackToronto = LatLng(43.6532, -79.3832);
+
+  void _onPickupControllerTick() {
+    if (mounted) setState(() {});
+  }
+
+  void _syncPickupListener(RidePickupController pickupCtrl) {
+    if (identical(_pickupListenTarget, pickupCtrl)) {
+      return;
+    }
+    _pickupListenTarget?.removeListener(_onPickupControllerTick);
+    _pickupListenTarget = pickupCtrl;
+    _pickupListenTarget!.addListener(_onPickupControllerTick);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _syncPickupListener(RidePickupScope.of(context));
     if (!_didSeedPickup) {
       _didSeedPickup = true;
       final pickupCtrl = RidePickupScope.of(context);
@@ -74,9 +101,12 @@ class _MapTabScreenState extends State<MapTabScreen>
 
   @override
   void dispose() {
+    _pickupListenTarget?.removeListener(_onPickupControllerTick);
     _geoDebounce?.cancel();
+    _destGeoDebounce?.cancel();
     _geocoder.close();
     _promoCodeCtrl.dispose();
+    _destSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -232,6 +262,130 @@ class _MapTabScreenState extends State<MapTabScreen>
     });
   }
 
+  void _scheduleDestGeocode(LatLng p, String mapsApiKey) {
+    _destGeoDebounce?.cancel();
+    if (mapsApiKey.trim().isEmpty) {
+      setState(() {
+        _destLabel =
+            '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
+        _destGeocoding = false;
+      });
+      return;
+    }
+    setState(() => _destGeocoding = true);
+    _destGeoDebounce = Timer(const Duration(milliseconds: 480), () async {
+      final label = await _geocoder.reverseFormattedAddress(
+        p.latitude,
+        p.longitude,
+        apiKey: mapsApiKey,
+      );
+      if (!mounted) return;
+      setState(() {
+        _destGeocoding = false;
+        _destLabel = label ??
+            '${p.latitude.toStringAsFixed(5)}, ${p.longitude.toStringAsFixed(5)}';
+      });
+    });
+  }
+
+  Future<void> _searchDestination(String mapsApiKey) async {
+    final q = _destSearchCtrl.text.trim();
+    if (q.isEmpty || mapsApiKey.isEmpty) return;
+    final hit = await _geocoder.geocodeAddress(q, apiKey: mapsApiKey);
+    if (!mounted || hit == null) return;
+    setState(() {
+      _destPoint = LatLng(hit.lat, hit.lng);
+      _destLabel = hit.address;
+      _pinPickup = false;
+    });
+    try {
+      final c = await _mapController.future;
+      await c.animateCamera(
+        CameraUpdate.newLatLngZoom(LatLng(hit.lat, hit.lng), 14.5),
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _runEstimate(
+    BuildContext context,
+    RidePickupController pickupCtrl,
+  ) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    final p = pickupCtrl.pickup;
+    if (token == null || p == null || !auth.isSignedIn) return;
+    final cfg = ClientConfigScope.of(context).features;
+    final messenger = ScaffoldMessenger.of(context);
+    setState(() => _estimateBusy = true);
+    try {
+      final promo = cfg.promoCodeEntryEnabled ? _promoCodeCtrl.text.trim() : '';
+      final res = await ApiScope.of(context).postRideEstimate(
+        bearerToken: token,
+        pickupLat: p.latitude,
+        pickupLng: p.longitude,
+        pickupAddress: pickupCtrl.addressLabel,
+        destLat: _destPoint?.latitude,
+        destLng: _destPoint?.longitude,
+        destAddress: _destLabel,
+        roundTrip: _roundTrip,
+        promoCode: promo.isNotEmpty ? promo : null,
+      );
+      if (!mounted) return;
+      setState(() => _lastEstimate = res);
+      final total = res['totalFinalFare'];
+      final dist = res['distanceKm'];
+      var msg = 'Estimate updated';
+      if (dist != null) msg += ' · ${dist} km';
+      if (total != null) msg += ' · total $total';
+      messenger.showSnackBar(SnackBar(content: Text(msg)));
+    } on ApiException catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _estimateBusy = false);
+    }
+  }
+
+  String _estimateSummaryLine(Map<String, dynamic> e) {
+    final dist = e['distanceKm'];
+    final total = e['totalFinalFare'];
+    final p = e['pricing'];
+    var s = '';
+    if (dist != null) s += '${dist} km · ';
+    if (p is Map && p['finalFare'] != null) {
+      final cur = '${p['currency'] ?? ''}'.trim();
+      s += 'Leg $cur ${p['finalFare']}';
+    }
+    if (e['returnPricing'] is Map && e['roundTrip'] == true) {
+      final r = e['returnPricing'] as Map;
+      if (r['finalFare'] != null) {
+        final cur = '${r['currency'] ?? ''}'.trim();
+        s += ' · return $cur ${r['finalFare']}';
+      }
+    }
+    if (total != null) s += ' · total $total';
+    return s.isEmpty ? 'Estimate ready' : s;
+  }
+
+  Future<void> _pickSchedule(BuildContext context) async {
+    final now = DateTime.now();
+    final d = await showDatePicker(
+      context: context,
+      initialDate: now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+    );
+    if (d == null || !mounted) return;
+    final t = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(now.add(const Duration(hours: 2))),
+    );
+    if (t == null || !mounted) return;
+    final local = DateTime(d.year, d.month, d.day, t.hour, t.minute);
+    setState(() => _scheduledPickupUtc = local.toUtc());
+  }
+
   Future<void> _requestRide(
     BuildContext context,
     RidePickupController pickupCtrl,
@@ -282,15 +436,25 @@ class _MapTabScreenState extends State<MapTabScreen>
         pickupLat: p.latitude,
         pickupLng: p.longitude,
         pickupAddress: pickupCtrl.addressLabel,
+        destLat: _destPoint?.latitude,
+        destLng: _destPoint?.longitude,
+        destAddress: _destLabel,
+        roundTrip: _roundTrip,
+        scheduledPickupAtIso: _scheduledPickupUtc?.toIso8601String(),
         promoCode: promo.isNotEmpty ? promo : null,
       );
       if (!mounted) return;
       final id = res['id'];
       final pricing = res['pricing'];
+      final total = res['totalFinalFare'];
       var sub = 'Ride requested${id != null ? ' · #$id' : ''}';
       if (pricing is Map && pricing['finalFare'] != null) {
         final cur = '${pricing['currency'] ?? ''}'.trim();
         sub += ' · $cur ${pricing['finalFare']}';
+      }
+      if (total != null) {
+        final cur = pricing is Map ? '${pricing['currency'] ?? ''}'.trim() : '';
+        sub += ' · total $cur $total'.trim();
       }
       messenger.showSnackBar(SnackBar(content: Text(sub)));
       await _refreshActiveRide(context);
@@ -340,6 +504,18 @@ class _MapTabScreenState extends State<MapTabScreen>
     }
 
     final initial = _initialTarget(context);
+    final pickupPt = pickupCtrl.pickup;
+    final polys = <Polyline>{};
+    if (pickupPt != null && _destPoint != null) {
+      polys.add(
+        Polyline(
+          polylineId: const PolylineId('legroute'),
+          color: AppColors.secondary.withValues(alpha: 0.88),
+          width: 5,
+          points: [pickupPt, _destPoint!],
+        ),
+      );
+    }
 
     return ColoredBox(
       color: AppColors.surfaceMuted,
@@ -347,6 +523,7 @@ class _MapTabScreenState extends State<MapTabScreen>
         fit: StackFit.expand,
         children: [
           GoogleMap(
+            key: const ValueKey<String>('ride_map_singleton'),
             initialCameraPosition: CameraPosition(
               target: initial,
               zoom: 14.5,
@@ -355,17 +532,24 @@ class _MapTabScreenState extends State<MapTabScreen>
             myLocationButtonEnabled: false,
             compassEnabled: true,
             mapToolbarEnabled: false,
+            polylines: polys,
             padding: const EdgeInsets.only(bottom: 200),
             onMapCreated: (c) {
-              _mapController.complete(c);
+              if (!_mapController.isCompleted) {
+                _mapController.complete(c);
+              }
               _centerOnUser();
             },
             onCameraMove: (pos) => _cameraTarget = pos.target,
             onCameraIdle: () {
               final t = _cameraTarget;
-              if (t != null) {
+              if (t == null) return;
+              if (_pinPickup) {
                 pickupCtrl.setFromCamera(t);
                 _scheduleGeocode(pickupCtrl, t, mapsKey);
+              } else {
+                setState(() => _destPoint = t);
+                _scheduleDestGeocode(t, mapsKey);
               }
             },
           ),
@@ -375,7 +559,7 @@ class _MapTabScreenState extends State<MapTabScreen>
               child: Icon(
                 Icons.location_pin,
                 size: 52,
-                color: AppColors.secondary,
+                color: _pinPickup ? AppColors.secondary : Colors.deepOrange.shade700,
                 shadows: [
                   Shadow(
                     color: Colors.black.withValues(alpha: 0.2),
@@ -441,61 +625,191 @@ class _MapTabScreenState extends State<MapTabScreen>
               shadowColor: Colors.black26,
               borderRadius: BorderRadius.circular(20),
               color: Colors.white,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Pickup',
-                      style: textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.08,
-                        color: AppColors.secondary.withValues(alpha: 0.45),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 400),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          ChoiceChip(
+                            label: const Text('Pickup pin'),
+                            selected: _pinPickup,
+                            onSelected: (_) =>
+                                setState(() => _pinPickup = true),
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text('Destination pin'),
+                            selected: !_pinPickup,
+                            onSelected: (_) {
+                              setState(() {
+                                _pinPickup = false;
+                                final cur = pickupCtrl.pickup;
+                                if (_destPoint == null && cur != null) {
+                                  _destPoint = cur;
+                                  _destLabel = 'Move map or search';
+                                }
+                              });
+                            },
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    ListenableBuilder(
-                      listenable: pickupCtrl,
-                      builder: (context, _) {
-                        final label = pickupCtrl.addressLabel ??
-                            'Move map to adjust pin';
-                        return Text(
-                          pickupCtrl.isGeocoding ? 'Finding address…' : label,
+                      const SizedBox(height: 10),
+                      Text(
+                        _pinPickup ? 'Pickup' : 'Destination',
+                        style: textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.08,
+                          color: AppColors.secondary.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      if (_pinPickup)
+                        ListenableBuilder(
+                          listenable: pickupCtrl,
+                          builder: (context, _) {
+                            final label = pickupCtrl.addressLabel ??
+                                'Move map to adjust pin';
+                            return Text(
+                              pickupCtrl.isGeocoding
+                                  ? 'Finding address…'
+                                  : label,
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                height: 1.3,
+                              ),
+                              maxLines: 3,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
+                        )
+                      else ...[
+                        TextField(
+                          controller: _destSearchCtrl,
+                          textCapitalization: TextCapitalization.sentences,
+                          decoration: InputDecoration(
+                            labelText: 'Search destination',
+                            isDense: true,
+                            border: const OutlineInputBorder(),
+                            suffixIcon: IconButton(
+                              tooltip: 'Search',
+                              icon: const Icon(Icons.search_rounded),
+                              onPressed: mapsKey.isEmpty
+                                  ? null
+                                  : () => _searchDestination(mapsKey),
+                            ),
+                          ),
+                          onSubmitted: (_) => _searchDestination(mapsKey),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _destGeocoding
+                              ? 'Finding address…'
+                              : (_destLabel ??
+                                    'Move map to set destination pin'),
                           style: textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             height: 1.3,
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
-                        );
-                      },
-                    ),
-                    if (features.promoCodeEntryEnabled) ...[
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _promoCodeCtrl,
-                        textCapitalization: TextCapitalization.characters,
-                        decoration: const InputDecoration(
-                          labelText: 'Promo code (optional)',
-                          isDense: true,
-                          border: OutlineInputBorder(),
                         ),
+                      ],
+                      const SizedBox(height: 10),
+                      SwitchListTile.adaptive(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Round trip'),
+                        subtitle: const Text(
+                          'Books a return from destination back to pickup',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        value: _roundTrip,
+                        onChanged: rideDisabled
+                            ? null
+                            : (v) => setState(() {
+                                  _roundTrip = v;
+                                  _lastEstimate = null;
+                                }),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: rideDisabled
+                                  ? null
+                                  : () => _pickSchedule(context),
+                              icon: const Icon(Icons.schedule_rounded),
+                              label: Text(
+                                _scheduledPickupUtc == null
+                                    ? 'Schedule pickup'
+                                    : 'Scheduled (UTC): ${_scheduledPickupUtc!.toIso8601String()}',
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                          if (_scheduledPickupUtc != null)
+                            IconButton(
+                              tooltip: 'Clear schedule',
+                              onPressed: () =>
+                                  setState(() => _scheduledPickupUtc = null),
+                              icon: const Icon(Icons.clear_rounded),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _estimateBusy || rideDisabled
+                            ? null
+                            : () => _runEstimate(context, pickupCtrl),
+                        icon: _estimateBusy
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.payments_outlined),
+                        label: const Text('Refresh fare estimate'),
+                      ),
+                      if (_lastEstimate != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _estimateSummaryLine(_lastEstimate!),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.secondary.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ],
+                      if (features.promoCodeEntryEnabled) ...[
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: _promoCodeCtrl,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(
+                            labelText: 'Promo code (optional)',
+                            isDense: true,
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 14),
+                      AppPrimaryButton(
+                        label: rideDisabled
+                            ? (features.maintenanceMode
+                                  ? 'Unavailable (maintenance)'
+                                  : 'Booking disabled')
+                            : 'Request ride',
+                        isLoading: _rideBusy,
+                        onPressed: _rideBusy || rideDisabled
+                            ? null
+                            : () => _requestRide(context, pickupCtrl),
                       ),
                     ],
-                    const SizedBox(height: 14),
-                    AppPrimaryButton(
-                      label: rideDisabled
-                          ? (features.maintenanceMode ? 'Unavailable (maintenance)'
-                                : 'Booking disabled')
-                          : 'Request ride',
-                      isLoading: _rideBusy,
-                      onPressed: _rideBusy || rideDisabled
-                          ? null
-                          : () => _requestRide(context, pickupCtrl),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),

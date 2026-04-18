@@ -157,6 +157,28 @@ if ($path === '/api/v1/rides/current' && in_array($method, ['GET', 'OPTIONS'], t
     exit;
 }
 
+if ($path === '/api/v1/rides/mine' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_rides_mine.php';
+    exit;
+}
+
+if ($path === '/api/v1/rides/estimate' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_rides_estimate.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/rides/(\\d+)/rating$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_ride_rating.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/rides/(\\d+)$#', $path, $vpridePathMatch) && in_array($method, ['GET', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_ride_detail.php';
+    exit;
+}
+
 if ($path === '/api/v1/sos' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_sos.php';
     exit;
