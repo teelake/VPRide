@@ -53,6 +53,11 @@ final class RideJsonPresenter
             'distanceKm' => isset($ride['distance_km']) && $ride['distance_km'] !== null
                 ? round((float) $ride['distance_km'], 3)
                 : null,
+            'assignSource' => array_key_exists('assign_source', $ride)
+                ? (string) ($ride['assign_source'] ?? 'none')
+                : 'none',
+            'consoleBooking' => isset($ride['console_booking']) && (int) $ride['console_booking'] === 1,
+            'driverMaySetFinalFare' => self::driverMaySetFinalFare($ride),
             'ratingStars' => isset($ride['rating_stars']) && $ride['rating_stars'] !== null
                 ? (int) $ride['rating_stars']
                 : null,
@@ -100,5 +105,23 @@ final class RideJsonPresenter
         }
 
         return $out;
+    }
+
+    /**
+     * Driver may submit final fare at complete when admin dispatched manually or booking was created in console.
+     *
+     * @param array<string, mixed> $ride
+     */
+    public static function driverMaySetFinalFare(array $ride): bool
+    {
+        $src = (string) ($ride['assign_source'] ?? 'none');
+        if ($src === 'manual') {
+            return true;
+        }
+        if (isset($ride['console_booking']) && (int) $ride['console_booking'] === 1) {
+            return true;
+        }
+
+        return false;
     }
 }

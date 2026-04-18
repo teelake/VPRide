@@ -592,15 +592,57 @@ final class RideRepository
         return $stmt->rowCount() > 0;
     }
 
-    public function driverCompleteTrip(int $rideId, int $driverRiderUserId): bool
+    /**
+     * Completes trip. Optional final fare (validated, rounded) when console / manual-dispatch rules allow.
+     *
+     * @return 'ok'|'cannot_complete'|'fare_not_allowed'|'invalid_fare'
+     */
+    public function driverCompleteTrip(int $rideId, int $driverRiderUserId, ?float $finalFare = null): string
     {
+        $row = $this->findById($rideId);
+        if ($row === null) {
+            return 'cannot_complete';
+        }
+        if ((int) ($row['driver_rider_user_id'] ?? 0) !== $driverRiderUserId) {
+            return 'cannot_complete';
+        }
+        if (($row['status'] ?? '') !== 'in_progress') {
+            return 'cannot_complete';
+        }
+
+        if ($finalFare !== null) {
+            if (! RideJsonPresenter::driverMaySetFinalFare($row)) {
+                return 'fare_not_allowed';
+            }
+            if ($finalFare <= 0.0 || $finalFare > 99_999_999.0 || ! is_finite($finalFare)) {
+                return 'invalid_fare';
+            }
+            $finalFare = round($finalFare, 2, PHP_ROUND_HALF_UP);
+            if (! SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
+                    . "AND status = 'in_progress'",
+                );
+                $stmt->execute([$rideId, $driverRiderUserId]);
+
+                return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
+            }
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET status = \'completed\', final_fare_amount = ? '
+                . 'WHERE id = ? AND driver_rider_user_id = ? AND status = \'in_progress\'',
+            );
+            $stmt->execute([$finalFare, $rideId, $driverRiderUserId]);
+
+            return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
+        }
+
         $stmt = $this->pdo->prepare(
             'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
             . "AND status = 'in_progress'",
         );
         $stmt->execute([$rideId, $driverRiderUserId]);
 
-        return $stmt->rowCount() > 0;
+        return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
     }
 
     /**

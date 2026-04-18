@@ -11,6 +11,7 @@ require_once $backendRoot . '/src/PlatformPromoSettingsRepository.php';
 require_once $backendRoot . '/src/FarePromoService.php';
 require_once $backendRoot . '/src/FixedPricingService.php';
 require_once $backendRoot . '/src/DispatchService.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
@@ -20,6 +21,7 @@ use VprideBackend\FarePromoService;
 use VprideBackend\FixedPricingService;
 use VprideBackend\PlatformPromoSettingsRepository;
 use VprideBackend\RideRepository;
+use VprideBackend\SchemaInspector;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -122,6 +124,10 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                             $pricingPayload,
                             $meta,
                         );
+                        if (SchemaInspector::columnExists($pdo, 'rides', 'console_booking')) {
+                            $markConsole = $pdo->prepare('UPDATE rides SET console_booking = 1 WHERE id = ?');
+                            $markConsole->execute([$newId]);
+                        }
                         if (! $skipAuto) {
                             try {
                                 (new DispatchService($pdo))->tryAutoAssign($newId);

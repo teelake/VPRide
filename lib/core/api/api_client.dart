@@ -461,15 +461,21 @@ final class ApiClient {
 
   Future<Map<String, dynamic>> postDriverRideComplete(
     String bearerToken,
-    int rideId,
-  ) async {
+    int rideId, {
+    double? finalFare,
+  }) async {
+    final body = <String, dynamic>{
+      if (finalFare != null) 'finalFare': finalFare,
+    };
     final res = await _client
         .post(
           _uri('/api/v1/driver/rides/$rideId/complete'),
           headers: {
+            'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Authorization': 'Bearer $bearerToken',
           },
+          body: jsonEncode(body),
         )
         .timeout(_timeout);
     return _decode(res);

@@ -35,17 +35,56 @@ if ($rideId < 1) {
     exit;
 }
 
+$finalFare = null;
+$raw = file_get_contents('php://input') ?: '';
+if ($raw !== '') {
+    try {
+        /** @var mixed $data */
+        $data = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+    } catch (Throwable) {
+        http_response_code(400);
+        echo json_encode(['error' => 'invalid_json'], JSON_THROW_ON_ERROR);
+        exit;
+    }
+    if (is_array($data) && array_key_exists('finalFare', $data)) {
+        $v = $data['finalFare'];
+        if ($v !== null && $v !== '') {
+            if (is_numeric($v)) {
+                $finalFare = (float) $v;
+            } else {
+                http_response_code(400);
+                echo json_encode(['error' => 'invalid_fare'], JSON_THROW_ON_ERROR);
+                exit;
+            }
+        }
+    }
+}
+
 $pdo = Database::pdo();
 $ctx = DriverApiContext::requireFleetDriver($pdo);
 $rides = new RideRepository($pdo);
-if (! $rides->driverCompleteTrip($rideId, $ctx['riderUserId'])) {
-    http_response_code(409);
-    echo json_encode(['error' => 'cannot_complete'], JSON_THROW_ON_ERROR);
+$result = $rides->driverCompleteTrip($rideId, $ctx['riderUserId'], $finalFare);
+
+if ($result === 'ok') {
+    try {
+        (new DriverAvailabilityRepository($pdo))->setStatus($ctx['riderUserId'], 'online');
+    } catch (Throwable) {
+        /* ignore */
+    }
+    echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     exit;
 }
-try {
-    (new DriverAvailabilityRepository($pdo))->setStatus($ctx['riderUserId'], 'online');
-} catch (Throwable) {
-    /* ignore */
+
+if ($result === 'fare_not_allowed') {
+    http_response_code(409);
+    echo json_encode(['error' => 'fare_not_allowed'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    exit;
 }
-echo json_encode(['ok' => true], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+if ($result === 'invalid_fare') {
+    http_response_code(400);
+    echo json_encode(['error' => 'invalid_fare'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    exit;
+}
+
+http_response_code(409);
+echo json_encode(['error' => 'cannot_complete'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
