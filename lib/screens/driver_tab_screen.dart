@@ -122,10 +122,11 @@ class _DriverTabScreenState extends State<DriverTabScreen>
 
   Future<void> _setAvailability(String status) async {
     final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
     final token = auth.sessionToken;
     if (token == null) return;
     try {
-      await ApiScope.of(context).postDriverAvailability(
+      await api.postDriverAvailability(
         bearerToken: token,
         status: status,
       );
@@ -145,12 +146,14 @@ class _DriverTabScreenState extends State<DriverTabScreen>
   }
 
   Future<void> _accept(int rideId) async {
-    final token = AuthScope.of(context).sessionToken;
+    final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
+    final token = auth.sessionToken;
     if (token == null) return;
     setState(() => _busyRideId = rideId);
     try {
-      await ApiScope.of(context).postDriverRideAccept(token, rideId);
-      await AuthScope.of(context).refreshProfile();
+      await api.postDriverRideAccept(token, rideId);
+      await auth.refreshProfile();
       if (mounted) await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -164,12 +167,14 @@ class _DriverTabScreenState extends State<DriverTabScreen>
   }
 
   Future<void> _reject(int rideId) async {
-    final token = AuthScope.of(context).sessionToken;
+    final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
+    final token = auth.sessionToken;
     if (token == null) return;
     setState(() => _busyRideId = rideId);
     try {
-      await ApiScope.of(context).postDriverRideReject(token, rideId);
-      await AuthScope.of(context).refreshProfile();
+      await api.postDriverRideReject(token, rideId);
+      await auth.refreshProfile();
       if (mounted) await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -183,11 +188,13 @@ class _DriverTabScreenState extends State<DriverTabScreen>
   }
 
   Future<void> _start(int rideId) async {
-    final token = AuthScope.of(context).sessionToken;
+    final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
+    final token = auth.sessionToken;
     if (token == null) return;
     setState(() => _busyRideId = rideId);
     try {
-      await ApiScope.of(context).postDriverRideStart(token, rideId);
+      await api.postDriverRideStart(token, rideId);
       if (mounted) await _load();
     } on ApiException catch (e) {
       if (mounted) {
@@ -201,12 +208,14 @@ class _DriverTabScreenState extends State<DriverTabScreen>
   }
 
   Future<void> _complete(int rideId) async {
-    final token = AuthScope.of(context).sessionToken;
+    final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
+    final token = auth.sessionToken;
     if (token == null) return;
     setState(() => _busyRideId = rideId);
     try {
-      await ApiScope.of(context).postDriverRideComplete(token, rideId);
-      await AuthScope.of(context).refreshProfile();
+      await api.postDriverRideComplete(token, rideId);
+      await auth.refreshProfile();
       if (mounted) await _load();
     } on ApiException catch (e) {
       if (mounted) {
