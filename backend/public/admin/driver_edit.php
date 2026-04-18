@@ -207,7 +207,7 @@ require __DIR__ . '/includes/app_shell_start.php';
             <option value="<?= $vid ?>" data-ownership="<?= vp_h($own) ?>"<?= $fleetVehicleId === $vid ? ' selected' : '' ?>><?= vp_h($label) ?></option>
           <?php } ?>
         </select>
-        <p class="vp-field-hint">Only <strong>active</strong> vehicles appear here. The server checks that the vehicle ownership matches the driver type when you save.</p>
+        <p class="vp-field-hint">Only <strong>active</strong> vehicles appear here. The server checks that the vehicle ownership matches the driver type when you save. Each vehicle may be assigned to only one <strong>active</strong> or <strong>pending</strong> driver at a time (suspend or unassign others first).</p>
       </div>
       <div class="vp-field">
         <label class="vp-label" for="license_number">License / permit ID (optional)</label>

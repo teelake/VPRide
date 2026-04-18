@@ -106,6 +106,7 @@ final class ConsoleDriverRepository
     public function insert(array $data): int
     {
         $row = $this->normalizeAndValidateVehicle($data);
+        $this->assertFleetVehicleExclusive($row['fleet_vehicle_id'], null);
         $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
         $hasEarn = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'earnings_percent_override');
         if ($hasRider && $hasEarn) {
@@ -188,6 +189,7 @@ final class ConsoleDriverRepository
             throw new RuntimeException('Invalid driver id');
         }
         $row = $this->normalizeAndValidateVehicle($data);
+        $this->assertFleetVehicleExclusive($row['fleet_vehicle_id'], $id);
         $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
         $hasEarn = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'earnings_percent_override');
         if ($hasRider && $hasEarn) {
@@ -277,6 +279,36 @@ final class ConsoleDriverRepository
         $stmt->execute([$id]);
         if ($stmt->rowCount() < 1) {
             throw new RuntimeException('Driver not found');
+        }
+    }
+
+    /**
+     * One vehicle may be held by only one driver at a time among active / pending rows.
+     * Suspended drivers do not block reassignment (change status or clear vehicle first if you need stricter data).
+     */
+    private function assertFleetVehicleExclusive(?int $fleetVehicleId, ?int $excludeDriverId): void
+    {
+        if ($fleetVehicleId === null || $fleetVehicleId < 1) {
+            return;
+        }
+        $sql = 'SELECT id, full_name FROM fleet_drivers WHERE fleet_vehicle_id = ? '
+            . "AND status IN ('active', 'pending')";
+        $params = [$fleetVehicleId];
+        if ($excludeDriverId !== null && $excludeDriverId > 0) {
+            $sql .= ' AND id != ?';
+            $params[] = $excludeDriverId;
+        }
+        $sql .= ' LIMIT 1';
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute($params);
+        $other = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($other !== false) {
+            $name = trim((string) ($other['full_name'] ?? 'Driver'));
+            $oid = (int) $other['id'];
+            throw new RuntimeException(
+                'This vehicle is already assigned to ' . $name . ' (#' . $oid . ', active or pending). '
+                . 'Clear that driver\'s vehicle, set them to suspended, or choose another vehicle.',
+            );
         }
     }
 
