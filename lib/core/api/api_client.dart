@@ -317,6 +317,28 @@ final class ApiClient {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> postDriverLocation({
+    required String bearerToken,
+    required double latitude,
+    required double longitude,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/location'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode({
+            'latitude': latitude,
+            'longitude': longitude,
+          }),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postDriverAvailability({
     required String bearerToken,
     required String status,

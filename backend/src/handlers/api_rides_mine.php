@@ -8,14 +8,14 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RideRepository.php';
-require_once $backendRoot . '/src/RideJsonPresenter.php';
+require_once $backendRoot . '/src/RiderRideViewPresenter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
-use VprideBackend\RideJsonPresenter;
 use VprideBackend\RideRepository;
 use VprideBackend\RiderAuthService;
+use VprideBackend\RiderRideViewPresenter;
 
 Config::load($backendRoot . '/.env');
 
@@ -44,11 +44,9 @@ if ($user === null) {
 }
 
 try {
-    $rows = (new RideRepository(Database::pdo()))->listForRiderUser($user['rider_user_id'], 50);
-    $rides = [];
-    foreach ($rows as $row) {
-        $rides[] = RideJsonPresenter::toPublicArray($row);
-    }
+    $pdo = Database::pdo();
+    $rows = (new RideRepository($pdo))->listForRiderUser($user['rider_user_id'], 50);
+    $rides = RiderRideViewPresenter::mapManyForRider($pdo, $rows);
     echo json_encode(['rides' => $rides], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/rides/mine: ' . $e->getMessage());

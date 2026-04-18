@@ -8,14 +8,14 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RideRepository.php';
-require_once $backendRoot . '/src/RideJsonPresenter.php';
+require_once $backendRoot . '/src/RiderRideViewPresenter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
-use VprideBackend\RideJsonPresenter;
 use VprideBackend\RideRepository;
 use VprideBackend\RiderAuthService;
+use VprideBackend\RiderRideViewPresenter;
 
 Config::load($backendRoot . '/.env');
 
@@ -50,7 +50,7 @@ try {
         exit;
     }
     echo json_encode([
-        'ride' => RideJsonPresenter::toPublicArray($ride),
+        'ride' => RiderRideViewPresenter::toRiderArray(Database::pdo(), $ride),
     ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/rides/current: ' . $e->getMessage());

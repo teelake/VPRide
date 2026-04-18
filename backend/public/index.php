@@ -172,6 +172,11 @@ if ($path === '/api/v1/driver/availability' && in_array($method, ['POST', 'OPTIO
     exit;
 }
 
+if ($path === '/api/v1/driver/location' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_location.php';
+    exit;
+}
+
 if ($path === '/api/v1/driver/rides/incoming' && in_array($method, ['GET', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_driver_rides_incoming.php';
     exit;

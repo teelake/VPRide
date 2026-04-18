@@ -19,7 +19,9 @@ import '../core/region/resolved_region_config.dart';
 import '../core/ride/ride_pickup_controller.dart';
 import '../core/ride/ride_pickup_scope.dart';
 import '../core/theme/app_colors.dart';
+import '../core/trip/rider_trip_copy.dart';
 import '../core/widgets/app_buttons.dart';
+import 'trip_detail_screen.dart';
 
 /// Live map + center pickup pin; requests ride against [POST /api/v1/rides].
 class MapTabScreen extends StatefulWidget {
@@ -44,6 +46,8 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _configRetryBusy = false;
   final TextEditingController _promoCodeCtrl = TextEditingController();
   int? _activeRideId;
+  Map<String, dynamic>? _activeRide;
+  Timer? _currentRidePoll;
   bool _sosBusy = false;
   bool _ridePollBusy = false;
 
@@ -101,6 +105,7 @@ class _MapTabScreenState extends State<MapTabScreen>
 
   @override
   void dispose() {
+    _currentRidePoll?.cancel();
     _pickupListenTarget?.removeListener(_onPickupControllerTick);
     _geoDebounce?.cancel();
     _destGeoDebounce?.cancel();
@@ -120,11 +125,59 @@ class _MapTabScreenState extends State<MapTabScreen>
     return '${s.substring(0, 8)}-${s.substring(8, 12)}-${s.substring(12, 16)}-${s.substring(16, 20)}-${s.substring(20)}';
   }
 
+  void _syncCurrentRidePoll() {
+    if (!mounted) return;
+    final auth = AuthScope.of(context);
+    if (!auth.isSignedIn || auth.sessionToken == null || _activeRide == null) {
+      _currentRidePoll?.cancel();
+      _currentRidePoll = null;
+      return;
+    }
+    if (_currentRidePoll != null) return;
+    _currentRidePoll = Timer.periodic(const Duration(seconds: 14), (_) {
+      unawaited(_pollCurrentRideQuiet());
+    });
+  }
+
+  Future<void> _pollCurrentRideQuiet() async {
+    if (!mounted) return;
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null || !auth.isSignedIn) return;
+    try {
+      final res = await ApiScope.of(context).getCurrentRide(token);
+      if (!mounted) return;
+      final ride = res['ride'];
+      if (ride is Map<String, dynamic>) {
+        final id = ride['id'];
+        final parsedId = id is int ? id : int.tryParse('$id');
+        setState(() {
+          _activeRide = ride;
+          _activeRideId = parsedId;
+        });
+      } else {
+        setState(() {
+          _activeRide = null;
+          _activeRideId = null;
+        });
+        _currentRidePoll?.cancel();
+        _currentRidePoll = null;
+      }
+    } catch (_) {}
+  }
+
   Future<void> _refreshActiveRide(BuildContext context) async {
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null || !auth.isSignedIn) {
-      if (mounted) setState(() => _activeRideId = null);
+      if (mounted) {
+        setState(() {
+          _activeRideId = null;
+          _activeRide = null;
+        });
+      }
+      _currentRidePoll?.cancel();
+      _currentRidePoll = null;
       return;
     }
     if (_ridePollBusy) return;
@@ -133,15 +186,155 @@ class _MapTabScreenState extends State<MapTabScreen>
       final api = ApiScope.of(context);
       final res = await api.getCurrentRide(token);
       final ride = res['ride'];
-      final id = ride is Map<String, dynamic> ? ride['id'] : null;
-      if (mounted) {
-        setState(() => _activeRideId = id is int ? id : int.tryParse('$id'));
+      if (!mounted) return;
+      if (ride is Map<String, dynamic>) {
+        final id = ride['id'];
+        final parsedId = id is int ? id : int.tryParse('$id');
+        setState(() {
+          _activeRide = ride;
+          _activeRideId = parsedId;
+        });
+        _syncCurrentRidePoll();
+      } else {
+        setState(() {
+          _activeRide = null;
+          _activeRideId = null;
+        });
+        _currentRidePoll?.cancel();
+        _currentRidePoll = null;
       }
     } catch (_) {
-      if (mounted) setState(() => _activeRideId = null);
+      if (mounted) {
+        setState(() {
+          _activeRideId = null;
+          _activeRide = null;
+        });
+      }
+      _currentRidePoll?.cancel();
+      _currentRidePoll = null;
     } finally {
       if (mounted) setState(() => _ridePollBusy = false);
     }
+  }
+
+  Widget? _activeTripBanner(BuildContext context) {
+    final ride = _activeRide;
+    final id = _activeRideId;
+    if (ride == null || id == null) return null;
+    final theme = Theme.of(context);
+    final phase = ride['lifecyclePhase']?.toString();
+    final driver = ride['driver'];
+    final driverLine = riderTripDriverLine(
+      driver is Map<String, dynamic> ? driver : null,
+    );
+    final eta = riderTripEtaSummary(
+      ride['eta'] is Map<String, dynamic> ? ride['eta'] as Map<String, dynamic> : null,
+    );
+    final statusRaw = '${ride['status'] ?? ''}';
+
+    return Material(
+      elevation: 6,
+      shadowColor: Colors.black26,
+      borderRadius: BorderRadius.circular(16),
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () async {
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (ctx) => TripDetailScreen(rideId: id),
+            ),
+          );
+          if (mounted) _refreshActiveRide(context);
+        },
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.directions_car_filled_rounded, color: AppColors.secondary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      riderTripPhaseTitle(phase),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '#$id',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: AppColors.secondary.withValues(alpha: 0.5),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+              if (statusRaw.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Status: $statusRaw',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.secondary.withValues(alpha: 0.55),
+                    ),
+                  ),
+                ),
+              if (driverLine.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    driverLine,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      height: 1.25,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              if (eta != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.schedule_rounded,
+                        size: 18,
+                        color: AppColors.secondary.withValues(alpha: 0.65),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          eta,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.secondary.withValues(alpha: 0.75),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Text(
+                  'Tap for details',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.secondary.withValues(alpha: 0.45),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _sendSos(BuildContext context) async {
@@ -517,6 +710,8 @@ class _MapTabScreenState extends State<MapTabScreen>
       );
     }
 
+    final activeTripBanner = _activeTripBanner(context);
+
     return ColoredBox(
       color: AppColors.surfaceMuted,
       child: Stack(
@@ -616,6 +811,13 @@ class _MapTabScreenState extends State<MapTabScreen>
               ],
             ),
           ),
+          if (activeTripBanner != null)
+            Positioned(
+              left: 14,
+              right: 14,
+              bottom: 228,
+              child: activeTripBanner,
+            ),
           Positioned(
             left: 16,
             right: 16,

@@ -6,6 +6,7 @@ import '../core/api/api_exception.dart';
 import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/theme/app_colors.dart';
+import '../core/trip/rider_trip_copy.dart';
 
 /// Live status for a single ride + rating after completion.
 class TripDetailScreen extends StatefulWidget {
@@ -136,6 +137,94 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                           style: theme.textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
+                        ),
+                        if (ride['lifecyclePhase'] != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            riderTripPhaseTitle(
+                              ride['lifecyclePhase']?.toString(),
+                            ),
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.secondary.withValues(alpha: 0.85),
+                            ),
+                          ),
+                        ],
+                        Builder(
+                          builder: (context) {
+                            final d = ride['driver'];
+                            final line = riderTripDriverLine(
+                              d is Map<String, dynamic> ? d : null,
+                            );
+                            if (line.isEmpty) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Card(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Your driver',
+                                        style: theme.textTheme.labelSmall?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: AppColors.secondary
+                                              .withValues(alpha: 0.5),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        line,
+                                        style: theme.textTheme.bodyLarge?.copyWith(
+                                          fontWeight: FontWeight.w600,
+                                          height: 1.3,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        Builder(
+                          builder: (context) {
+                            final e = ride['eta'];
+                            final summary = riderTripEtaSummary(
+                              e is Map<String, dynamic> ? e : null,
+                            );
+                            if (summary == null) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: Card(
+                                color: AppColors.primary.withValues(alpha: 0.12),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(14),
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Icon(
+                                        Icons.schedule_rounded,
+                                        color: AppColors.secondary
+                                            .withValues(alpha: 0.75),
+                                      ),
+                                      const SizedBox(width: 10),
+                                      Expanded(
+                                        child: Text(
+                                          summary,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         if (ride['tripLeg'] != null &&
                             '${ride['tripLeg']}' != 'single')

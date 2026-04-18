@@ -57,4 +57,45 @@ final class DriverAvailabilityRepository
             throw $e;
         }
     }
+
+    /**
+     * Stores last reported coordinates for rider ETA (columns from migration_trip_tracking.sql).
+     */
+    public function upsertLastKnownLocation(int $riderUserId, float $latitude, float $longitude): void
+    {
+        if (! self::tableExists($this->pdo)
+            || ! SchemaInspector::columnExists($this->pdo, 'driver_availability', 'last_latitude')) {
+            return;
+        }
+        if ($latitude < -90.0 || $latitude > 90.0 || $longitude < -180.0 || $longitude > 180.0) {
+            return;
+        }
+        $upd = $this->pdo->prepare(
+            'UPDATE driver_availability SET last_latitude = ?, last_longitude = ?, '
+            . 'location_updated_at = CURRENT_TIMESTAMP WHERE rider_user_id = ?',
+        );
+        try {
+            $upd->execute([$latitude, $longitude, $riderUserId]);
+        } catch (PDOException $e) {
+            if (str_contains($e->getMessage(), '42S02')) {
+                return;
+            }
+            throw $e;
+        }
+        if ($upd->rowCount() > 0) {
+            return;
+        }
+        $ins = $this->pdo->prepare(
+            'INSERT INTO driver_availability (rider_user_id, status, last_latitude, last_longitude, location_updated_at) '
+            . 'VALUES (?, \'online\', ?, ?, CURRENT_TIMESTAMP)',
+        );
+        try {
+            $ins->execute([$riderUserId, $latitude, $longitude]);
+        } catch (PDOException $e) {
+            if (str_contains($e->getMessage(), '42S02')) {
+                return;
+            }
+            throw $e;
+        }
+    }
 }

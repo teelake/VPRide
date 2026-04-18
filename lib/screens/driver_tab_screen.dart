@@ -1,13 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../core/api/api_exception.dart';
 import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/theme/app_colors.dart';
 
+String _mapDriverApiMessage(String code) {
+  switch (code) {
+    case 'not_a_driver':
+      return 'This account is not linked to an active driver in the fleet console, '
+          'or the link was removed. Ask an administrator to fix the link, sign out '
+          'and back in, then pull to refresh.';
+    case 'cannot_accept':
+      return 'This ride can no longer be accepted. It may have been reassigned or cancelled.';
+    case 'cannot_reject':
+      return 'Could not decline this ride. Try again or contact support.';
+    case 'cannot_start':
+      return 'You cannot start this trip in its current state.';
+    case 'cannot_complete':
+      return 'You cannot complete this trip in its current state.';
+    case 'invalid_status':
+      return 'That status change is not allowed right now.';
+    case 'invalid_ride':
+      return 'This ride is no longer valid. Refresh the list.';
+    default:
+      return code;
+  }
+}
+
 /// Driver operations: availability, incoming offers, active trip, history, earnings.
 class DriverTabScreen extends StatefulWidget {
-  const DriverTabScreen({super.key});
+  const DriverTabScreen({super.key, this.isActive = false});
+
+  /// Whether the Drive tab is the selected bottom-nav destination.
+  final bool isActive;
 
   @override
   State<DriverTabScreen> createState() => _DriverTabScreenState();
@@ -25,16 +55,97 @@ class _DriverTabScreenState extends State<DriverTabScreen>
   List<Map<String, dynamic>> _history = [];
   Map<String, dynamic>? _earnings;
   int? _busyRideId;
+  Timer? _pollTimer;
+  Timer? _locationTimer;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
+    if (widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+    _syncPollTimer();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _load();
+      if (mounted) _syncLocationBroadcastTimer();
     });
   }
 
-  Future<void> _load() async {
+  @override
+  void didUpdateWidget(DriverTabScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+    if (oldWidget.isActive != widget.isActive) {
+      _syncPollTimer();
+      _syncLocationBroadcastTimer();
+    }
+  }
+
+  @override
+  void dispose() {
+    _pollTimer?.cancel();
+    _locationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncPollTimer() {
+    _pollTimer?.cancel();
+    _pollTimer = null;
+    if (!widget.isActive) return;
+    _pollTimer = Timer.periodic(const Duration(seconds: 25), (_) {
+      if (mounted) _load(silent: true);
+    });
+  }
+
+  void _syncLocationBroadcastTimer() {
+    _locationTimer?.cancel();
+    _locationTimer = null;
+    if (!widget.isActive || !mounted) return;
+    final auth = AuthScope.of(context);
+    final d = auth.driverProfile;
+    if (d == null || auth.sessionToken == null) return;
+    if (d.availability != 'online' && d.availability != 'busy') return;
+    _locationTimer = Timer.periodic(const Duration(seconds: 32), (_) {
+      unawaited(_pushDriverLocation());
+    });
+    unawaited(_pushDriverLocation());
+  }
+
+  Future<void> _pushDriverLocation() async {
+    if (!mounted) return;
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    final d = auth.driverProfile;
+    if (token == null || d == null) return;
+    if (d.availability != 'online' && d.availability != 'busy') return;
+    final api = ApiScope.of(context);
+    try {
+      var perm = await Permission.locationWhenInUse.status;
+      if (!perm.isGranted) {
+        perm = await Permission.locationWhenInUse.request();
+      }
+      if (!perm.isGranted || !mounted) return;
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 12),
+        ),
+      );
+      if (!mounted) return;
+      await api.postDriverLocation(
+        bearerToken: token,
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      );
+    } catch (_) {}
+  }
+
+  Future<void> _load({bool silent = false}) async {
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null || auth.driverProfile == null) {
@@ -51,10 +162,14 @@ class _DriverTabScreenState extends State<DriverTabScreen>
       return;
     }
 
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (silent) {
+      if (mounted) setState(() => _error = null);
+    } else {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
 
     final api = ApiScope.of(context);
     try {
@@ -95,12 +210,20 @@ class _DriverTabScreenState extends State<DriverTabScreen>
         });
       }
       await auth.refreshProfile();
+      if (mounted) _syncLocationBroadcastTimer();
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (!mounted) return;
+      if (silent) {
+        if (e.statusCode == 403 && e.message == 'not_a_driver') {
+          await auth.refreshProfile();
+        }
+      } else {
+        setState(() => _error = _mapDriverApiMessage(e.message));
+      }
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
+      if (mounted && !silent) setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !silent) setState(() => _loading = false);
     }
   }
 
@@ -132,6 +255,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
       );
       await auth.refreshProfile();
       if (mounted) {
+        _syncLocationBroadcastTimer();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Status: $status')),
         );
@@ -139,7 +263,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(_mapDriverApiMessage(e.message))),
         );
       }
     }
@@ -158,7 +282,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(_mapDriverApiMessage(e.message))),
         );
       }
     } finally {
@@ -179,7 +303,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(_mapDriverApiMessage(e.message))),
         );
       }
     } finally {
@@ -199,7 +323,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(_mapDriverApiMessage(e.message))),
         );
       }
     } finally {
@@ -220,7 +344,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     } on ApiException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message)),
+          SnackBar(content: Text(_mapDriverApiMessage(e.message))),
         );
       }
     } finally {
