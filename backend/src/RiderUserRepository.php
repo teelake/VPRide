@@ -7,14 +7,23 @@ namespace VprideBackend;
 use PDO;
 use PDOException;
 
+if (! class_exists(SchemaInspector::class, false)) {
+    require_once __DIR__ . '/SchemaInspector.php';
+}
+
 final class RiderUserRepository
 {
     public function __construct(private PDO $pdo) {}
 
+    /**
+     * Counts app accounts that can use the passenger / ride-booking experience.
+     * Excludes rows with driver_account_only = 1 (fleet driver-only logins) when that column exists.
+     */
     public function countAll(): int
     {
+        $sql = 'SELECT COUNT(*) FROM rider_users' . $this->sqlWhereExcludeDriverOnly();
         try {
-            return (int) $this->pdo->query('SELECT COUNT(*) FROM rider_users')->fetchColumn();
+            return (int) $this->pdo->query($sql)->fetchColumn();
         } catch (PDOException $e) {
             if (self::isMissingTable($e)) {
                 return 0;
@@ -85,30 +94,48 @@ final class RiderUserRepository
             || str_contains($m, 'Base table or view not found');
     }
 
+    /** `WHERE …` fragment, or empty string if column absent / no filter. */
+    private function sqlWhereExcludeDriverOnly(): string
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rider_users', 'driver_account_only')) {
+            return '';
+        }
+
+        return ' WHERE COALESCE(driver_account_only, 0) = 0';
+    }
+
     /**
      * @return array{0: string, 1: list<int|string>}
      */
     private function buildSearchQuery(?string $q, bool $countOnly): array
     {
         $q = $q !== null ? trim($q) : '';
+        $exclude = $this->sqlWhereExcludeDriverOnly();
         if ($q === '') {
             if ($countOnly) {
-                return ['SELECT COUNT(*) FROM rider_users', []];
+                return ['SELECT COUNT(*) FROM rider_users' . $exclude, []];
             }
 
-            return ['SELECT id, email, display_name, google_sub, created_at, updated_at FROM rider_users', []];
+            return [
+                'SELECT id, email, display_name, google_sub, created_at, updated_at FROM rider_users'
+                    . ($exclude !== '' ? $exclude : ''),
+                [],
+            ];
         }
         $like = '%' . $q . '%';
+        $driverFilter = $exclude !== '' ? ' AND COALESCE(driver_account_only, 0) = 0' : '';
         if ($countOnly) {
             return [
-                'SELECT COUNT(*) FROM rider_users WHERE email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?',
+                'SELECT COUNT(*) FROM rider_users WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?)'
+                    . $driverFilter,
                 [$like, $like, $like, $like],
             ];
         }
 
         return [
             'SELECT id, email, display_name, google_sub, created_at, updated_at FROM rider_users '
-            . 'WHERE email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?',
+                . 'WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?)'
+                . $driverFilter,
             [$like, $like, $like, $like],
         ];
     }

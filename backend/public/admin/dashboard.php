@@ -138,7 +138,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-a" aria-hidden="true"><?= vp_kpi_icon_riders() ?></span>
     </div>
     <div class="vp-kpi-card__dash-body">
-      <p class="vp-kpi-card__label">Registered riders</p>
+      <p class="vp-kpi-card__label" title="Excludes fleet driver-only logins (driver_account_only)">Registered riders</p>
       <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
     </div>
   </article>

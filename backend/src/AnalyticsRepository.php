@@ -7,6 +7,10 @@ namespace VprideBackend;
 use PDO;
 use PDOException;
 
+if (! class_exists(SchemaInspector::class, false)) {
+    require_once __DIR__ . '/SchemaInspector.php';
+}
+
 /**
  * Dashboard metrics — queries are defensive (empty arrays / zeros if tables missing).
  */
@@ -45,9 +49,10 @@ final class AnalyticsRepository
             return 0;
         }
         $days = max(1, min(90, $days));
+        $riderOnly = $table === 'rider_users' ? $this->sqlExcludeDriverOnlyRiders() : '';
         try {
             $stmt = $this->pdo->prepare(
-                "SELECT COUNT(*) FROM {$table} WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)",
+                "SELECT COUNT(*) FROM {$table} WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY){$riderOnly}",
             );
             $stmt->execute([$days]);
 
@@ -55,6 +60,16 @@ final class AnalyticsRepository
         } catch (PDOException) {
             return 0;
         }
+    }
+
+    /** Exclude fleet driver-only app accounts from rider metrics. */
+    private function sqlExcludeDriverOnlyRiders(): string
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rider_users', 'driver_account_only')) {
+            return '';
+        }
+
+        return ' AND COALESCE(driver_account_only, 0) = 0';
     }
 
     /**
@@ -99,9 +114,10 @@ final class AnalyticsRepository
         }
         $col = 'created_at';
         $days = max(1, min(90, $days));
+        $riderOnly = $table === 'rider_users' ? $this->sqlExcludeDriverOnlyRiders() : '';
         try {
             $sql = "SELECT DATE({$col}) AS d, COUNT(*) AS c FROM {$table} "
-                . "WHERE {$col} >= DATE_SUB(CURDATE(), INTERVAL ? DAY) "
+                . "WHERE {$col} >= DATE_SUB(CURDATE(), INTERVAL ? DAY){$riderOnly} "
                 . "GROUP BY DATE({$col}) ORDER BY d ASC";
             $stmt = $this->pdo->prepare($sql);
             $stmt->execute([$days]);

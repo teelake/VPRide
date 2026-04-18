@@ -56,7 +56,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Riders</h1>
-  <p class="vp-page-desc">Directory of rider accounts from the mobile app.</p>
+  <p class="vp-page-desc">Passenger app accounts (excludes driver-only fleet logins — <code>driver_account_only</code>).</p>
 </header>
 
 <div class="vp-toolbar vp-toolbar--split">
