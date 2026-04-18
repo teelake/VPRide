@@ -18,7 +18,12 @@ final class SchemaInspector
             return false;
         }
         try {
-            $stmt = $pdo->prepare('SHOW TABLES LIKE ?');
+            // Use information_schema: native PDO prepares work reliably here. `SHOW TABLES LIKE ?`
+            // can return no rows incorrectly when ATTR_EMULATE_PREPARES is false on some MySQL builds.
+            $stmt = $pdo->prepare(
+                'SELECT 1 FROM information_schema.tables '
+                . 'WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1',
+            );
             $stmt->execute([$table]);
 
             return (bool) $stmt->fetch(PDO::FETCH_NUM);
