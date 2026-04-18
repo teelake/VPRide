@@ -6,6 +6,10 @@ namespace VprideBackend;
 
 use PDO;
 
+if (! class_exists(SchemaInspector::class, false)) {
+    require_once __DIR__ . '/SchemaInspector.php';
+}
+
 /**
  * Links rider app accounts (rider_users) to console fleet driver records.
  */
@@ -16,6 +20,27 @@ final class DriverFleetRepository
     public static function fleetTableExists(PDO $pdo): bool
     {
         return SchemaInspector::tableExists($pdo, 'fleet_drivers');
+    }
+
+    /**
+     * True if this email appears on a fleet driver record (admin-onboarded drivers must not self-register with the same address).
+     */
+    public static function fleetDriverEmailExists(PDO $pdo, string $email): bool
+    {
+        if (! self::fleetTableExists($pdo)
+            || ! SchemaInspector::columnExists($pdo, 'fleet_drivers', 'email')) {
+            return false;
+        }
+        $email = trim(strtolower($email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+        $stmt = $pdo->prepare(
+            'SELECT 1 FROM fleet_drivers WHERE LOWER(TRIM(IFNULL(email, \'\'))) = ? LIMIT 1',
+        );
+        $stmt->execute([$email]);
+
+        return $stmt->fetchColumn() !== false;
     }
 
     /**

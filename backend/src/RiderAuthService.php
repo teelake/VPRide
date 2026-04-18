@@ -108,6 +108,71 @@ final class RiderAuthService
     }
 
     /**
+     * Creates a rider_users row with a random password (no session). Intended for admin fleet onboarding.
+     * Caller may wrap in a transaction together with fleet_drivers insert/update.
+     *
+     * @return array{userId: int, plainPassword: string}
+     */
+    public function createPasswordUserWithGeneratedPassword(string $email, string $displayName): array
+    {
+        $email = trim(strtolower($email));
+        if ($email === '' || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException('invalid_email');
+        }
+        $dn = trim($displayName);
+        if ($dn === '') {
+            throw new RuntimeException('display_name_required');
+        }
+        if (mb_strlen($dn) > 255) {
+            throw new RuntimeException('display_name_too_long');
+        }
+        $plain = self::generateRandomPassword();
+        if (strlen($plain) < self::MIN_PASSWORD_LEN) {
+            throw new RuntimeException('password_generation_failed');
+        }
+        $hash = password_hash($plain, PASSWORD_DEFAULT);
+        if ($hash === false) {
+            throw new RuntimeException('hash_failed');
+        }
+
+        $chk = $this->pdo->prepare('SELECT id, google_sub, password_hash FROM rider_users WHERE email = ? LIMIT 1');
+        $chk->execute([$email]);
+        $row = $chk->fetch();
+        if ($row !== false) {
+            throw new RuntimeException('email_taken');
+        }
+
+        try {
+            $ins = $this->pdo->prepare(
+                'INSERT INTO rider_users (google_sub, password_hash, email, display_name, photo_url) VALUES (NULL, ?, ?, ?, NULL)',
+            );
+            $ins->execute([$hash, $email, $dn]);
+
+            return [
+                'userId' => (int) $this->pdo->lastInsertId(),
+                'plainPassword' => $plain,
+            ];
+        } catch (PDOException $e) {
+            if ($e->getCode() === '23000' || str_contains($e->getMessage(), 'Duplicate')) {
+                throw new RuntimeException('email_taken', 0, $e);
+            }
+            throw $e;
+        }
+    }
+
+    private static function generateRandomPassword(): string
+    {
+        $alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
+        $len = strlen($alphabet);
+        $out = '';
+        for ($i = 0; $i < 16; $i++) {
+            $out .= $alphabet[random_int(0, $len - 1)];
+        }
+
+        return $out;
+    }
+
+    /**
      * @return array{sessionToken: string, user: array<string, mixed>}
      */
     public function loginWithPassword(string $email, string $password): array

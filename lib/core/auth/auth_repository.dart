@@ -121,6 +121,9 @@ final class AuthRepository extends ChangeNotifier {
       if (e.statusCode == 409) {
         return 'That email is already registered. Sign in or use Google.';
       }
+      if (e.statusCode == 403) {
+        return e.message;
+      }
       if (e.statusCode == 400) {
         return e.message;
       }
@@ -273,6 +276,9 @@ final class AuthRepository extends ChangeNotifier {
       return null;
     } on ApiException catch (e) {
       if (e.statusCode == 400) {
+        return e.message;
+      }
+      if (e.statusCode == 403) {
         return e.message;
       }
       if (e.statusCode == 409) {

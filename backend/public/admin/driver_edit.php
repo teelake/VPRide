@@ -8,12 +8,18 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/FleetVehicleRepository.php';
 require_once $backendRoot . '/src/ConsoleDriverRepository.php';
+require_once $backendRoot . '/src/RiderAuthService.php';
+require_once $backendRoot . '/src/Mailer.php';
+require_once $backendRoot . '/src/AppSettingsRepository.php';
 
+use VprideBackend\AppSettingsRepository;
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\ConsoleDriverRepository;
 use VprideBackend\Database;
 use VprideBackend\FleetVehicleRepository;
+use VprideBackend\Mailer;
+use VprideBackend\RiderAuthService;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -42,6 +48,11 @@ $earningsPercentOverride = '';
 
 $error = '';
 $message = '';
+if (($_GET['welcome'] ?? '') === '1') {
+    $message = 'Driver saved. Login details were sent to the driver&apos;s email.';
+} elseif (($_GET['driver_mail'] ?? '') === '0') {
+    $message = 'Driver saved, but the login email could not be sent. Check server mail settings or share the temporary password manually.';
+}
 
 if (! $isNew) {
     $row = $repo->findById($id);
@@ -103,28 +114,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $notes = trim((string) ($_POST['notes'] ?? ''));
         $riderUserIdField = trim((string) ($_POST['rider_user_id'] ?? ''));
         $earningsPercentOverride = trim((string) ($_POST['earnings_percent_override'] ?? ''));
-        $payload = [
-            'full_name' => $fullName,
-            'driver_kind' => $driverKind,
-            'phone' => $phone,
-            'email' => $email,
-            'fleet_vehicle_id' => $fleetVehicleId,
-            'license_number' => $licenseNumber,
-            'status' => $status,
-            'notes' => $notes,
-            'rider_user_id' => $riderUserIdField === '' ? null : (int) $riderUserIdField,
-            'earnings_percent_override' => $earningsPercentOverride === '' ? null : $earningsPercentOverride,
-        ];
-        try {
-            if ($isNew) {
-                $newId = $repo->insert($payload);
-                header('Location: ' . Config::url('/admin/drivers/' . $newId));
-                exit;
+
+        $existingRiderUserId = null;
+        if (! $isNew && $id > 0) {
+            $existingRow = $repo->findById($id);
+            if ($existingRow !== null && isset($existingRow['rider_user_id']) && $existingRow['rider_user_id'] !== null) {
+                $existingRiderUserId = (int) $existingRow['rider_user_id'];
             }
-            $repo->update($id, $payload);
-            $message = 'Driver saved.';
-        } catch (Throwable $e) {
-            $error = $e->getMessage();
+        }
+
+        $postRiderId = $riderUserIdField === '' ? null : (int) $riderUserIdField;
+        $riderUserIdEmpty = $postRiderId === null || $postRiderId < 1;
+        $hadNoRiderLink = $isNew || $existingRiderUserId === null || $existingRiderUserId < 1;
+        $needsProvision = $riderUserIdEmpty && $hadNoRiderLink;
+
+        if ($needsProvision && $email === '') {
+            $error = 'Email is required so the system can create the driver&apos;s app login and send the password, '
+                . 'unless you enter an existing Linked app user ID.';
+        } else {
+            $payload = [
+                'full_name' => $fullName,
+                'driver_kind' => $driverKind,
+                'phone' => $phone,
+                'email' => $email,
+                'fleet_vehicle_id' => $fleetVehicleId,
+                'license_number' => $licenseNumber,
+                'status' => $status,
+                'notes' => $notes,
+                'rider_user_id' => $riderUserIdEmpty ? null : $postRiderId,
+                'earnings_percent_override' => $earningsPercentOverride === '' ? null : $earningsPercentOverride,
+            ];
+            $generatedPassword = null;
+            $provisionEmail = $email;
+            $driverMailOk = true;
+            try {
+                $pdo = Database::pdo();
+                if ($needsProvision) {
+                    $pdo->beginTransaction();
+                    try {
+                        $auth = new RiderAuthService($pdo);
+                        $prov = $auth->createPasswordUserWithGeneratedPassword($provisionEmail, $fullName);
+                        $payload['rider_user_id'] = $prov['userId'];
+                        $generatedPassword = $prov['plainPassword'];
+                        if ($isNew) {
+                            $newId = $repo->insert($payload);
+                        } else {
+                            $repo->update($id, $payload);
+                            $newId = $id;
+                        }
+                        $pdo->commit();
+                    } catch (Throwable $e) {
+                        $pdo->rollBack();
+                        throw $e;
+                    }
+                } else {
+                    if ($isNew) {
+                        $newId = $repo->insert($payload);
+                    } else {
+                        $repo->update($id, $payload);
+                        $newId = $id;
+                    }
+                }
+
+                if ($generatedPassword !== null) {
+                    $cfg = AppSettingsRepository::emailOutboundEffective($pdo);
+                    $from = $cfg['mailFrom'] !== '' ? $cfg['mailFrom'] : null;
+                    $greeting = $fullName !== '' ? 'Hi ' . $fullName . ",\n\n" : "Hello,\n\n";
+                    $vars = [
+                        'displayName' => $fullName,
+                        'email' => $provisionEmail,
+                        'temporaryPassword' => $generatedPassword,
+                        'greeting' => $greeting,
+                    ];
+                    $subj = 'Your VP Ride driver app login';
+                    $body = "{greeting}An administrator created your VP Ride account for driver tools.\n\n"
+                        . "Sign in with:\n  Email: {email}\n  Temporary password: {temporaryPassword}\n\n"
+                        . "Open the VP Ride app, choose email sign-in, then change your password from the profile or forgot-password flow if you like.\n\n— VP Ride";
+                    $subj = Mailer::expandTemplate($subj, $vars);
+                    $body = Mailer::expandTemplate($body, $vars);
+                    $driverMailOk = Mailer::sendPlain($provisionEmail, $subj, $body, $from);
+                    if (! $driverMailOk) {
+                        error_log('[vpride] driver welcome email failed for ' . $provisionEmail);
+                    }
+                }
+
+                if ($isNew) {
+                    $loc = Config::url('/admin/drivers/' . $newId);
+                    if ($generatedPassword !== null) {
+                        $loc .= (str_contains($loc, '?') ? '&' : '?') . ($driverMailOk ? 'welcome=1' : 'driver_mail=0');
+                    }
+                    header('Location: ' . $loc);
+                    exit;
+                }
+                if ($generatedPassword !== null) {
+                    $message = $driverMailOk
+                        ? 'Driver saved. Login details were sent to the driver&apos;s email.'
+                        : 'Driver saved, but the login email could not be sent. Check server mail settings or share the temporary password manually.';
+                } else {
+                    $message = 'Driver saved.';
+                }
+            } catch (Throwable $e) {
+                $msg = $e->getMessage();
+                if ($needsProvision && $msg === 'email_taken') {
+                    $error = 'That email already has a VP Ride login. Enter that rider&apos;s numeric user ID in &quot;Linked app user ID&quot;, or use a different email to provision a new login.';
+                } else {
+                    $error = $msg;
+                }
+            }
         }
     }
 }
@@ -183,9 +279,9 @@ require __DIR__ . '/includes/app_shell_start.php';
         </div>
       </div>
       <div class="vp-field">
-        <label class="vp-label" for="rider_user_id">Linked app user ID (rider_users.id)</label>
-        <input class="vp-input vp-input--mono" id="rider_user_id" name="rider_user_id" type="number" min="0" step="1" value="<?= vp_h($riderUserIdField) ?>" placeholder="e.g. 42 — leave empty until rider has signed up">
-        <p class="vp-field-hint">Drivers sign in with the <strong>same</strong> VP Ride app account. Find the numeric user id under <a href="<?= vp_h(vp_url('/admin/riders')) ?>">Riders</a> or your DB.</p>
+        <label class="vp-label" for="rider_user_id">Linked app user ID (optional override)</label>
+        <input class="vp-input vp-input--mono" id="rider_user_id" name="rider_user_id" type="number" min="0" step="1" value="<?= vp_h($riderUserIdField) ?>" placeholder="Leave blank — a rider account is created from the email above">
+        <p class="vp-field-hint">Normally leave this empty: saving creates a <code class="vp-inline-code">rider_users</code> row, links it here, and emails a temporary password to the driver&apos;s email. Only fill this if you are attaching an <strong>existing</strong> app user (see <a href="<?= vp_h(vp_url('/admin/riders')) ?>">Riders</a>).</p>
       </div>
       <div class="vp-field">
         <label class="vp-label" for="earnings_percent_override">Driver earnings % override (optional)</label>

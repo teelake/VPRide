@@ -10,11 +10,13 @@ require_once $backendRoot . '/src/GoogleIdTokenVerifier.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
 require_once $backendRoot . '/src/AppSettingsRepository.php';
+require_once $backendRoot . '/src/DriverFleetRepository.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\DriverFleetRepository;
 use VprideBackend\GoogleIdTokenVerifier;
 use VprideBackend\RateLimiter;
 use VprideBackend\RiderAuthService;
@@ -79,6 +81,19 @@ try {
     echo json_encode([
         'error' => 'invalid_id_token',
         'message' => $e->getMessage(),
+    ], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$googleEmail = isset($payload->email) && is_string($payload->email)
+    ? trim(strtolower($payload->email))
+    : '';
+if ($googleEmail !== '' && filter_var($googleEmail, FILTER_VALIDATE_EMAIL)
+    && DriverFleetRepository::fleetDriverEmailExists(Database::pdo(), $googleEmail)) {
+    http_response_code(403);
+    echo json_encode([
+        'error' => 'fleet_driver_invite_only',
+        'message' => 'This email is used for a fleet driver account. Sign in with email and the password your administrator sent you.',
     ], JSON_THROW_ON_ERROR);
     exit;
 }

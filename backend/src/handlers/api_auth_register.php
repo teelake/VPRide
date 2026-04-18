@@ -10,11 +10,13 @@ require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
 require_once $backendRoot . '/src/Mailer.php';
 require_once $backendRoot . '/src/AppSettingsRepository.php';
+require_once $backendRoot . '/src/DriverFleetRepository.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\DriverFleetRepository;
 use VprideBackend\Mailer;
 use VprideBackend\RateLimiter;
 use VprideBackend\RiderAuthService;
@@ -57,6 +59,18 @@ if (! is_array($data)) {
 $email = isset($data['email']) && is_string($data['email']) ? $data['email'] : '';
 $password = isset($data['password']) && is_string($data['password']) ? $data['password'] : '';
 $displayName = null;
+
+$emailNorm = trim(strtolower($email));
+if ($emailNorm !== '' && filter_var($emailNorm, FILTER_VALIDATE_EMAIL)
+    && DriverFleetRepository::fleetDriverEmailExists(Database::pdo(), $emailNorm)) {
+    http_response_code(403);
+    echo json_encode([
+        'error' => 'fleet_driver_invite_only',
+        'message' => 'This email is reserved for a fleet driver account. Use the password your administrator emailed you, or sign in with that email.',
+    ], JSON_THROW_ON_ERROR);
+    exit;
+}
+
 if (isset($data['displayName']) && is_string($data['displayName'])) {
     $displayName = mb_substr(trim($data['displayName']), 0, 255);
     if ($displayName === '') {
