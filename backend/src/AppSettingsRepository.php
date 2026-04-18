@@ -65,6 +65,7 @@ final class AppSettingsRepository
      *   staffNotifyEmails: string,
      *   staffNotifySubject: string,
      *   staffNotifyBody: string,
+     *   sosNotifyEmails: string,
      *   riderWelcomeEnabled: bool,
      *   riderWelcomeSubject: string,
      *   riderWelcomeBody: string
@@ -84,6 +85,7 @@ final class AppSettingsRepository
      *   staffNotifyEmails: string,
      *   staffNotifySubject: string,
      *   staffNotifyBody: string,
+     *   sosNotifyEmails: string,
      *   riderWelcomeEnabled: bool,
      *   riderWelcomeSubject: string,
      *   riderWelcomeBody: string
@@ -107,6 +109,7 @@ final class AppSettingsRepository
             'staffNotifyEmails' => $staffEmails,
             'staffNotifySubject' => $e['staffNotifySubject'],
             'staffNotifyBody' => $e['staffNotifyBody'],
+            'sosNotifyEmails' => trim((string) ($e['sosNotifyEmails'] ?? '')),
             'riderWelcomeEnabled' => $e['riderWelcomeEnabled'],
             'riderWelcomeSubject' => $e['riderWelcomeSubject'],
             'riderWelcomeBody' => $e['riderWelcomeBody'],
@@ -146,6 +149,12 @@ final class AppSettingsRepository
             'requireSignInForHome' => array_key_exists('requireSignInForHome', $featPatch)
                 ? self::boolish($featPatch['requireSignInForHome'])
                 : $current['features']['requireSignInForHome'],
+            'sosEnabled' => array_key_exists('sosEnabled', $featPatch)
+                ? self::boolish($featPatch['sosEnabled'])
+                : $current['features']['sosEnabled'],
+            'promoCodeEntryEnabled' => array_key_exists('promoCodeEntryEnabled', $featPatch)
+                ? self::boolish($featPatch['promoCodeEntryEnabled'])
+                : $current['features']['promoCodeEntryEnabled'],
         ];
         if (strlen($mergedFeatures['maintenanceMessage']) > 2000) {
             throw new RuntimeException('Maintenance message too long');
@@ -242,6 +251,8 @@ final class AppSettingsRepository
             'maintenanceMessage' => trim((string) ($featIn['maintenanceMessage'] ?? $featDef['maintenanceMessage'])),
             'helpCenterUrl' => trim((string) ($featIn['helpCenterUrl'] ?? $featDef['helpCenterUrl'])),
             'requireSignInForHome' => self::boolish($featIn['requireSignInForHome'] ?? $featDef['requireSignInForHome']),
+            'sosEnabled' => self::boolish($featIn['sosEnabled'] ?? $featDef['sosEnabled']),
+            'promoCodeEntryEnabled' => self::boolish($featIn['promoCodeEntryEnabled'] ?? $featDef['promoCodeEntryEnabled']),
         ];
         if (strlen($features['maintenanceMessage']) > 2000) {
             $features['maintenanceMessage'] = mb_substr($features['maintenanceMessage'], 0, 2000);
@@ -327,6 +338,13 @@ final class AppSettingsRepository
             throw new RuntimeException('Rider welcome body too long');
         }
 
+        $sosNotifyEmails = array_key_exists('sosNotifyEmails', $in)
+            ? trim((string) $in['sosNotifyEmails'])
+            : trim((string) ($base['sosNotifyEmails'] ?? ''));
+        if (strlen($sosNotifyEmails) > 2000) {
+            throw new RuntimeException('SOS notify list too long');
+        }
+
         return [
             'mailFrom' => $mailFrom,
             'staffNotifyOnRiderSignup' => array_key_exists('staffNotifyOnRiderSignup', $in)
@@ -335,6 +353,7 @@ final class AppSettingsRepository
             'staffNotifyEmails' => $staffNotifyEmails,
             'staffNotifySubject' => $staffNotifySubject,
             'staffNotifyBody' => $staffNotifyBody,
+            'sosNotifyEmails' => $sosNotifyEmails,
             'riderWelcomeEnabled' => array_key_exists('riderWelcomeEnabled', $in)
                 ? self::boolish($in['riderWelcomeEnabled'])
                 : self::boolish($base['riderWelcomeEnabled']),
@@ -354,6 +373,7 @@ final class AppSettingsRepository
             'staffNotifyEmails' => '',
             'staffNotifySubject' => 'VP Ride: new rider account',
             'staffNotifyBody' => "A new rider signed up from the mobile app.\n\nEmail: {email}\nDisplay name: {displayName}\nUser ID: {userId}\n",
+            'sosNotifyEmails' => '',
             'riderWelcomeEnabled' => true,
             'riderWelcomeSubject' => 'Welcome to VP Ride',
             'riderWelcomeBody' => "{greeting}Thanks for creating your rider account. Open the VP Ride app to book a ride.\n\n— VP Ride",
@@ -461,6 +481,8 @@ final class AppSettingsRepository
                 'maintenanceMessage' => '',
                 'helpCenterUrl' => '',
                 'requireSignInForHome' => true,
+                'sosEnabled' => true,
+                'promoCodeEntryEnabled' => true,
             ],
             'email' => self::defaultEmail(),
         ];

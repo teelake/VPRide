@@ -59,6 +59,34 @@ final class RiderRewardGrantRepository
         $stmt->execute([$rideId, $grantId]);
     }
 
+    public function assertGrantAvailableForRider(int $grantId, int $riderUserId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT id FROM rider_reward_grant WHERE id = ? AND rider_user_id = ? AND status = \'available\' LIMIT 1',
+        );
+        $stmt->execute([$grantId, $riderUserId]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function countAvailableForRider(int $riderUserId): int
+    {
+        if (! self::tableExists($this->pdo)) {
+            return 0;
+        }
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT COUNT(*) FROM rider_reward_grant WHERE rider_user_id = ? AND status = \'available\' '
+                . 'AND (expires_at IS NULL OR expires_at > NOW())',
+            );
+            $stmt->execute([$riderUserId]);
+
+            return (int) $stmt->fetchColumn();
+        } catch (PDOException) {
+            return 0;
+        }
+    }
+
     public function insertGrant(int $riderUserId, int $promotionId, ?string $expiresAt): int
     {
         $stmt = $this->pdo->prepare(

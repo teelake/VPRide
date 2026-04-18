@@ -36,8 +36,8 @@ final class SchemaInspector
             return false;
         }
         try {
-            $stmt = $pdo->query('SHOW COLUMNS FROM `' . str_replace('`', '', $table) . '` LIKE '
-                . $pdo->quote($column));
+            $safeTable = str_replace('`', '', $table);
+            $stmt = $pdo->query('SHOW COLUMNS FROM `' . $safeTable . '` LIKE ' . $pdo->quote($column));
 
             return $stmt && (bool) $stmt->fetch(PDO::FETCH_NUM);
         } catch (PDOException) {

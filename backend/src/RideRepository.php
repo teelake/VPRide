@@ -94,17 +94,32 @@ final class RideRepository
         }
     }
 
-    public function markPaid(int $rideId): bool
+    /**
+     * @return array{rider_user_id: int}|null when updated
+     */
+    public function markPaid(int $rideId): ?array
     {
         if (! SchemaInspector::columnExists($this->pdo, 'rides', 'payment_status')) {
-            return false;
+            return null;
         }
+        $sel = $this->pdo->prepare(
+            'SELECT rider_user_id FROM rides WHERE id = ? AND payment_status = \'pending\' AND status = \'completed\' LIMIT 1',
+        );
+        $sel->execute([$rideId]);
+        $rid = $sel->fetchColumn();
+        if ($rid === false) {
+            return null;
+        }
+        $riderUserId = (int) $rid;
         $stmt = $this->pdo->prepare(
             'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? AND payment_status = \'pending\' AND status = \'completed\'',
         );
         $stmt->execute([$rideId]);
+        if ($stmt->rowCount() < 1) {
+            return null;
+        }
 
-        return $stmt->rowCount() > 0;
+        return ['rider_user_id' => $riderUserId];
     }
 
     /**
@@ -114,12 +129,21 @@ final class RideRepository
      */
     public function findActiveRideForRiderUser(int $riderUserId): ?array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM rides WHERE status IN (\'requested\', \'accepted\', \'in_progress\') '
-            . 'AND (rider_user_id = ? OR driver_rider_user_id = ?) '
-            . 'ORDER BY id DESC LIMIT 1',
-        );
-        $stmt->execute([$riderUserId, $riderUserId]);
+        $hasDriver = SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id');
+        if ($hasDriver) {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM rides WHERE status IN (\'requested\', \'accepted\', \'in_progress\') '
+                . 'AND (rider_user_id = ? OR driver_rider_user_id = ?) '
+                . 'ORDER BY id DESC LIMIT 1',
+            );
+            $stmt->execute([$riderUserId, $riderUserId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM rides WHERE status IN (\'requested\', \'accepted\', \'in_progress\') '
+                . 'AND rider_user_id = ? ORDER BY id DESC LIMIT 1',
+            );
+            $stmt->execute([$riderUserId]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row !== false ? $row : null;
@@ -130,10 +154,18 @@ final class RideRepository
      */
     public function findByIdForRiderUser(int $rideId, int $riderUserId): ?array
     {
-        $stmt = $this->pdo->prepare(
-            'SELECT * FROM rides WHERE id = ? AND (rider_user_id = ? OR driver_rider_user_id = ?) LIMIT 1',
-        );
-        $stmt->execute([$rideId, $riderUserId, $riderUserId]);
+        $hasDriver = SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id');
+        if ($hasDriver) {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM rides WHERE id = ? AND (rider_user_id = ? OR driver_rider_user_id = ?) LIMIT 1',
+            );
+            $stmt->execute([$rideId, $riderUserId, $riderUserId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'SELECT * FROM rides WHERE id = ? AND rider_user_id = ? LIMIT 1',
+            );
+            $stmt->execute([$rideId, $riderUserId]);
+        }
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row !== false ? $row : null;
@@ -239,8 +271,7 @@ final class RideRepository
         }
 
         return [
-            'SELECT r.id, r.status, r.pickup_lat, r.pickup_lng, r.pickup_address, '
-            . 'r.dropoff_lat, r.dropoff_lng, r.dropoff_address, r.created_at, u.email AS rider_email '
+            'SELECT r.*, u.email AS rider_email '
             . "FROM rides r INNER JOIN rider_users u ON u.id = r.rider_user_id WHERE {$w}",
             $params,
         ];
