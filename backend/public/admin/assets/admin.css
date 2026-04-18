@@ -3275,6 +3275,29 @@ html {
   display: block;
 }
 
+/* Promotions page tabs (same behavior as settings) */
+#promotions_tab_pricing:focus-visible ~ .vp-tablist label[for="promotions_tab_pricing"],
+#promotions_tab_catalog:focus-visible ~ .vp-tablist label[for="promotions_tab_catalog"],
+#promotions_tab_editor:focus-visible ~ .vp-tablist label[for="promotions_tab_editor"] {
+  outline: 2px solid var(--vp-gold);
+  outline-offset: 2px;
+}
+
+#promotions_tab_pricing:checked ~ .vp-tablist label[for="promotions_tab_pricing"],
+#promotions_tab_catalog:checked ~ .vp-tablist label[for="promotions_tab_catalog"],
+#promotions_tab_editor:checked ~ .vp-tablist label[for="promotions_tab_editor"] {
+  color: var(--vp-text);
+  background: var(--vp-surface);
+  border-bottom-color: var(--vp-surface);
+  font-weight: 800;
+}
+
+#promotions_tab_pricing:checked ~ .vp-tab-panels .vp-tab-panel--promo-pricing,
+#promotions_tab_catalog:checked ~ .vp-tab-panels .vp-tab-panel--promo-catalog,
+#promotions_tab_editor:checked ~ .vp-tab-panels .vp-tab-panel--promo-editor {
+  display: block;
+}
+
 @keyframes vp-settings-tab-in {
   from {
     opacity: 0.88;

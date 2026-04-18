@@ -30,6 +30,12 @@ $error = '';
 $promoRepo = new PromotionRepository($pdo);
 $platRepo = new PlatformPromoSettingsRepository($pdo);
 
+$promoTab = 'pricing';
+if (isset($_GET['tab']) && in_array($_GET['tab'], ['pricing', 'catalog', 'editor'], true)) {
+    $promoTab = $_GET['tab'];
+}
+$editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     if (! Auth::validateCsrf($_POST['_csrf'] ?? null)) {
         $error = 'Invalid session.';
@@ -118,9 +124,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $error = 'Promotions table missing — run migration_sos_promos_loyalty.sql.';
         }
     }
+    $postedTab = (string) ($_POST['promotions_ui_tab'] ?? '');
+    if (in_array($postedTab, ['pricing', 'catalog', 'editor'], true)) {
+        $promoTab = $postedTab;
+    }
+    if ($message !== '' && (str_contains($message, 'Promotion created.') || str_contains($message, 'Promotion updated.'))) {
+        $promoTab = 'catalog';
+    }
 }
 
-$editId = isset($_GET['edit']) ? (int) $_GET['edit'] : 0;
+if ($editId > 0 && ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+    $promoTab = 'editor';
+}
+
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST'
+    && isset($_POST['save_promotion'])
+    && $error !== ''
+    && (int) ($_POST['promotion_id'] ?? 0) > 0) {
+    $editId = (int) $_POST['promotion_id'];
+    $promoTab = 'editor';
+}
+
 $editRow = $editId > 0 && PromotionRepository::tableExists($pdo) ? $promoRepo->findById($editId) : null;
 $platform = $platRepo->getSettings();
 $list = PromotionRepository::tableExists($pdo) ? $promoRepo->listAll() : [];
@@ -150,11 +174,25 @@ require __DIR__ . '/includes/app_shell_start.php';
   <p class="vp-banner vp-banner--danger" role="alert"><?= vp_h($error) ?></p>
 <?php } ?>
 
+<div class="vp-settings-tabs" role="region" aria-label="Promotions sections">
+  <input type="radio" name="promotions_tab_ui" id="promotions_tab_pricing" class="vp-sr-only" value="pricing"<?= $promoTab === 'pricing' ? ' checked' : '' ?>>
+  <input type="radio" name="promotions_tab_ui" id="promotions_tab_catalog" class="vp-sr-only" value="catalog"<?= $promoTab === 'catalog' ? ' checked' : '' ?>>
+  <input type="radio" name="promotions_tab_ui" id="promotions_tab_editor" class="vp-sr-only" value="editor"<?= $promoTab === 'editor' ? ' checked' : '' ?>>
+
+  <div class="vp-tablist" aria-label="Promotions tabs">
+    <label class="vp-tab" for="promotions_tab_pricing">Pricing &amp; loyalty</label>
+    <label class="vp-tab" for="promotions_tab_catalog">All promotions</label>
+    <label class="vp-tab" for="promotions_tab_editor">New / edit</label>
+  </div>
+
+  <div class="vp-tab-panels">
+    <div class="vp-tab-panel vp-tab-panel--promo-pricing" id="promotions_panel_pricing">
 <section class="vp-card" aria-labelledby="plat-heading">
   <div class="vp-card__pad">
     <h2 id="plat-heading" class="vp-section-title">Pricing &amp; loyalty defaults</h2>
-    <form method="post" class="vp-stack-form" style="max-width:40rem;">
+    <form method="post" class="vp-stack-form" style="max-width:40rem;" action="<?= vp_url('/admin/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+      <input type="hidden" name="promotions_ui_tab" value="pricing">
       <input type="hidden" name="save_platform" value="1">
       <div class="vp-field">
         <label class="vp-label" for="currency_code">Currency (ISO 4217)</label>
@@ -191,12 +229,59 @@ require __DIR__ . '/includes/app_shell_start.php';
     </form>
   </div>
 </section>
+    </div>
 
-<section class="vp-card" style="margin-top:1.5rem;" aria-labelledby="promo-form-heading">
+    <div class="vp-tab-panel vp-tab-panel--promo-catalog" id="promotions_panel_catalog">
+<section class="vp-card" aria-labelledby="promo-list-heading">
+  <div class="vp-card__pad">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;">
+      <h2 id="promo-list-heading" class="vp-section-title" style="margin:0;">All promotions</h2>
+      <a class="vp-btn vp-btn--primary vp-btn--sm" href="<?= vp_url('/admin/promotions?tab=editor') ?>">New promotion</a>
+    </div>
+    <?php if ($list === []) { ?>
+      <p class="vp-field-hint">None yet. Use <strong>New / edit</strong> to create one.</p>
+    <?php } else { ?>
+      <div class="vp-table-wrap">
+        <table class="vp-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Kind</th>
+              <th>Code</th>
+              <th>Discount</th>
+              <th>Active</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($list as $p) { ?>
+              <tr>
+                <td class="vp-table__id"><?= (int) $p['id'] ?></td>
+                <td><?= vp_h((string) $p['name']) ?></td>
+                <td><?= vp_h((string) $p['kind']) ?></td>
+                <td class="vp-table__muted"><?= vp_h((string) ($p['coupon_code'] ?? '—')) ?></td>
+                <td><?= vp_h((string) $p['discount_kind'] . ' ' . (string) $p['discount_value']) ?></td>
+                <td><?= ! empty($p['is_active']) ? 'Yes' : 'No' ?></td>
+                <td><a href="<?= vp_url('/admin/promotions?edit=' . (int) $p['id']) ?>">Edit</a></td>
+              </tr>
+            <?php } ?>
+          </tbody>
+        </table>
+      </div>
+    <?php } ?>
+  </div>
+</section>
+    </div>
+
+    <div class="vp-tab-panel vp-tab-panel--promo-editor" id="promotions_panel_editor">
+<section class="vp-card" aria-labelledby="promo-form-heading">
   <div class="vp-card__pad">
     <h2 id="promo-form-heading" class="vp-section-title"><?= $editRow !== null ? 'Edit promotion' : 'New promotion' ?></h2>
-    <form method="post" class="vp-stack-form" style="max-width:44rem;">
+    <p class="vp-field-hint" style="margin:-0.35rem 0 1rem;">Automatic promos can use a JSON schedule (happy hour). Coupon promos require a code riders enter when booking (if enabled in Settings).</p>
+    <form method="post" class="vp-stack-form" style="max-width:44rem;" action="<?= vp_url('/admin/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+      <input type="hidden" name="promotions_ui_tab" value="editor">
       <input type="hidden" name="save_promotion" value="1">
       <input type="hidden" name="promotion_id" value="<?= $editRow !== null ? (int) $editRow['id'] : 0 ?>">
       <div class="vp-field">
@@ -272,48 +357,13 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <button type="submit" class="vp-btn vp-btn--primary"><?= $editRow !== null ? 'Update promotion' : 'Create promotion' ?></button>
       <?php if ($editRow !== null) { ?>
-        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/promotions') ?>">Cancel edit</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/promotions?tab=catalog') ?>">Cancel edit</a>
       <?php } ?>
     </form>
   </div>
 </section>
-
-<section class="vp-card" style="margin-top:1.5rem;" aria-labelledby="promo-list-heading">
-  <div class="vp-card__pad">
-    <h2 id="promo-list-heading" class="vp-section-title">All promotions</h2>
-    <?php if ($list === []) { ?>
-      <p class="vp-field-hint">None yet.</p>
-    <?php } else { ?>
-      <div class="vp-table-wrap">
-        <table class="vp-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Kind</th>
-              <th>Code</th>
-              <th>Discount</th>
-              <th>Active</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($list as $p) { ?>
-              <tr>
-                <td class="vp-table__id"><?= (int) $p['id'] ?></td>
-                <td><?= vp_h((string) $p['name']) ?></td>
-                <td><?= vp_h((string) $p['kind']) ?></td>
-                <td class="vp-table__muted"><?= vp_h((string) ($p['coupon_code'] ?? '—')) ?></td>
-                <td><?= vp_h((string) $p['discount_kind'] . ' ' . (string) $p['discount_value']) ?></td>
-                <td><?= ! empty($p['is_active']) ? 'Yes' : 'No' ?></td>
-                <td><a href="<?= vp_url('/admin/promotions?edit=' . (int) $p['id']) ?>">Edit</a></td>
-              </tr>
-            <?php } ?>
-          </tbody>
-        </table>
-      </div>
-    <?php } ?>
+    </div>
   </div>
-</section>
+</div>
 
 <?php require __DIR__ . '/includes/app_shell_end.php'; ?>
