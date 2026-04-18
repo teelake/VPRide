@@ -45,9 +45,24 @@ if ($user === null) {
 
 try {
     $pdo = Database::pdo();
-    $rows = (new RideRepository($pdo))->listForRiderUser($user['rider_user_id'], 50);
+    $limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 50;
+    $limit = max(1, min(100, $limit));
+    $beforeId = isset($_GET['before_id']) ? (int) $_GET['before_id'] : 0;
+    $beforeId = $beforeId > 0 ? $beforeId : null;
+    $rows = (new RideRepository($pdo))->listForRiderUser($user['rider_user_id'], $limit, $beforeId);
     $rides = RiderRideViewPresenter::mapManyForRider($pdo, $rows);
-    echo json_encode(['rides' => $rides], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $nextBeforeId = null;
+    if (count($rows) === $limit && $rows !== []) {
+        $last = $rows[array_key_last($rows)];
+        $nextBeforeId = isset($last['id']) ? (int) $last['id'] : null;
+    }
+    echo json_encode(
+        [
+            'rides' => $rides,
+            'nextBeforeId' => $nextBeforeId,
+        ],
+        JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+    );
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/rides/mine: ' . $e->getMessage());
     http_response_code(500);

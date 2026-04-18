@@ -8,12 +8,14 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/DriverApiContext.php';
 require_once $backendRoot . '/src/DriverAvailabilityRepository.php';
+require_once $backendRoot . '/src/RateLimiter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\DriverApiContext;
 use VprideBackend\DriverAvailabilityRepository;
+use VprideBackend\RateLimiter;
 
 Config::load($backendRoot . '/.env');
 

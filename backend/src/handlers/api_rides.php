@@ -15,6 +15,7 @@ require_once $backendRoot . '/src/FixedPricingService.php';
 require_once $backendRoot . '/src/PromotionRepository.php';
 require_once $backendRoot . '/src/RiderRewardGrantRepository.php';
 require_once $backendRoot . '/src/DispatchService.php';
+require_once $backendRoot . '/src/RateLimiter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
@@ -26,6 +27,7 @@ use VprideBackend\FixedPricingService;
 use VprideBackend\PlatformPromoSettingsRepository;
 use VprideBackend\PromotionRepository;
 use VprideBackend\RideRepository;
+use VprideBackend\RateLimiter;
 use VprideBackend\RiderAuthService;
 use VprideBackend\RiderRewardGrantRepository;
 
@@ -52,6 +54,13 @@ $user = $auth->resolveBearerToken($token);
 if ($user === null) {
     http_response_code(401);
     echo json_encode(['error' => 'invalid_session'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$maxCreate = (int) (getenv('API_RATE_LIMIT_RIDE_CREATE_PER_HOUR') ?: '90');
+if (! RateLimiter::allow('ride_create', (string) $user['rider_user_id'], max(1, $maxCreate), 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
     exit;
 }
 

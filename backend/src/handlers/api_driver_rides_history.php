@@ -30,9 +30,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'GET') {
 
 $pdo = Database::pdo();
 $ctx = DriverApiContext::requireFleetDriver($pdo);
-$rows = (new RideRepository($pdo))->listHistoryForDriver($ctx['riderUserId'], 60);
+$limit = isset($_GET['limit']) ? (int) $_GET['limit'] : 60;
+$limit = max(1, min(100, $limit));
+$beforeId = isset($_GET['before_id']) ? (int) $_GET['before_id'] : 0;
+$beforeId = $beforeId > 0 ? $beforeId : null;
+$rows = (new RideRepository($pdo))->listHistoryForDriver($ctx['riderUserId'], $limit, $beforeId);
 $rides = [];
 foreach ($rows as $row) {
     $rides[] = RideJsonPresenter::toPublicArray($row);
 }
-echo json_encode(['rides' => $rides], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+$nextBeforeId = null;
+if (count($rows) === $limit && $rows !== []) {
+    $last = $rows[array_key_last($rows)];
+    $nextBeforeId = isset($last['id']) ? (int) $last['id'] : null;
+}
+echo json_encode(
+    [
+        'rides' => $rides,
+        'nextBeforeId' => $nextBeforeId,
+    ],
+    JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+);

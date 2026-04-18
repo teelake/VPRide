@@ -6,9 +6,11 @@ $backendRoot = dirname(__DIR__, 2);
 require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/RegionRepository.php';
+require_once $backendRoot . '/src/HttpCacheJson.php';
 
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\HttpCacheJson;
 use VprideBackend\RegionRepository;
 
 Config::load($backendRoot . '/.env');
@@ -16,7 +18,6 @@ Config::load($backendRoot . '/.env');
 header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, OPTIONS');
-header('Cache-Control: public, max-age=120, stale-while-revalidate=600');
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(204);
     exit;
@@ -35,7 +36,8 @@ try {
         echo json_encode(['error' => 'No active region configuration']);
         exit;
     }
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    HttpCacheJson::emit($json, 120, 600);
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/config/regions: ' . $e->getMessage());
     http_response_code(500);

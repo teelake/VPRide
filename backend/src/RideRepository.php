@@ -203,16 +203,26 @@ final class RideRepository
     }
 
     /**
+     * @param ?int $beforeId When set, only rides with id strictly less than this (cursor for DESC pages).
+     *
      * @return list<array<string, mixed>>
      */
-    public function listForRiderUser(int $riderUserId, int $limit = 50): array
+    public function listForRiderUser(int $riderUserId, int $limit = 50, ?int $beforeId = null): array
     {
         $limit = max(1, min(100, $limit));
         try {
-            $stmt = $this->pdo->prepare(
-                'SELECT * FROM rides WHERE rider_user_id = ? ORDER BY id DESC LIMIT ' . (int) $limit,
-            );
-            $stmt->execute([$riderUserId]);
+            if ($beforeId !== null && $beforeId > 0) {
+                $stmt = $this->pdo->prepare(
+                    'SELECT * FROM rides WHERE rider_user_id = ? AND id < ? ORDER BY id DESC LIMIT '
+                    . (int) $limit,
+                );
+                $stmt->execute([$riderUserId, $beforeId]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'SELECT * FROM rides WHERE rider_user_id = ? ORDER BY id DESC LIMIT ' . (int) $limit,
+                );
+                $stmt->execute([$riderUserId]);
+            }
 
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         } catch (PDOException $e) {
@@ -738,21 +748,34 @@ final class RideRepository
     }
 
     /**
+     * @param ?int $beforeId Cursor: only rows with id strictly less than this (DESC pagination).
+     *
      * @return list<array<string, mixed>>
      */
-    public function listHistoryForDriver(int $driverRiderUserId, int $limit = 50): array
+    public function listHistoryForDriver(int $driverRiderUserId, int $limit = 50, ?int $beforeId = null): array
     {
         if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
             return [];
         }
         $limit = max(1, min(100, $limit));
-        $stmt = $this->pdo->prepare(
-            'SELECT r.*, u.email AS rider_email FROM rides r '
-            . 'INNER JOIN rider_users u ON u.id = r.rider_user_id '
-            . 'WHERE r.driver_rider_user_id = ? AND r.status IN (\'completed\', \'cancelled\') '
-            . 'ORDER BY r.id DESC LIMIT ' . (int) $limit,
-        );
-        $stmt->execute([$driverRiderUserId]);
+        if ($beforeId !== null && $beforeId > 0) {
+            $stmt = $this->pdo->prepare(
+                'SELECT r.*, u.email AS rider_email FROM rides r '
+                . 'INNER JOIN rider_users u ON u.id = r.rider_user_id '
+                . 'WHERE r.driver_rider_user_id = ? AND r.status IN (\'completed\', \'cancelled\') '
+                . 'AND r.id < ? '
+                . 'ORDER BY r.id DESC LIMIT ' . (int) $limit,
+            );
+            $stmt->execute([$driverRiderUserId, $beforeId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'SELECT r.*, u.email AS rider_email FROM rides r '
+                . 'INNER JOIN rider_users u ON u.id = r.rider_user_id '
+                . 'WHERE r.driver_rider_user_id = ? AND r.status IN (\'completed\', \'cancelled\') '
+                . 'ORDER BY r.id DESC LIMIT ' . (int) $limit,
+            );
+            $stmt->execute([$driverRiderUserId]);
+        }
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
