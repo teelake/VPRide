@@ -317,6 +317,142 @@ final class ApiClient {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> postDriverAvailability({
+    required String bearerToken,
+    required String status,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/availability'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode({'status': status}),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getDriverRidesIncoming(String bearerToken) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/driver/rides/incoming'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getDriverRidesActive(String bearerToken) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/driver/rides/active'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getDriverRidesHistory(String bearerToken) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/driver/rides/history'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> getDriverEarningsSummary(
+    String bearerToken,
+  ) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/driver/earnings/summary'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postDriverRideAccept(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/rides/$rideId/accept'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postDriverRideReject(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/rides/$rideId/reject'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postDriverRideStart(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/rides/$rideId/start'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postDriverRideComplete(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/rides/$rideId/complete'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postRideRating({
     required String bearerToken,
     required int rideId,

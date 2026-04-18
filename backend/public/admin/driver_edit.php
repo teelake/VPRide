@@ -37,6 +37,7 @@ $fleetVehicleId = 0;
 $licenseNumber = '';
 $status = 'pending';
 $notes = '';
+$riderUserIdField = '';
 
 $error = '';
 $message = '';
@@ -77,6 +78,9 @@ if (! $isNew) {
     $licenseNumber = (string) ($row['license_number'] ?? '');
     $status = (string) $row['status'];
     $notes = (string) ($row['notes'] ?? '');
+    if (isset($row['rider_user_id']) && $row['rider_user_id'] !== null) {
+        $riderUserIdField = (string) (int) $row['rider_user_id'];
+    }
 }
 
 $vehicles = $vehicleRepo->listActiveForSelect();
@@ -93,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $licenseNumber = trim((string) ($_POST['license_number'] ?? ''));
         $status = trim((string) ($_POST['status'] ?? 'pending'));
         $notes = trim((string) ($_POST['notes'] ?? ''));
+        $riderUserIdField = trim((string) ($_POST['rider_user_id'] ?? ''));
         $payload = [
             'full_name' => $fullName,
             'driver_kind' => $driverKind,
@@ -102,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'license_number' => $licenseNumber,
             'status' => $status,
             'notes' => $notes,
+            'rider_user_id' => $riderUserIdField === '' ? null : (int) $riderUserIdField,
         ];
         try {
             if ($isNew) {
@@ -169,6 +175,11 @@ require __DIR__ . '/includes/app_shell_start.php';
           <label class="vp-label" for="email">Email</label>
           <input class="vp-input" id="email" name="email" type="email" value="<?= vp_h($email) ?>" maxlength="255" autocomplete="email">
         </div>
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="rider_user_id">Linked app user ID (rider_users.id)</label>
+        <input class="vp-input vp-input--mono" id="rider_user_id" name="rider_user_id" type="number" min="0" step="1" value="<?= vp_h($riderUserIdField) ?>" placeholder="e.g. 42 — leave empty until rider has signed up">
+        <p class="vp-field-hint">Drivers sign in with the <strong>same</strong> VP Ride app account. Find the numeric user id under <a href="<?= vp_h(vp_url('/admin/riders')) ?>">Riders</a> or your DB.</p>
       </div>
       <div class="vp-field">
         <label class="vp-label" for="fleet_vehicle_id">Assigned vehicle</label>

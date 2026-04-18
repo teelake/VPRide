@@ -48,6 +48,8 @@ $rows = SchemaInspector::tableExists($pdo, 'rides')
     : [];
 $csrf = Auth::csrfToken();
 $hasPayCol = SchemaInspector::columnExists($pdo, 'rides', 'payment_status');
+$hasDriverCol = SchemaInspector::columnExists($pdo, 'rides', 'driver_rider_user_id');
+$canDispatch = Auth::can('rides.dispatch');
 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Bookings · VP Ride Console';
@@ -72,6 +74,9 @@ require __DIR__ . '/includes/app_shell_start.php';
 <div class="vp-toolbar vp-toolbar--split">
   <div class="vp-toolbar__left"></div>
   <div class="vp-toolbar__actions">
+    <?php if (Auth::can('rides.create_manual')) { ?>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/rides/create') ?>">Create booking</a>
+    <?php } ?>
     <?php if (Auth::can('reports.view')) { ?>
       <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/rides') ?>">Filtered reports</a>
     <?php } ?>
@@ -117,6 +122,9 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">ID</th>
               <th scope="col">Rider</th>
               <th scope="col">Status</th>
+              <?php if ($hasDriverCol) { ?>
+                <th scope="col">Driver</th>
+              <?php } ?>
               <?php if ($hasPayCol) { ?>
                 <th scope="col">Payment</th>
                 <th scope="col">Fare</th>
@@ -124,7 +132,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">Pickup</th>
               <th scope="col">Drop-off</th>
               <th scope="col">Created</th>
-              <?php if ($hasPayCol) { ?><th scope="col"></th><?php } ?>
+              <?php if ($hasPayCol || ($hasDriverCol && $canDispatch)) { ?><th scope="col"></th><?php } ?>
             </tr>
           </thead>
           <tbody>
@@ -133,6 +141,12 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__id"><?= (int) $r['id'] ?></td>
                 <td><?= vp_h((string) $r['rider_email']) ?></td>
                 <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $r['status']) ?></span></td>
+                <?php if ($hasDriverCol) { ?>
+                  <td class="vp-table__muted"><?php
+                    $du = $r['driver_rider_user_id'] ?? null;
+                    echo $du !== null && $du !== '' ? '#' . (int) $du : '—';
+                  ?></td>
+                <?php } ?>
                 <?php if ($hasPayCol) { ?>
                   <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) ($r['payment_status'] ?? '—')) ?></span></td>
                   <td class="vp-table__muted"><?php
@@ -144,21 +158,26 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__muted"><?= vp_h((string) ($r['pickup_address'] ?: (($r['pickup_lat'] ?? '') . ', ' . ($r['pickup_lng'] ?? '')))) ?></td>
                 <td class="vp-table__muted"><?= vp_h((string) ($r['dropoff_address'] ?? '—')) ?></td>
                 <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
-                <?php if ($hasPayCol) { ?>
+                <?php if ($hasPayCol || ($hasDriverCol && $canDispatch)) { ?>
                   <td>
-                    <?php
-                      $st = (string) ($r['status'] ?? '');
-                      $canMark = in_array($st, ['requested', 'accepted', 'in_progress', 'completed'], true)
-                          && ($r['payment_status'] ?? 'pending') === 'pending';
-                    ?>
-                    <?php if ($canMark) { ?>
-                      <form method="post" style="margin:0;">
-                        <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
-                        <input type="hidden" name="mark_paid_ride_id" value="<?= (int) $r['id'] ?>">
-                        <button type="submit" class="vp-btn vp-btn--sm vp-btn--ghost">Mark paid</button>
-                      </form>
-                    <?php } else { ?>
-                      —
+                    <?php if ($hasDriverCol && $canDispatch) { ?>
+                      <a class="vp-btn vp-btn--sm vp-btn--ghost" href="<?= vp_url('/admin/rides/' . (int) $r['id'] . '/dispatch') ?>">Dispatch</a>
+                    <?php } ?>
+                    <?php if ($hasPayCol) { ?>
+                      <?php
+                        $st = (string) ($r['status'] ?? '');
+                        $canMark = in_array($st, ['requested', 'accepted', 'in_progress', 'completed'], true)
+                            && ($r['payment_status'] ?? 'pending') === 'pending';
+                      ?>
+                      <?php if ($canMark) { ?>
+                        <form method="post" style="margin:0;display:inline;">
+                          <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+                          <input type="hidden" name="mark_paid_ride_id" value="<?= (int) $r['id'] ?>">
+                          <button type="submit" class="vp-btn vp-btn--sm vp-btn--ghost">Mark paid</button>
+                        </form>
+                      <?php } elseif (! $canDispatch || ! $hasDriverCol) { ?>
+                        —
+                      <?php } ?>
                     <?php } ?>
                   </td>
                 <?php } ?>

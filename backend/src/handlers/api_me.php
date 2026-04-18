@@ -10,6 +10,8 @@ require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/PlatformPromoSettingsRepository.php';
 require_once $backendRoot . '/src/RiderLoyaltyRepository.php';
 require_once $backendRoot . '/src/RiderRewardGrantRepository.php';
+require_once $backendRoot . '/src/DriverFleetRepository.php';
+require_once $backendRoot . '/src/DriverAvailabilityRepository.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
@@ -17,6 +19,8 @@ use VprideBackend\Database;
 use VprideBackend\PlatformPromoSettingsRepository;
 use VprideBackend\RiderAuthService;
 use VprideBackend\RiderLoyaltyRepository;
+use VprideBackend\DriverAvailabilityRepository;
+use VprideBackend\DriverFleetRepository;
 use VprideBackend\RiderRewardGrantRepository;
 
 Config::load($backendRoot . '/.env');
@@ -72,6 +76,15 @@ try {
             'photoUrl' => $row['photo_url'],
         ],
     ];
+    $fleetRow = (new DriverFleetRepository($pdo))->findActiveFleetRowForRiderUser($row['rider_user_id']);
+    if ($fleetRow !== null) {
+        $av = (new DriverAvailabilityRepository($pdo))->getStatus($row['rider_user_id']);
+        $payload['driver'] = [
+            'fleetDriverId' => (int) $fleetRow['id'],
+            'fullName' => (string) $fleetRow['full_name'],
+            'availability' => $av,
+        ];
+    }
     if ($loyalty !== null) {
         $payload['loyalty'] = $loyalty;
     }

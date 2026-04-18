@@ -89,6 +89,16 @@ class ProfileTabScreen extends StatelessWidget {
                             color: AppColors.secondary.withValues(alpha: 0.55),
                           ),
                         ),
+                        if (auth.driverProfile != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            'Driver: ${auth.driverProfile!.fullName.isNotEmpty ? auth.driverProfile!.fullName : 'Fleet #${auth.driverProfile!.fleetDriverId}'} · ${auth.driverProfile!.availability}',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.secondary.withValues(alpha: 0.55),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ] else
                         Text(
                           'Not signed in',

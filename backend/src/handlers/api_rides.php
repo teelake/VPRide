@@ -14,11 +14,13 @@ require_once $backendRoot . '/src/FarePromoService.php';
 require_once $backendRoot . '/src/FixedPricingService.php';
 require_once $backendRoot . '/src/PromotionRepository.php';
 require_once $backendRoot . '/src/RiderRewardGrantRepository.php';
+require_once $backendRoot . '/src/DispatchService.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\DispatchService;
 use VprideBackend\FarePromoService;
 use VprideBackend\FixedPricingService;
 use VprideBackend\PlatformPromoSettingsRepository;
@@ -359,6 +361,18 @@ try {
         }
 
         $pdo->commit();
+
+        try {
+            $dispatch = new DispatchService($pdo);
+            foreach ($bookings as $b) {
+                if (($b['leg'] ?? 'single') === 'return') {
+                    continue;
+                }
+                $dispatch->tryAutoAssign((int) $b['id']);
+            }
+        } catch (Throwable $e) {
+            error_log('[vpride] auto-dispatch: ' . $e->getMessage());
+        }
 
         $totalFinal = 0.0;
         foreach ($bookings as $b) {

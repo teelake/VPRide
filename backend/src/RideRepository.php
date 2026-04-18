@@ -445,4 +445,248 @@ final class RideRepository
             $params,
         ];
     }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findById(int $rideId): ?array
+    {
+        if ($rideId < 1) {
+            return null;
+        }
+        try {
+            $stmt = $this->pdo->prepare('SELECT * FROM rides WHERE id = ? LIMIT 1');
+            $stmt->execute([$rideId]);
+        } catch (PDOException $e) {
+            if (self::isMissingTable($e)) {
+                return null;
+            }
+            throw $e;
+        }
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row !== false ? $row : null;
+    }
+
+    public function countRefusalsForRide(int $rideId): int
+    {
+        if (! SchemaInspector::tableExists($this->pdo, 'ride_driver_refusals')) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM ride_driver_refusals WHERE ride_id = ?');
+        $stmt->execute([$rideId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function recordDriverRefusal(int $rideId, int $driverRiderUserId): void
+    {
+        if (! SchemaInspector::tableExists($this->pdo, 'ride_driver_refusals')) {
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'INSERT IGNORE INTO ride_driver_refusals (ride_id, driver_rider_user_id) VALUES (?, ?)',
+        );
+        $stmt->execute([$rideId, $driverRiderUserId]);
+    }
+
+    public function assignDriverToRequestedRide(int $rideId, int $driverRiderUserId, string $source): void
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return;
+        }
+        $src = in_array($source, ['auto', 'manual'], true) ? $source : 'auto';
+        if (SchemaInspector::columnExists($this->pdo, 'rides', 'assign_source')) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET driver_rider_user_id = ?, assign_source = ? '
+                . "WHERE id = ? AND status = 'requested'",
+            );
+            $stmt->execute([$driverRiderUserId, $src, $rideId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET driver_rider_user_id = ? WHERE id = ? AND status = \'requested\'',
+            );
+            $stmt->execute([$driverRiderUserId, $rideId]);
+        }
+    }
+
+    public function clearDriverOnRequestedRide(int $rideId): void
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET driver_rider_user_id = NULL '
+            . "WHERE id = ? AND status = 'requested'",
+        );
+        $stmt->execute([$rideId]);
+        if (SchemaInspector::columnExists($this->pdo, 'rides', 'assign_source')) {
+            $u = $this->pdo->prepare(
+                "UPDATE rides SET assign_source = 'none' WHERE id = ? AND status = 'requested' AND driver_rider_user_id IS NULL",
+            );
+            $u->execute([$rideId]);
+        }
+    }
+
+    /**
+     * Manual dispatch from admin. Optionally skip accept step.
+     */
+    public function adminAssignDriver(int $rideId, int $driverRiderUserId, bool $forceAccepted): bool
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return false;
+        }
+        if ($forceAccepted) {
+            if (SchemaInspector::columnExists($this->pdo, 'rides', 'assign_source')) {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET driver_rider_user_id = ?, assign_source = \'manual\', status = \'accepted\' '
+                    . "WHERE id = ? AND status IN ('requested', 'accepted')",
+                );
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET driver_rider_user_id = ?, status = \'accepted\' '
+                    . "WHERE id = ? AND status IN ('requested', 'accepted')",
+                );
+            }
+            $stmt->execute([$driverRiderUserId, $rideId]);
+        } else {
+            if (SchemaInspector::columnExists($this->pdo, 'rides', 'assign_source')) {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET driver_rider_user_id = ?, assign_source = \'manual\' '
+                    . "WHERE id = ? AND status = 'requested'",
+                );
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET driver_rider_user_id = ? WHERE id = ? AND status = \'requested\'',
+                );
+            }
+            $stmt->execute([$driverRiderUserId, $rideId]);
+        }
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function driverAccept(int $rideId, int $driverRiderUserId): bool
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return false;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET status = \'accepted\' WHERE id = ? AND driver_rider_user_id = ? '
+            . "AND status = 'requested'",
+        );
+        $stmt->execute([$rideId, $driverRiderUserId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function driverStartTrip(int $rideId, int $driverRiderUserId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET status = \'in_progress\' WHERE id = ? AND driver_rider_user_id = ? '
+            . "AND status = 'accepted'",
+        );
+        $stmt->execute([$rideId, $driverRiderUserId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    public function driverCompleteTrip(int $rideId, int $driverRiderUserId): bool
+    {
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
+            . "AND status = 'in_progress'",
+        );
+        $stmt->execute([$rideId, $driverRiderUserId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listIncomingForDriver(int $driverRiderUserId, int $limit = 20): array
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return [];
+        }
+        $limit = max(1, min(50, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM rides WHERE driver_rider_user_id = ? AND status = \'requested\' '
+            . 'ORDER BY id ASC LIMIT ' . (int) $limit,
+        );
+        $stmt->execute([$driverRiderUserId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    public function listHistoryForDriver(int $driverRiderUserId, int $limit = 50): array
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return [];
+        }
+        $limit = max(1, min(100, $limit));
+        $stmt = $this->pdo->prepare(
+            'SELECT r.*, u.email AS rider_email FROM rides r '
+            . 'INNER JOIN rider_users u ON u.id = r.rider_user_id '
+            . 'WHERE r.driver_rider_user_id = ? AND r.status IN (\'completed\', \'cancelled\') '
+            . 'ORDER BY r.id DESC LIMIT ' . (int) $limit,
+        );
+        $stmt->execute([$driverRiderUserId]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Sum final fares for completed trips (gross — platform/deductions not modeled).
+     */
+    public function sumCompletedEarningsForDriver(int $driverRiderUserId): float
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')
+            || ! SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
+            return 0.0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COALESCE(SUM(final_fare_amount), 0) FROM rides '
+            . "WHERE driver_rider_user_id = ? AND status = 'completed' "
+            . 'AND final_fare_amount IS NOT NULL',
+        );
+        $stmt->execute([$driverRiderUserId]);
+
+        return round((float) $stmt->fetchColumn(), 4);
+    }
+
+    public function countCompletedTripsForDriver(int $driverRiderUserId): int
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*) FROM rides WHERE driver_rider_user_id = ? AND status = \'completed\'',
+        );
+        $stmt->execute([$driverRiderUserId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function findActiveTripForDriver(int $driverRiderUserId): ?array
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return null;
+        }
+        $stmt = $this->pdo->prepare(
+            'SELECT * FROM rides WHERE driver_rider_user_id = ? AND status IN (\'accepted\', \'in_progress\') '
+            . 'ORDER BY id DESC LIMIT 1',
+        );
+        $stmt->execute([$driverRiderUserId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row !== false ? $row : null;
+    }
 }

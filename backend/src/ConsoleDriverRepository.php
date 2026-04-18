@@ -102,20 +102,40 @@ final class ConsoleDriverRepository
     public function insert(array $data): int
     {
         $row = $this->normalizeAndValidateVehicle($data);
-        $stmt = $this->pdo->prepare(
-            'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes) '
-            . 'VALUES (?,?,?,?,?,?,?,?)',
-        );
-        $stmt->execute([
-            $row['full_name'],
-            $row['phone'],
-            $row['email'],
-            $row['driver_kind'],
-            $row['fleet_vehicle_id'],
-            $row['license_number'],
-            $row['status'],
-            $row['notes'],
-        ]);
+        $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
+        if ($hasRider) {
+            $this->assertRiderUserLinkUnique($row['rider_user_id'], null);
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes, rider_user_id) '
+                . 'VALUES (?,?,?,?,?,?,?,?,?)',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['rider_user_id'],
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes) '
+                . 'VALUES (?,?,?,?,?,?,?,?)',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+            ]);
+        }
 
         return (int) $this->pdo->lastInsertId();
     }
@@ -129,21 +149,42 @@ final class ConsoleDriverRepository
             throw new RuntimeException('Invalid driver id');
         }
         $row = $this->normalizeAndValidateVehicle($data);
-        $stmt = $this->pdo->prepare(
-            'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
-            . 'license_number = ?, status = ?, notes = ? WHERE id = ?',
-        );
-        $stmt->execute([
-            $row['full_name'],
-            $row['phone'],
-            $row['email'],
-            $row['driver_kind'],
-            $row['fleet_vehicle_id'],
-            $row['license_number'],
-            $row['status'],
-            $row['notes'],
-            $id,
-        ]);
+        $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
+        if ($hasRider) {
+            $this->assertRiderUserLinkUnique($row['rider_user_id'], $id);
+            $stmt = $this->pdo->prepare(
+                'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
+                . 'license_number = ?, status = ?, notes = ?, rider_user_id = ? WHERE id = ?',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['rider_user_id'],
+                $id,
+            ]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
+                . 'license_number = ?, status = ?, notes = ? WHERE id = ?',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $id,
+            ]);
+        }
         if ($stmt->rowCount() < 1) {
             if ($this->findById($id) === null) {
                 throw new RuntimeException('Driver not found');
@@ -163,9 +204,31 @@ final class ConsoleDriverRepository
         }
     }
 
+    private function assertRiderUserLinkUnique(?int $riderUserId, ?int $excludeFleetDriverId): void
+    {
+        if ($riderUserId === null || $riderUserId < 1) {
+            return;
+        }
+        if (! SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id')) {
+            return;
+        }
+        if ($excludeFleetDriverId === null) {
+            $stmt = $this->pdo->prepare('SELECT id FROM fleet_drivers WHERE rider_user_id = ? LIMIT 1');
+            $stmt->execute([$riderUserId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'SELECT id FROM fleet_drivers WHERE rider_user_id = ? AND id != ? LIMIT 1',
+            );
+            $stmt->execute([$riderUserId, $excludeFleetDriverId]);
+        }
+        if ($stmt->fetchColumn() !== false) {
+            throw new RuntimeException('That app user is already linked to another driver record');
+        }
+    }
+
     /**
      * @param array<string, mixed> $data
-     * @return array{full_name: string, phone: ?string, email: ?string, driver_kind: string, fleet_vehicle_id: ?int, license_number: ?string, status: string, notes: ?string}
+     * @return array{full_name: string, phone: ?string, email: ?string, driver_kind: string, fleet_vehicle_id: ?int, license_number: ?string, status: string, notes: ?string, rider_user_id: ?int}
      */
     private function normalizeAndValidateVehicle(array $data): array
     {
@@ -208,6 +271,23 @@ final class ConsoleDriverRepository
             }
         }
 
+        $riderUserId = null;
+        if (SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id')
+            && array_key_exists('rider_user_id', $data)) {
+            $rawRu = $data['rider_user_id'];
+            if ($rawRu !== null && $rawRu !== '') {
+                $r = (int) $rawRu;
+                if ($r > 0) {
+                    $chk = $this->pdo->prepare('SELECT id FROM rider_users WHERE id = ? LIMIT 1');
+                    $chk->execute([$r]);
+                    if ($chk->fetchColumn() === false) {
+                        throw new RuntimeException('Linked rider user ID does not exist in the app');
+                    }
+                    $riderUserId = $r;
+                }
+            }
+        }
+
         return [
             'full_name' => $name,
             'phone' => $phone,
@@ -217,6 +297,7 @@ final class ConsoleDriverRepository
             'license_number' => $license,
             'status' => $status,
             'notes' => $notes,
+            'rider_user_id' => $riderUserId,
         ];
     }
 

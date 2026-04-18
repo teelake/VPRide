@@ -5,6 +5,7 @@ import '../api/api_exception.dart';
 import '../config/app_config.dart';
 import 'google_auth_service.dart';
 import 'session_store.dart';
+import '../../models/driver_profile.dart';
 import '../../models/rider_profile.dart';
 
 /// Rider auth: Google on device + session token from PHP API.
@@ -23,10 +24,12 @@ final class AuthRepository extends ChangeNotifier {
 
   String? _token;
   RiderProfile? _profile;
+  DriverProfile? _driverProfile;
   bool _busy = false;
 
   String? get sessionToken => _token;
   RiderProfile? get profile => _profile;
+  DriverProfile? get driverProfile => _driverProfile;
   bool get isSignedIn => _token != null;
   bool get isBusy => _busy;
 
@@ -41,21 +44,46 @@ final class AuthRepository extends ChangeNotifier {
 
     try {
       final body = await _api.getMe(_token!);
-      final user = body['user'];
-      if (user is Map<String, dynamic>) {
-        _profile = RiderProfile.fromJson(user);
-      }
+      _applyMeResponse(body);
     } on ApiException {
       await _sessionStore.clearToken();
       _token = null;
       _profile = null;
+      _driverProfile = null;
       notifyListeners();
     } catch (_) {
       await _sessionStore.clearToken();
       _token = null;
       _profile = null;
+      _driverProfile = null;
       notifyListeners();
     }
+  }
+
+  void _applyMeResponse(Map<String, dynamic> body) {
+    final user = body['user'];
+    if (user is Map<String, dynamic>) {
+      _profile = RiderProfile.fromJson(user);
+    }
+    final d = body['driver'];
+    if (d is Map<String, dynamic>) {
+      _driverProfile = DriverProfile.fromJson(d);
+    } else {
+      _driverProfile = null;
+    }
+  }
+
+  /// Refreshes profile and driver linkage from [GET /api/v1/me] without clearing the session on failure.
+  Future<void> refreshProfile() async {
+    final t = _token;
+    if (t == null || AppConfig.apiBaseUrl.trim().isEmpty) return;
+    try {
+      final body = await _api.getMe(t);
+      _applyMeResponse(body);
+      notifyListeners();
+    } on ApiException {
+      // Keep cached profile if /me fails transiently.
+    } catch (_) {}
   }
 
   /// Returns null on success, or an error message for UI.
@@ -85,7 +113,9 @@ final class AuthRepository extends ChangeNotifier {
       if (userRaw is Map<String, dynamic>) {
         _profile = RiderProfile.fromJson(userRaw);
       }
+      _driverProfile = null;
       notifyListeners();
+      await refreshProfile();
       return null;
     } on ApiException catch (e) {
       if (e.statusCode == 409) {
@@ -195,7 +225,9 @@ final class AuthRepository extends ChangeNotifier {
       if (userRaw is Map<String, dynamic>) {
         _profile = RiderProfile.fromJson(userRaw);
       }
+      _driverProfile = null;
       notifyListeners();
+      await refreshProfile();
       return null;
     } on ApiException catch (e) {
       if (e.statusCode == 401) {
@@ -235,7 +267,9 @@ final class AuthRepository extends ChangeNotifier {
       if (userRaw is Map<String, dynamic>) {
         _profile = RiderProfile.fromJson(userRaw);
       }
+      _driverProfile = null;
       notifyListeners();
+      await refreshProfile();
       return null;
     } on ApiException catch (e) {
       if (e.statusCode == 400) {
@@ -263,6 +297,7 @@ final class AuthRepository extends ChangeNotifier {
     await _sessionStore.clearToken();
     _token = null;
     _profile = null;
+    _driverProfile = null;
     notifyListeners();
   }
 }

@@ -167,6 +167,55 @@ if ($path === '/api/v1/rides/estimate' && in_array($method, ['POST', 'OPTIONS'],
     exit;
 }
 
+if ($path === '/api/v1/driver/availability' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_availability.php';
+    exit;
+}
+
+if ($path === '/api/v1/driver/rides/incoming' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_rides_incoming.php';
+    exit;
+}
+
+if ($path === '/api/v1/driver/rides/active' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_rides_active.php';
+    exit;
+}
+
+if ($path === '/api/v1/driver/rides/history' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_rides_history.php';
+    exit;
+}
+
+if ($path === '/api/v1/driver/earnings/summary' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_driver_earnings.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/driver/rides/(\\d+)/accept$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_driver_ride_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_driver_ride_accept.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/driver/rides/(\\d+)/reject$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_driver_ride_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_driver_ride_reject.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/driver/rides/(\\d+)/start$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_driver_ride_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_driver_ride_start.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/driver/rides/(\\d+)/complete$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_driver_ride_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_driver_ride_complete.php';
+    exit;
+}
+
 if (preg_match('#^/api/v1/rides/(\\d+)/rating$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
     $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
     require $backendRoot . '/src/handlers/api_ride_rating.php';
@@ -226,6 +275,17 @@ if ($path === '/admin/search' && $method === 'GET') {
 
 if ($path === '/admin/regions' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/regions.php';
+    exit;
+}
+
+if (preg_match('#^/admin/rides/(\\d+)/dispatch$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+    $_ROUTE_RIDE_DISPATCH_ID = (int) $m[1];
+    require $backendRoot . '/public/admin/ride_dispatch.php';
+    exit;
+}
+
+if ($path === '/admin/rides/create' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/ride_create.php';
     exit;
 }
 
