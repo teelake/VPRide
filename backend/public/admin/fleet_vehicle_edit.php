@@ -151,7 +151,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/fleet/new' : '/admin/fleet/' . $id)) ?>" class="vp-stack-form">
+    <form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/fleet/new' : '/admin/fleet/' . $id)) ?>" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="ownership">Vehicle ownership</label>

@@ -82,7 +82,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_url('/admin/team/new') ?>" class="vp-stack-form" style="max-width:28rem;">
+    <form method="post" action="<?= vp_url('/admin/team/new') ?>" class="vp-stack-form vp-stack-form--narrow">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
 
       <div class="vp-field">

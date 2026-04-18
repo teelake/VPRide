@@ -109,7 +109,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     <?php if ($drivers === []) { ?>
       <p class="vp-field-hint">No active drivers with a linked <strong>App user ID</strong>. Edit a fleet driver and set <em>Linked rider user ID</em>.</p>
     <?php } else { ?>
-      <form method="post" class="vp-stack-form" style="max-width:32rem;margin-top:1rem;">
+      <form method="post" class="vp-stack-form vp-stack-form--medium" style="margin-top:1rem;">
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <div class="vp-field">
           <label class="vp-label" for="driver_rider_user_id">Driver (app account)</label>

@@ -86,7 +86,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th>Reporter</th>
               <th>Location</th>
               <th>Time</th>
-              <?php if (Auth::can('sos.manage')) { ?><th></th><?php } ?>
+              <?php if (Auth::can('sos.manage')) { ?><th class="vp-table__actions-col"><span class="vp-sr-only">Actions</span></th><?php } ?>
             </tr>
           </thead>
           <tbody>
@@ -99,12 +99,18 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__muted"><?= vp_h((string) $r['latitude'] . ', ' . (string) $r['longitude']) ?></td>
                 <td style="color:var(--vp-muted);font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
                 <?php if (Auth::can('sos.manage')) { ?>
-                  <td>
-                    <form method="post" style="margin:0;">
-                      <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
-                      <input type="hidden" name="acknowledge_id" value="<?= (int) $r['id'] ?>">
-                      <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Acknowledge</button>
-                    </form>
+                  <td class="vp-table__actions-col">
+                    <?php
+                    vp_action_icons_open();
+                    vp_action_post_icon_form(
+                        vp_url('/admin/sos'),
+                        $csrf,
+                        ['acknowledge_id' => (int) $r['id']],
+                        vp_icon_svg_acknowledge(),
+                        'Acknowledge',
+                    );
+                    vp_action_icons_close();
+                    ?>
                   </td>
                 <?php } ?>
               </tr>

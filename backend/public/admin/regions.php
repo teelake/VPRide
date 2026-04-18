@@ -98,7 +98,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">Status</th>
               <th scope="col">Updated</th>
               <th scope="col">Last edited by</th>
-              <th scope="col">Actions</th>
+              <th scope="col" class="vp-table__actions-col"><span class="vp-sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -115,21 +115,25 @@ require __DIR__ . '/includes/app_shell_start.php';
                 </td>
                 <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['updated_at']) ?></td>
                 <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) ($r['updated_by_email'] ?? '') ?: '—') ?></td>
-                <td>
-                  <div class="vp-table__actions">
-                    <?php if ($canManageRegions) { ?>
-                      <a class="vp-btn vp-btn--inline" href="<?= vp_url('/admin/region/' . (int) $r['id']) ?>">Edit</a>
-                      <?php if ((int) $r['is_active'] !== 1) { ?>
-                        <form method="post" action="<?= vp_url('/admin/regions') ?>" class="vp-inline-form" onsubmit="return confirm(<?= vp_confirm_attr('Make “' . (string) $r['label'] . '” the live region for all rider apps? They will pick this up on the next config sync.') ?>);">
-                          <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
-                          <input type="hidden" name="activate_id" value="<?= (int) $r['id'] ?>">
-                          <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Go live</button>
-                        </form>
-                      <?php } ?>
-                    <?php } else { ?>
-                      <span class="vp-badge-draft">View only</span>
-                    <?php } ?>
-                  </div>
+                <td class="vp-table__actions-col">
+                  <?php if ($canManageRegions) { ?>
+                    <?php
+                    vp_action_icons_open();
+                    vp_action_edit(vp_url('/admin/region/' . (int) $r['id']));
+                    if ((int) $r['is_active'] !== 1) {
+                        vp_action_publish_form(
+                            vp_url('/admin/regions'),
+                            $csrf,
+                            ['activate_id' => (int) $r['id']],
+                            'Make "' . (string) $r['label'] . '" the live region for all rider apps? They will pick this up on the next config sync.',
+                            'Go live',
+                        );
+                    }
+                    vp_action_icons_close();
+                    ?>
+                  <?php } else { ?>
+                    <span class="vp-badge-draft">View only</span>
+                  <?php } ?>
                 </td>
               </tr>
             <?php } ?>

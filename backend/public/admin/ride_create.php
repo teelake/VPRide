@@ -165,7 +165,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" class="vp-stack-form" style="max-width:40rem;">
+    <form method="post" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="rider_email">Rider email</label>

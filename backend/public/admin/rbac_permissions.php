@@ -77,7 +77,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card">
   <div class="vp-card__pad">
     <h2 class="vp-section-title">Add permission</h2>
-    <form method="post" action="<?= vp_url('/admin/rbac/permissions') ?>" class="vp-stack-form" style="max-width:36rem;">
+    <form method="post" action="<?= vp_url('/admin/rbac/permissions') ?>" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="slug">Key</label>

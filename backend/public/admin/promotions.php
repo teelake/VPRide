@@ -194,7 +194,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card" aria-labelledby="plat-heading">
   <div class="vp-card__pad">
     <h2 id="plat-heading" class="vp-section-title">Pricing &amp; loyalty defaults</h2>
-    <form method="post" class="vp-stack-form" style="max-width:40rem;" action="<?= vp_url('/admin/promotions') ?>">
+    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/admin/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="promotions_ui_tab" value="pricing">
       <input type="hidden" name="save_platform" value="1">
@@ -271,7 +271,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th>Code</th>
               <th>Discount</th>
               <th>Active</th>
-              <th></th>
+              <th class="vp-table__actions-col"><span class="vp-sr-only">Actions</span></th>
             </tr>
           </thead>
           <tbody>
@@ -283,7 +283,13 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__muted"><?= vp_h((string) ($p['coupon_code'] ?? '—')) ?></td>
                 <td><?= vp_h((string) $p['discount_kind'] . ' ' . (string) $p['discount_value']) ?></td>
                 <td><?= ! empty($p['is_active']) ? 'Yes' : 'No' ?></td>
-                <td><a href="<?= vp_url('/admin/promotions?edit=' . (int) $p['id']) ?>">Edit</a></td>
+                <td class="vp-table__actions-col">
+                  <?php
+                  vp_action_icons_open();
+                  vp_action_edit(vp_url('/admin/promotions?edit=' . (int) $p['id']));
+                  vp_action_icons_close();
+                  ?>
+                </td>
               </tr>
             <?php } ?>
           </tbody>
@@ -299,7 +305,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 id="promo-form-heading" class="vp-section-title"><?= $editRow !== null ? 'Edit promotion' : 'New promotion' ?></h2>
     <p class="vp-field-hint" style="margin:-0.35rem 0 1rem;">Automatic promos can use a JSON schedule (happy hour). Coupon promos require a code riders enter when booking (if enabled in Settings).</p>
-    <form method="post" class="vp-stack-form" style="max-width:44rem;" action="<?= vp_url('/admin/promotions') ?>">
+    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/admin/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="promotions_ui_tab" value="editor">
       <input type="hidden" name="save_promotion" value="1">

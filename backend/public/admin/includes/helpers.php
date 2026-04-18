@@ -408,3 +408,4 @@ function vp_csv_line(array $fields): string
 }
 
 require_once __DIR__ . '/ui_components.php';
+require_once __DIR__ . '/action_controls.php';

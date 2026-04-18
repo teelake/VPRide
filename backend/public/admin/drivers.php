@@ -160,7 +160,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">Vehicle</th>
               <th scope="col">Status</th>
               <?php if (Auth::can('fleet.manage')) { ?>
-                <th scope="col"><span class="vp-sr-only">Actions</span></th>
+                <th scope="col" class="vp-table__actions-col"><span class="vp-sr-only">Actions</span></th>
               <?php } ?>
             </tr>
           </thead>
@@ -194,14 +194,18 @@ require __DIR__ . '/includes/app_shell_start.php';
                 </td>
                 <td><span class="vp-status-dot <?= vp_h(vp_ride_status_dot_class((string) $r['status'])) ?>"></span><?= vp_h((string) $r['status']) ?></td>
                 <?php if (Auth::can('fleet.manage')) { ?>
-                  <td style="white-space:nowrap;">
-                    <a class="vp-btn vp-btn--ghost vp-btn--sm" href="<?= vp_h(vp_url('/admin/drivers/' . (int) $r['id'])) ?>">Edit</a>
-                    <form method="post" action="<?= vp_h(vp_url('/admin/drivers')) ?>" style="display:inline;" onsubmit="return confirm(<?= vp_confirm_attr('Delete this driver record?') ?>);">
-                      <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
-                      <input type="hidden" name="action" value="delete_driver">
-                      <input type="hidden" name="delete_id" value="<?= (int) $r['id'] ?>">
-                      <button type="submit" class="vp-btn vp-btn--ghost vp-btn--sm" style="color:var(--vp-danger);">Delete</button>
-                    </form>
+                  <td class="vp-table__actions-col">
+                    <?php
+                    vp_action_icons_open();
+                    vp_action_edit(vp_url('/admin/drivers/' . (int) $r['id']));
+                    vp_action_delete_form(
+                        vp_url('/admin/drivers'),
+                        $csrf,
+                        ['action' => 'delete_driver', 'delete_id' => (int) $r['id']],
+                        'Delete this driver record?',
+                    );
+                    vp_action_icons_close();
+                    ?>
                   </td>
                 <?php } ?>
               </tr>
