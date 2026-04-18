@@ -13,6 +13,9 @@ final class RiderAuthService
 {
     private const MIN_PASSWORD_LEN = 8;
 
+    /** Length of admin-emailed temporary passwords (must be >= MIN_PASSWORD_LEN). */
+    private const PROVISIONED_PASSWORD_LENGTH = 8;
+
     public function __construct(private PDO $pdo) {}
 
     /**
@@ -127,7 +130,7 @@ final class RiderAuthService
             throw new RuntimeException('display_name_too_long');
         }
         $plain = self::generateRandomPassword();
-        if (strlen($plain) < self::MIN_PASSWORD_LEN) {
+        if (strlen($plain) !== self::PROVISIONED_PASSWORD_LENGTH) {
             throw new RuntimeException('password_generation_failed');
         }
         $hash = password_hash($plain, PASSWORD_DEFAULT);
@@ -165,7 +168,7 @@ final class RiderAuthService
         $alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789';
         $len = strlen($alphabet);
         $out = '';
-        for ($i = 0; $i < 16; $i++) {
+        for ($i = 0; $i < self::PROVISIONED_PASSWORD_LENGTH; $i++) {
             $out .= $alphabet[random_int(0, $len - 1)];
         }
 
