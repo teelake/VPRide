@@ -32,7 +32,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">People &amp; access</h1>
-  <p class="vp-page-desc">Shortcuts to <strong>riders</strong> (app customers), <strong>drivers</strong> (operations), and <strong>console administrators</strong>. The sidebar has the same entries under separate menus.</p>
+  <p class="vp-page-desc">Shortcuts to <strong>riders</strong> (app customers), <strong>drivers</strong> (operations), and <strong>console administrators</strong>. The sidebar lists the same areas in order: <strong>Riders</strong>, <strong>Drivers &amp; fleet</strong>, then <strong>Console team</strong>.</p>
 </header>
 
 <div class="vp-hub-grid" role="list">

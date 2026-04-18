@@ -48,68 +48,73 @@ $vpSearchPlaceholder = Auth::can('riders.view')
       </a>
     </div>
     <nav class="vp-sidebar__nav" aria-label="Sections">
-      <ul class="vp-sidebar__list">
-        <?php if (Auth::can('dashboard.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_overview() ?></span>
-              <span class="vp-nav-item__text">Dashboard</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('rides.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rides() ?></span>
-              <span class="vp-nav-item__text">Bookings</span>
-            </a>
-          </li>
-          <li>
-            <a href="<?= vp_url('/admin/schedule') ?>" class="vp-nav-item<?= $vpNavActive === 'schedule' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'schedule' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_schedule() ?></span>
-              <span class="vp-nav-item__text">Schedule</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('reports.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/reports/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'reports' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'reports' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_reports() ?></span>
-              <span class="vp-nav-item__text">Reports</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('settings.manage')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
-              <span class="vp-nav-item__text">Settings</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('promotions.manage')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/promotions') ?>" class="vp-nav-item<?= $vpNavActive === 'promotions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'promotions' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true">%</span>
-              <span class="vp-nav-item__text">Promotions</span>
-            </a>
-          </li>
-        <?php } ?>
-        <?php if (Auth::can('sos.view')) { ?>
-          <li>
-            <a href="<?= vp_url('/admin/sos') ?>" class="vp-nav-item<?= $vpNavActive === 'sos' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'sos' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true">!</span>
-              <span class="vp-nav-item__text">SOS</span>
-            </a>
-          </li>
-        <?php } ?>
-        <li>
-          <a href="<?= vp_url('/admin/help') ?>" class="vp-nav-item<?= $vpNavActive === 'help' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'help' ? ' aria-current="page"' : '' ?>>
-            <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_help() ?></span>
-            <span class="vp-nav-item__text">Help &amp; support</span>
+      <?php
+      $vpShowOpsNav = Auth::can('dashboard.view')
+          || Auth::can('rides.view')
+          || Auth::can('sos.view')
+          || Auth::can('reports.view')
+          || Auth::can('promotions.manage');
+      ?>
+      <?php if ($vpShowOpsNav) { ?>
+        <p class="vp-sidebar__section-label">Operations</p>
+        <ul class="vp-sidebar__list">
+          <?php if (Auth::can('dashboard.view')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/dashboard') ?>" class="vp-nav-item<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'overview' || $vpNavActive === 'dashboard' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_overview() ?></span>
+                <span class="vp-nav-item__text">Dashboard</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('rides.view')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rides' || $vpNavActive === 'bookings' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rides() ?></span>
+                <span class="vp-nav-item__text">Bookings</span>
+              </a>
+            </li>
+            <li>
+              <a href="<?= vp_url('/admin/schedule') ?>" class="vp-nav-item<?= $vpNavActive === 'schedule' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'schedule' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_schedule() ?></span>
+                <span class="vp-nav-item__text">Schedule</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('sos.view')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/sos') ?>" class="vp-nav-item<?= $vpNavActive === 'sos' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'sos' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true">!</span>
+                <span class="vp-nav-item__text">SOS</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('reports.view')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/reports/rides') ?>" class="vp-nav-item<?= $vpNavActive === 'reports' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'reports' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_reports() ?></span>
+                <span class="vp-nav-item__text">Reports</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('promotions.manage')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/promotions') ?>" class="vp-nav-item<?= $vpNavActive === 'promotions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'promotions' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true">%</span>
+                <span class="vp-nav-item__text">Promotions</span>
+              </a>
+            </li>
+          <?php } ?>
+        </ul>
+      <?php } ?>
+
+      <?php if (Auth::can('rides.view')) { ?>
+        <div class="vp-sidebar__cta">
+          <a class="vp-sidebar__cta-btn vp-btn vp-btn--primary" href="<?= vp_url('/admin/rides') ?>">
+            <span class="vp-sidebar__cta-icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
+            <span>Bookings queue</span>
           </a>
-        </li>
-      </ul>
+        </div>
+      <?php } ?>
 
       <?php if (Auth::can('riders.view')) { ?>
         <p class="vp-sidebar__section-label">Riders</p>
@@ -124,7 +129,7 @@ $vpSearchPlaceholder = Auth::can('riders.view')
       <?php } ?>
 
       <?php if (Auth::can('rides.view')) { ?>
-        <p class="vp-sidebar__section-label">Drivers</p>
+        <p class="vp-sidebar__section-label">Drivers &amp; fleet</p>
         <ul class="vp-sidebar__list">
           <li>
             <a href="<?= vp_url('/admin/drivers') ?>" class="vp-nav-item<?= $vpNavActive === 'drivers' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'drivers' ? ' aria-current="page"' : '' ?>>
@@ -153,15 +158,6 @@ $vpSearchPlaceholder = Auth::can('riders.view')
         </ul>
       <?php } ?>
 
-      <?php if (Auth::can('rides.view')) { ?>
-        <div class="vp-sidebar__cta">
-          <a class="vp-sidebar__cta-btn vp-btn vp-btn--primary" href="<?= vp_url('/admin/rides') ?>">
-            <span class="vp-sidebar__cta-icon" aria-hidden="true"><?= vp_nav_icon_plus() ?></span>
-            <span>Bookings queue</span>
-          </a>
-        </div>
-      <?php } ?>
-
       <?php if (Auth::can('regions.view') || Auth::can('regions.manage')) { ?>
         <p class="vp-sidebar__section-label">Regions &amp; coverage</p>
         <ul class="vp-sidebar__list">
@@ -184,17 +180,37 @@ $vpSearchPlaceholder = Auth::can('riders.view')
         </ul>
       <?php } ?>
 
-      <?php if (Auth::can('rbac.manage')) { ?>
-        <p class="vp-sidebar__section-label">Administration</p>
+      <?php if (Auth::can('settings.manage') || Auth::can('rbac.manage')) { ?>
+        <p class="vp-sidebar__section-label">Platform</p>
         <ul class="vp-sidebar__list">
-          <li>
-            <a href="<?= vp_url('/admin/rbac') ?>" class="vp-nav-item<?= $vpNavActive === 'rbac' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rbac' ? ' aria-current="page"' : '' ?>>
-              <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rbac() ?></span>
-              <span class="vp-nav-item__text">Roles &amp; access</span>
-            </a>
-          </li>
+          <?php if (Auth::can('settings.manage')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
+                <span class="vp-nav-item__text">Settings</span>
+              </a>
+            </li>
+          <?php } ?>
+          <?php if (Auth::can('rbac.manage')) { ?>
+            <li>
+              <a href="<?= vp_url('/admin/rbac') ?>" class="vp-nav-item<?= $vpNavActive === 'rbac' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'rbac' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_rbac() ?></span>
+                <span class="vp-nav-item__text">Roles &amp; access</span>
+              </a>
+            </li>
+          <?php } ?>
         </ul>
       <?php } ?>
+
+      <p class="vp-sidebar__section-label">Support</p>
+      <ul class="vp-sidebar__list">
+        <li>
+          <a href="<?= vp_url('/admin/help') ?>" class="vp-nav-item<?= $vpNavActive === 'help' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'help' ? ' aria-current="page"' : '' ?>>
+            <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_help() ?></span>
+            <span class="vp-nav-item__text">Help &amp; support</span>
+          </a>
+        </li>
+      </ul>
     </nav>
     <div class="vp-sidebar__foot vp-sidebar__foot--minimal" aria-hidden="true"></div>
   </aside>
