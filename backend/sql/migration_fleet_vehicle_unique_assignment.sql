@@ -1,6 +1,11 @@
 -- At most one active or pending driver may reference a given fleet_vehicle_id (database-enforced).
--- Requires MySQL 5.7.14+ or MariaDB 10.2+ (generated STORED column + unique index).
+-- Requires MySQL 5.7.14+ or MariaDB 10.2+ (generated STORED/PERSISTENT column + unique index).
 -- Run after migration_fleet_vehicles_drivers.sql. Idempotent for column/index.
+--
+-- Run the full file in the mysql client (or a tool that honors DELIMITER). phpMyAdmin: set Delimiter
+-- to $$ before executing the procedure block, then reset to ; — or paste only the UPDATE, then
+-- the CREATE PROCEDURE … END$$ block with delimiter $$ selected. Plain “static analysis” on the
+-- whole file often fails on BEGIN/END inside procedures; that is expected.
 --
 -- 1) Clears duplicate assignments: for each vehicle used by multiple active/pending drivers,
 --    keeps the row with the smallest id and sets fleet_vehicle_id to NULL on the others.
@@ -36,7 +41,7 @@ BEGIN
       AND COLUMN_NAME = 'fleet_vehicle_active_key'
   ) THEN
     ALTER TABLE fleet_drivers
-      ADD COLUMN fleet_vehicle_active_key BIGINT UNSIGNED NULL
+      ADD COLUMN fleet_vehicle_active_key BIGINT UNSIGNED
       GENERATED ALWAYS AS (
         CASE
           WHEN `status` IN ('active', 'pending') AND `fleet_vehicle_id` IS NOT NULL

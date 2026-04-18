@@ -43,7 +43,6 @@ $fleetVehicleId = 0;
 $licenseNumber = '';
 $status = 'pending';
 $notes = '';
-$riderUserIdField = '';
 $earningsPercentOverride = '';
 
 $error = '';
@@ -90,9 +89,6 @@ if (! $isNew) {
     $licenseNumber = (string) ($row['license_number'] ?? '');
     $status = (string) $row['status'];
     $notes = (string) ($row['notes'] ?? '');
-    if (isset($row['rider_user_id']) && $row['rider_user_id'] !== null) {
-        $riderUserIdField = (string) (int) $row['rider_user_id'];
-    }
     if (isset($row['earnings_percent_override']) && $row['earnings_percent_override'] !== null && $row['earnings_percent_override'] !== '') {
         $earningsPercentOverride = (string) (float) $row['earnings_percent_override'];
     }
@@ -112,7 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $licenseNumber = trim((string) ($_POST['license_number'] ?? ''));
         $status = trim((string) ($_POST['status'] ?? 'pending'));
         $notes = trim((string) ($_POST['notes'] ?? ''));
-        $riderUserIdField = trim((string) ($_POST['rider_user_id'] ?? ''));
         $earningsPercentOverride = trim((string) ($_POST['earnings_percent_override'] ?? ''));
 
         $existingRiderUserId = null;
@@ -123,14 +118,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
-        $postRiderId = $riderUserIdField === '' ? null : (int) $riderUserIdField;
-        $riderUserIdEmpty = $postRiderId === null || $postRiderId < 1;
         $hadNoRiderLink = $isNew || $existingRiderUserId === null || $existingRiderUserId < 1;
-        $needsProvision = $riderUserIdEmpty && $hadNoRiderLink;
+        $needsProvision = $hadNoRiderLink;
 
         if ($needsProvision && $email === '') {
-            $error = 'Email is required so the system can create the driver&apos;s app login and send the password, '
-                . 'unless you enter an existing Linked app user ID.';
+            $error = 'Email is required so the system can create the driver&apos;s app account and send a temporary password.';
         } else {
             $payload = [
                 'full_name' => $fullName,
@@ -141,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'license_number' => $licenseNumber,
                 'status' => $status,
                 'notes' => $notes,
-                'rider_user_id' => $riderUserIdEmpty ? null : $postRiderId,
+                'rider_user_id' => $needsProvision ? null : $existingRiderUserId,
                 'earnings_percent_override' => $earningsPercentOverride === '' ? null : $earningsPercentOverride,
             ];
             $generatedPassword = null;
@@ -216,7 +208,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Throwable $e) {
                 $msg = $e->getMessage();
                 if ($needsProvision && $msg === 'email_taken') {
-                    $error = 'That email already has a VP Ride login. Enter that rider&apos;s numeric user ID in &quot;Linked app user ID&quot;, or use a different email to provision a new login.';
+                    $error = 'That email already has a VP Ride login. Use a different email for this driver, or resolve the duplicate account in the database.';
                 } else {
                     $error = $msg;
                 }
@@ -275,13 +267,8 @@ require __DIR__ . '/includes/app_shell_start.php';
         </div>
         <div>
           <label class="vp-label" for="email">Email</label>
-          <input class="vp-input" id="email" name="email" type="email" value="<?= vp_h($email) ?>" maxlength="255" autocomplete="email">
+          <input class="vp-input" id="email" name="email" type="email" value="<?= vp_h($email) ?>" maxlength="255" autocomplete="email"<?= $isNew ? ' required' : '' ?>>
         </div>
-      </div>
-      <div class="vp-field">
-        <label class="vp-label" for="rider_user_id">Linked app user ID (optional override)</label>
-        <input class="vp-input vp-input--mono" id="rider_user_id" name="rider_user_id" type="number" min="0" step="1" value="<?= vp_h($riderUserIdField) ?>" placeholder="Leave blank — a rider account is created from the email above">
-        <p class="vp-field-hint">Normally leave this empty: saving creates a <code class="vp-inline-code">rider_users</code> row, links it here, and emails a temporary password to the driver&apos;s email. Only fill this if you are attaching an <strong>existing</strong> app user (see <a href="<?= vp_h(vp_url('/admin/riders')) ?>">Riders</a>).</p>
       </div>
       <div class="vp-field">
         <label class="vp-label" for="earnings_percent_override">Driver earnings % override (optional)</label>
