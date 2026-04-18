@@ -75,7 +75,6 @@ if ($featuredRide !== null && count($recentRides) > 1) {
 
 $rides24h = $analytics->ridesCountLastHours(24);
 $rides7d = $analytics->ridesNewLastDays(7);
-$riders7d = $analytics->ridersNewLastDays(7);
 $ridesByDay = $analytics->ridesPerDayLastDays(7);
 $ridersByDay = $analytics->ridersPerDayLastDays(7);
 $statusRows = $analytics->ridesByStatus();
@@ -92,18 +91,6 @@ $canceledN = $statusMap['canceled'] ?? $statusMap['cancelled'] ?? 0;
 $completionPct = $statusTotal > 0 ? (int) round(100 * $completedN / $statusTotal) : 0;
 
 $dashDateLabel = date('D j M');
-$ridersWeekLine = $riders7d > 0
-    ? sprintf('+%s new riders this week', number_format($riders7d))
-    : 'No new riders this week';
-$bookingsWeekLine = $rides7d > 0
-    ? sprintf('%s bookings in the last 7 days', number_format($rides7d))
-    : 'No bookings in the last 7 days';
-$completionLine = $statusTotal > 0
-    ? sprintf('%s completed of %s total', number_format($completedN), number_format($statusTotal))
-    : 'No ride data yet';
-$canceledLine = $canceledN > 0
-    ? sprintf('%s canceled (all time)', number_format($canceledN))
-    : 'No canceled rides recorded';
 
 $sparkMaxRides = 1;
 foreach ($ridesByDay as $pt) {
@@ -154,47 +141,37 @@ require __DIR__ . '/includes/app_shell_start.php';
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-a" aria-hidden="true"><?= vp_kpi_icon_riders() ?></span>
     </div>
-    <p class="vp-kpi-card__label">Registered riders</p>
-    <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
-    <p class="vp-kpi-card__delta<?= $riders7d > 0 ? ' vp-kpi-card__delta--up' : ' vp-kpi-card__delta--muted' ?>"><?= vp_h($ridersWeekLine) ?></p>
-    <?php if (Auth::can('riders.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/users') ?>">People &amp; access</a>
-    <?php } ?>
+    <div class="vp-kpi-card__dash-body">
+      <p class="vp-kpi-card__label">Registered riders</p>
+      <p class="vp-kpi-card__value"><?= number_format($riderCount) ?></p>
+    </div>
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-b" aria-hidden="true"><?= vp_kpi_icon_rides() ?></span>
     </div>
-    <p class="vp-kpi-card__label">Total bookings</p>
-    <p class="vp-kpi-card__value"><?= number_format($rideCount) ?></p>
-    <p class="vp-kpi-card__delta<?= $rides7d > 0 ? ' vp-kpi-card__delta--neutral' : ' vp-kpi-card__delta--muted' ?>"><?= vp_h($bookingsWeekLine) ?></p>
-    <?php if (Auth::can('rides.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/rides') ?>">Open bookings</a>
-    <?php } ?>
+    <div class="vp-kpi-card__dash-body">
+      <p class="vp-kpi-card__label">Total bookings</p>
+      <p class="vp-kpi-card__value"><?= number_format($rideCount) ?></p>
+    </div>
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-c" aria-hidden="true"><?= vp_kpi_icon_globe() ?></span>
     </div>
-    <p class="vp-kpi-card__label">Completion rate</p>
-    <p class="vp-kpi-card__value"><?= $statusTotal > 0 ? vp_h((string) $completionPct) . '%' : '—' ?></p>
-    <p class="vp-kpi-card__delta<?= $statusTotal > 0 && $completionPct >= 50 ? ' vp-kpi-card__delta--up' : ($statusTotal > 0 ? ' vp-kpi-card__delta--warn' : ' vp-kpi-card__delta--muted') ?>"><?= vp_h($completionLine) ?></p>
-    <?php if (Auth::can('reports.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/reports/rides') ?>">Ride reports</a>
-    <?php } ?>
+    <div class="vp-kpi-card__dash-body">
+      <p class="vp-kpi-card__label">Completion rate</p>
+      <p class="vp-kpi-card__value"><?= $statusTotal > 0 ? vp_h((string) $completionPct) . '%' : '—' ?></p>
+    </div>
   </article>
   <article class="vp-kpi-card vp-kpi-card--dash" role="listitem">
     <div class="vp-kpi-card__dash-top">
       <span class="vp-kpi-card__bubble vp-kpi-card__bubble--brand-d" aria-hidden="true"><?= vp_kpi_icon_layers() ?></span>
     </div>
-    <p class="vp-kpi-card__label">Canceled</p>
-    <p class="vp-kpi-card__value"><?= number_format($canceledN) ?></p>
-    <p class="vp-kpi-card__delta<?= $canceledN > 0 ? ' vp-kpi-card__delta--down' : ' vp-kpi-card__delta--muted' ?>"><?= vp_h($canceledLine) ?></p>
-    <?php if (Auth::can('regions.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/regions') ?>">Live: <?= vp_h($liveLabel) ?> · Regions</a>
-    <?php } elseif (Auth::can('rides.view')) { ?>
-      <a class="vp-kpi-card__dash-link" href="<?= vp_url('/admin/rides') ?>">Review bookings</a>
-    <?php } ?>
+    <div class="vp-kpi-card__dash-body">
+      <p class="vp-kpi-card__label">Canceled</p>
+      <p class="vp-kpi-card__value"><?= number_format($canceledN) ?></p>
+    </div>
   </article>
 </div>
 
