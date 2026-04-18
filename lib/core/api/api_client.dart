@@ -500,6 +500,71 @@ final class ApiClient {
     return _decode(res);
   }
 
+  Future<Map<String, dynamic>> postRidePaymentProof({
+    required String bearerToken,
+    required int rideId,
+    required List<int> fileBytes,
+    required String filename,
+  }) async {
+    final uri = _uri('/api/v1/rides/$rideId/payment-proof');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Accept'] = 'application/json'
+      ..headers['Authorization'] = 'Bearer $bearerToken'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'proof',
+          fileBytes,
+          filename: filename,
+        ),
+      );
+    final streamed = await request.send().timeout(const Duration(seconds: 90));
+    final res = await http.Response.fromStream(streamed);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postRidePaymentOffline({
+    required String bearerToken,
+    required int rideId,
+    required String method,
+    String? proofUrl,
+    String? referenceNote,
+  }) async {
+    final body = <String, dynamic>{
+      'method': method,
+      if (proofUrl != null && proofUrl.trim().isNotEmpty) 'proofUrl': proofUrl.trim(),
+      if (referenceNote != null && referenceNote.trim().isNotEmpty)
+        'referenceNote': referenceNote.trim(),
+    };
+    final res = await _client
+        .post(
+          _uri('/api/v1/rides/$rideId/payment-offline'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postDriverConfirmPayment(
+    String bearerToken,
+    int rideId,
+  ) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/driver/rides/$rideId/confirm-payment'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Map<String, dynamic> _decode(http.Response res) {
     final raw = res.body;
     if (raw.isEmpty) {

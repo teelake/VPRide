@@ -166,8 +166,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                     <?php if ($hasPayCol) { ?>
                       <?php
                         $st = (string) ($r['status'] ?? '');
+                        $pay = (string) ($r['payment_status'] ?? 'pending');
                         $canMark = in_array($st, ['requested', 'accepted', 'in_progress', 'completed'], true)
-                            && ($r['payment_status'] ?? 'pending') === 'pending';
+                            && in_array($pay, ['pending', 'submitted'], true);
                       ?>
                       <?php if ($canMark) { ?>
                         <form method="post" style="margin:0;display:inline;">

@@ -76,6 +76,29 @@ final class RideJsonPresenter
             ],
         ];
 
+        if (array_key_exists('payment_status', $ride)) {
+            $sub = $ride['payment_submitted_at'] ?? null;
+            $paid = $ride['paid_at'] ?? null;
+            $out['payment'] = [
+                'status' => (string) ($ride['payment_status'] ?? 'pending'),
+                'method' => isset($ride['payment_method']) && $ride['payment_method'] !== null && $ride['payment_method'] !== ''
+                    ? (string) $ride['payment_method']
+                    : null,
+                'proofUrl' => isset($ride['payment_proof_url']) && $ride['payment_proof_url'] !== null
+                    ? (string) $ride['payment_proof_url']
+                    : null,
+                'referenceNote' => isset($ride['payment_reference_note']) && $ride['payment_reference_note'] !== null
+                    ? (string) $ride['payment_reference_note']
+                    : null,
+                'submittedAt' => $sub !== null && $sub !== ''
+                    ? str_replace(' ', 'T', (string) $sub) . 'Z'
+                    : null,
+                'paidAt' => $paid !== null && $paid !== ''
+                    ? str_replace(' ', 'T', (string) $paid) . 'Z'
+                    : null,
+            ];
+        }
+
         return $out;
     }
 }

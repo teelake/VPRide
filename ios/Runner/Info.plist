@@ -53,6 +53,8 @@
 	<string></string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pride uses your location to set pickup points and show nearby drivers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pride needs photo library access so you can attach a bank transfer receipt after your trip.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

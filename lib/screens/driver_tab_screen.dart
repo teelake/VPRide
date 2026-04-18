@@ -27,6 +27,9 @@ String _mapDriverApiMessage(String code) {
       return 'That status change is not allowed right now.';
     case 'invalid_ride':
       return 'This ride is no longer valid. Refresh the list.';
+    case 'cannot_confirm_payment':
+      return 'Payment cannot be confirmed yet. The rider may still be entering details, '
+          'or this trip is not in the right state.';
     default:
       return code;
   }
@@ -628,6 +631,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
                                 ? 'Ride #$id · ${r['status'] ?? ''}'
                                 : '${r['status'] ?? ''}',
                             ride: r,
+                            footer: _paymentConfirmFooter(r),
                           ),
                         );
                       }),
@@ -638,6 +642,63 @@ class _DriverTabScreenState extends State<DriverTabScreen>
         ),
       ),
     );
+  }
+
+  Widget? _paymentConfirmFooter(Map<String, dynamic> r) {
+    final id = _rideId(r);
+    if (id == null) return null;
+    if ('${r['status']}' != 'completed') return null;
+    final pay = r['payment'];
+    if (pay is! Map || '${pay['status']}' != 'submitted') return null;
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: _busyRideId != null
+            ? null
+            : () => _confirmPaymentReceived(id),
+        child: _busyRideId == id
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Confirm payment received'),
+      ),
+    );
+  }
+
+  Future<void> _confirmPaymentReceived(int rideId) async {
+    if (!mounted) return;
+    final auth = AuthScope.of(context);
+    final api = ApiScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    setState(() => _busyRideId = rideId);
+    try {
+      await api.postDriverConfirmPayment(token, rideId);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment marked as received.')),
+        );
+      }
+      await _load();
+    } on ApiException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_mapDriverApiMessage(e.message)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.toString())),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busyRideId = null);
+    }
   }
 
   Widget? _buildActiveActions(Map<String, dynamic> ride) {
@@ -697,6 +758,7 @@ class _DriverTabScreenState extends State<DriverTabScreen>
     required String title,
     required Map<String, dynamic> ride,
     Widget? trailing,
+    Widget? footer,
   }) {
     final theme = Theme.of(context);
     final pickup = _addressLine(ride, 'pickup');
@@ -749,6 +811,10 @@ class _DriverTabScreenState extends State<DriverTabScreen>
                 fontWeight: FontWeight.w600,
               ),
             ),
+          ],
+          if (footer != null) ...[
+            const SizedBox(height: 12),
+            footer,
           ],
         ],
       ),

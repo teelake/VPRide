@@ -270,7 +270,7 @@ final class RideRepository
             return null;
         }
         $sel = $this->pdo->prepare(
-            'SELECT rider_user_id FROM rides WHERE id = ? AND payment_status = \'pending\' '
+            'SELECT rider_user_id FROM rides WHERE id = ? AND payment_status IN (\'pending\', \'submitted\') '
             . 'AND status IN (\'requested\', \'accepted\', \'in_progress\', \'completed\') LIMIT 1',
         );
         $sel->execute([$rideId]);
@@ -280,7 +280,8 @@ final class RideRepository
         }
         $riderUserId = (int) $rid;
         $stmt = $this->pdo->prepare(
-            'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? AND payment_status = \'pending\' '
+            'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? '
+            . 'AND payment_status IN (\'pending\', \'submitted\') '
             . 'AND status IN (\'requested\', \'accepted\', \'in_progress\', \'completed\')',
         );
         $stmt->execute([$rideId]);
@@ -688,5 +689,72 @@ final class RideRepository
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row !== false ? $row : null;
+    }
+
+    public function riderSubmitOfflinePayment(
+        int $rideId,
+        int $riderUserId,
+        string $method,
+        ?string $proofUrl,
+        ?string $referenceNote,
+    ): bool {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'payment_method')) {
+            return false;
+        }
+        if (! in_array($method, ['cash', 'pos', 'bank_transfer'], true)) {
+            return false;
+        }
+        if ($method === 'bank_transfer') {
+            $p = $proofUrl !== null ? trim($proofUrl) : '';
+            if ($p === '') {
+                return false;
+            }
+        }
+        $proof = $proofUrl !== null ? mb_substr(trim($proofUrl), 0, 768) : null;
+        if ($proof === '') {
+            $proof = null;
+        }
+        $note = $referenceNote !== null ? mb_substr(trim($referenceNote), 0, 500) : null;
+        if ($note === '') {
+            $note = null;
+        }
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET payment_method = ?, payment_proof_url = ?, payment_reference_note = ?, '
+            . 'payment_submitted_at = NOW(), payment_status = \'submitted\' '
+            . 'WHERE id = ? AND rider_user_id = ? AND status = \'completed\' AND payment_status = \'pending\'',
+        );
+        $stmt->execute([$method, $proof, $note, $rideId, $riderUserId]);
+
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @return array{rider_user_id: int}|null
+     */
+    public function driverConfirmOfflinePaymentReceived(int $rideId, int $driverRiderUserId): ?array
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'payment_status')) {
+            return null;
+        }
+        $sel = $this->pdo->prepare(
+            'SELECT rider_user_id FROM rides WHERE id = ? AND driver_rider_user_id = ? '
+            . "AND status = 'completed' AND payment_status = 'submitted' LIMIT 1",
+        );
+        $sel->execute([$rideId, $driverRiderUserId]);
+        $rid = $sel->fetchColumn();
+        if ($rid === false) {
+            return null;
+        }
+        $riderUserId = (int) $rid;
+        $stmt = $this->pdo->prepare(
+            'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? '
+            . 'AND driver_rider_user_id = ? AND payment_status = \'submitted\' AND status = \'completed\'',
+        );
+        $stmt->execute([$rideId, $driverRiderUserId]);
+        if ($stmt->rowCount() < 1) {
+            return null;
+        }
+
+        return ['rider_user_id' => $riderUserId];
     }
 }

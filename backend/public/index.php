@@ -221,6 +221,24 @@ if (preg_match('#^/api/v1/driver/rides/(\\d+)/complete$#', $path, $vpridePathMat
     exit;
 }
 
+if (preg_match('#^/api/v1/driver/rides/(\\d+)/confirm-payment$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_driver_ride_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_driver_ride_payment_confirm.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/rides/(\\d+)/payment-proof$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_ride_payment_proof.php';
+    exit;
+}
+
+if (preg_match('#^/api/v1/rides/(\\d+)/payment-offline$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_ride_payment_offline.php';
+    exit;
+}
+
 if (preg_match('#^/api/v1/rides/(\\d+)/rating$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
     $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
     require $backendRoot . '/src/handlers/api_ride_rating.php';
