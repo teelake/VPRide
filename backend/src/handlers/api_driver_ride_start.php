@@ -8,6 +8,7 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/DriverApiContext.php';
 require_once $backendRoot . '/src/RideRepository.php';
+require_once $backendRoot . '/src/RateLimiter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
@@ -35,6 +36,12 @@ if ($rideId < 1) {
 
 $pdo = Database::pdo();
 $ctx = DriverApiContext::requireFleetDriver($pdo);
+$maxMut = (int) (getenv('API_RATE_LIMIT_DRIVER_RIDE_ACTIONS_PER_HOUR') ?: '400');
+if (! RateLimiter::allow('driver_ride_mut', (string) $ctx['riderUserId'], max(1, $maxMut), 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
+    exit;
+}
 $rides = new RideRepository($pdo);
 if (! $rides->driverStartTrip($rideId, $ctx['riderUserId'])) {
     http_response_code(409);

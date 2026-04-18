@@ -288,10 +288,22 @@ final class ApiClient {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getRidesMine(String bearerToken) async {
+  Future<Map<String, dynamic>> getRidesMine(
+    String bearerToken, {
+    int? limit,
+    int? beforeId,
+  }) async {
+    final q = <String, String>{
+      if (limit != null) 'limit': '${limit.clamp(1, 100)}',
+      if (beforeId != null && beforeId > 0) 'before_id': '$beforeId',
+    };
+    var uri = _uri('/api/v1/rides/mine');
+    if (q.isNotEmpty) {
+      uri = uri.replace(queryParameters: q);
+    }
     final res = await _client
         .get(
-          _uri('/api/v1/rides/mine'),
+          uri,
           headers: {
             'Accept': 'application/json',
             'Authorization': 'Bearer $bearerToken',
@@ -399,10 +411,22 @@ final class ApiClient {
     return _decode(res);
   }
 
-  Future<Map<String, dynamic>> getDriverRidesHistory(String bearerToken) async {
+  Future<Map<String, dynamic>> getDriverRidesHistory(
+    String bearerToken, {
+    int? limit,
+    int? beforeId,
+  }) async {
+    final q = <String, String>{
+      if (limit != null) 'limit': '${limit.clamp(1, 100)}',
+      if (beforeId != null && beforeId > 0) 'before_id': '$beforeId',
+    };
+    var uri = _uri('/api/v1/driver/rides/history');
+    if (q.isNotEmpty) {
+      uri = uri.replace(queryParameters: q);
+    }
     final res = await _client
         .get(
-          _uri('/api/v1/driver/rides/history'),
+          uri,
           headers: {
             'Accept': 'application/json',
             'Authorization': 'Bearer $bearerToken',

@@ -31,6 +31,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 $pdo = Database::pdo();
 $ctx = DriverApiContext::requireFleetDriver($pdo);
 
+$maxLoc = (int) (getenv('API_RATE_LIMIT_DRIVER_LOCATION_PER_MIN') ?: '200');
+if (! RateLimiter::allow('driver_location', (string) $ctx['riderUserId'], max(1, $maxLoc), 60)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
 $raw = file_get_contents('php://input') ?: '';
 try {
     /** @var mixed $data */

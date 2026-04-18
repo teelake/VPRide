@@ -19,9 +19,13 @@ class _TripsTabScreenState extends State<TripsTabScreen>
   @override
   bool get wantKeepAlive => true;
 
+  static const int _pageSize = 30;
+
   bool _loading = false;
+  bool _loadingMore = false;
   String? _error;
   List<Map<String, dynamic>> _rides = [];
+  int? _nextBeforeId;
 
   @override
   void didChangeDependencies() {
@@ -31,25 +35,36 @@ class _TripsTabScreenState extends State<TripsTabScreen>
     });
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool append = false}) async {
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null || !auth.isSignedIn) {
       if (mounted) {
         setState(() {
           _rides = [];
+          _nextBeforeId = null;
           _error = null;
           _loading = false;
+          _loadingMore = false;
         });
       }
       return;
     }
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    if (append) {
+      if (_nextBeforeId == null || _loadingMore) return;
+      setState(() => _loadingMore = true);
+    } else {
+      setState(() {
+        _loading = true;
+        _error = null;
+      });
+    }
     try {
-      final res = await ApiScope.of(context).getRidesMine(token);
+      final res = await ApiScope.of(context).getRidesMine(
+        token,
+        limit: _pageSize,
+        beforeId: append ? _nextBeforeId : null,
+      );
       final raw = res['rides'];
       final list = <Map<String, dynamic>>[];
       if (raw is List) {
@@ -57,13 +72,34 @@ class _TripsTabScreenState extends State<TripsTabScreen>
           if (e is Map<String, dynamic>) list.add(e);
         }
       }
-      if (mounted) setState(() => _rides = list);
+      final next = res['nextBeforeId'];
+      int? nextId;
+      if (next is int) {
+        nextId = next;
+      } else if (next is num) {
+        nextId = next.toInt();
+      }
+      if (mounted) {
+        setState(() {
+          if (append) {
+            _rides = [..._rides, ...list];
+          } else {
+            _rides = list;
+          }
+          _nextBeforeId = nextId;
+        });
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingMore = false;
+        });
+      }
     }
   }
 
@@ -197,7 +233,8 @@ class _TripsTabScreenState extends State<TripsTabScreen>
                       },
                     );
                   },
-                  childCount: _rides.length,
+                  childCount:
+                      _rides.length + (_nextBeforeId != null ? 1 : 0),
                 ),
               ),
           ],

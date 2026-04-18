@@ -8,6 +8,10 @@ use PDO;
 use PDOException;
 use RuntimeException;
 
+if (! class_exists(SchemaInspector::class, false)) {
+    require_once __DIR__ . '/SchemaInspector.php';
+}
+
 final class ConsoleDriverRepository
 {
     public function __construct(

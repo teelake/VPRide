@@ -8,12 +8,14 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/DriverApiContext.php';
 require_once $backendRoot . '/src/DriverAvailabilityRepository.php';
+require_once $backendRoot . '/src/RateLimiter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\DriverApiContext;
 use VprideBackend\DriverAvailabilityRepository;
+use VprideBackend\RateLimiter;
 
 Config::load($backendRoot . '/.env');
 
@@ -28,6 +30,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
 
 $pdo = Database::pdo();
 $ctx = DriverApiContext::requireFleetDriver($pdo);
+
+$maxAvail = (int) (getenv('API_RATE_LIMIT_DRIVER_AVAILABILITY_PER_HOUR') ?: '120');
+if (! RateLimiter::allow('driver_availability', (string) $ctx['riderUserId'], max(1, $maxAvail), 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
+    exit;
+}
 
 $raw = file_get_contents('php://input') ?: '';
 try {

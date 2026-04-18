@@ -100,7 +100,7 @@ class _MapTabScreenState extends State<MapTabScreen>
       }
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _refreshActiveRide(context);
+      if (mounted) _refreshActiveRide();
     });
   }
 
@@ -145,8 +145,9 @@ class _MapTabScreenState extends State<MapTabScreen>
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null || !auth.isSignedIn) return;
+    final api = ApiScope.of(context);
     try {
-      final res = await ApiScope.of(context).getCurrentRide(token);
+      final res = await api.getCurrentRide(token);
       if (!mounted) return;
       final ride = res['ride'];
       if (ride is Map<String, dynamic>) {
@@ -167,7 +168,8 @@ class _MapTabScreenState extends State<MapTabScreen>
     } catch (_) {}
   }
 
-  Future<void> _refreshActiveRide(BuildContext context) async {
+  Future<void> _refreshActiveRide() async {
+    if (!mounted) return;
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null || !auth.isSignedIn) {
@@ -182,9 +184,9 @@ class _MapTabScreenState extends State<MapTabScreen>
       return;
     }
     if (_ridePollBusy) return;
+    final api = ApiScope.of(context);
     setState(() => _ridePollBusy = true);
     try {
-      final api = ApiScope.of(context);
       final res = await api.getCurrentRide(token);
       final ride = res['ride'];
       if (!mounted) return;
@@ -246,7 +248,7 @@ class _MapTabScreenState extends State<MapTabScreen>
               builder: (ctx) => TripDetailScreen(rideId: id),
             ),
           );
-          if (mounted) _refreshActiveRide(context);
+          if (mounted) _refreshActiveRide();
         },
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -387,6 +389,8 @@ class _MapTabScreenState extends State<MapTabScreen>
     final feeLine = fee > 0
         ? 'A cancellation fee of $currency ${fee.toStringAsFixed(2)} applies and will be recorded on this ride.'
         : 'No cancellation fee is configured for your area.';
+    final api = ApiScope.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -406,12 +410,11 @@ class _MapTabScreenState extends State<MapTabScreen>
     if (ok != true || !mounted) return;
 
     setState(() => _cancelRideBusy = true);
-    final messenger = ScaffoldMessenger.of(context);
     try {
-      await ApiScope.of(context).postRideCancel(bearerToken: token, rideId: rideId);
+      await api.postRideCancel(bearerToken: token, rideId: rideId);
       if (!mounted) return;
       messenger.showSnackBar(const SnackBar(content: Text('Ride cancelled.')));
-      await _refreshActiveRide(context);
+      await _refreshActiveRide();
     } on ApiException catch (e) {
       if (mounted) {
         messenger.showSnackBar(SnackBar(content: Text(e.message)));
@@ -431,6 +434,7 @@ class _MapTabScreenState extends State<MapTabScreen>
     final auth = AuthScope.of(context);
     final token = auth.sessionToken;
     if (token == null) return;
+    final api = ApiScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final ok = await showDialog<bool>(
       context: context,
@@ -466,7 +470,7 @@ class _MapTabScreenState extends State<MapTabScreen>
         lng = pos.longitude;
       } catch (_) {}
 
-      await ApiScope.of(context).postSos(
+      await api.postSos(
         bearerToken: token,
         rideId: rideId,
         latitude: lat,
@@ -597,10 +601,11 @@ class _MapTabScreenState extends State<MapTabScreen>
     if (token == null || p == null || !auth.isSignedIn) return;
     final cfg = ClientConfigScope.of(context).features;
     final messenger = ScaffoldMessenger.of(context);
+    final api = ApiScope.of(context);
     setState(() => _estimateBusy = true);
     try {
       final promo = cfg.promoCodeEntryEnabled ? _promoCodeCtrl.text.trim() : '';
-      final res = await ApiScope.of(context).postRideEstimate(
+      final res = await api.postRideEstimate(
         bearerToken: token,
         pickupLat: p.latitude,
         pickupLng: p.longitude,
@@ -616,7 +621,7 @@ class _MapTabScreenState extends State<MapTabScreen>
       final total = res['totalFinalFare'];
       final dist = res['distanceKm'];
       var msg = 'Estimate updated';
-      if (dist != null) msg += ' · ${dist} km';
+      if (dist != null) msg += ' · $dist km';
       if (total != null) msg += ' · total $total';
       messenger.showSnackBar(SnackBar(content: Text(msg)));
     } on ApiException catch (e) {
@@ -633,7 +638,7 @@ class _MapTabScreenState extends State<MapTabScreen>
     final total = e['totalFinalFare'];
     final p = e['pricing'];
     var s = '';
-    if (dist != null) s += '${dist} km · ';
+    if (dist != null) s += '$dist km · ';
     if (p is Map && p['finalFare'] != null) {
       final cur = '${p['currency'] ?? ''}'.trim();
       s += 'Leg $cur ${p['finalFare']}';
@@ -657,12 +662,14 @@ class _MapTabScreenState extends State<MapTabScreen>
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
     );
-    if (d == null || !mounted) return;
+    if (d == null) return;
+    if (!context.mounted) return;
     final t = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.fromDateTime(now.add(const Duration(hours: 2))),
     );
-    if (t == null || !mounted) return;
+    if (t == null) return;
+    if (!context.mounted) return;
     final local = DateTime(d.year, d.month, d.day, t.hour, t.minute);
     setState(() => _scheduledPickupUtc = local.toUtc());
   }
@@ -738,7 +745,7 @@ class _MapTabScreenState extends State<MapTabScreen>
         sub += ' · total $cur $total'.trim();
       }
       messenger.showSnackBar(SnackBar(content: Text(sub)));
-      await _refreshActiveRide(context);
+      await _refreshActiveRide();
     } on ApiException catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(e.message)));

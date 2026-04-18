@@ -9,10 +9,12 @@ require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/RideRepository.php';
 require_once $backendRoot . '/src/RiderRideViewPresenter.php';
+require_once $backendRoot . '/src/RateLimiter.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\RateLimiter;
 use VprideBackend\RideRepository;
 use VprideBackend\RiderAuthService;
 use VprideBackend\RiderRideViewPresenter;
@@ -47,6 +49,13 @@ $user = $auth->resolveBearerToken($token);
 if ($user === null) {
     http_response_code(401);
     echo json_encode(['error' => 'invalid_session'], JSON_THROW_ON_ERROR);
+    exit;
+}
+
+$maxPay = (int) (getenv('API_RATE_LIMIT_RIDE_PAYMENT_POST_PER_HOUR') ?: '60');
+if (! RateLimiter::allow('ride_payment_post', (string) $user['rider_user_id'], max(1, $maxPay), 3600)) {
+    http_response_code(429);
+    echo json_encode(['error' => 'rate_limited'], JSON_THROW_ON_ERROR);
     exit;
 }
 
