@@ -86,6 +86,22 @@ $vpSearchPlaceholder = Auth::can('riders.view')
             </a>
           </li>
         <?php } ?>
+        <?php if (Auth::can('promotions.manage')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/promotions') ?>" class="vp-nav-item<?= $vpNavActive === 'promotions' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'promotions' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true">%</span>
+              <span class="vp-nav-item__text">Promotions</span>
+            </a>
+          </li>
+        <?php } ?>
+        <?php if (Auth::can('sos.view')) { ?>
+          <li>
+            <a href="<?= vp_url('/admin/sos') ?>" class="vp-nav-item<?= $vpNavActive === 'sos' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'sos' ? ' aria-current="page"' : '' ?>>
+              <span class="vp-nav-item__icon" aria-hidden="true">!</span>
+              <span class="vp-nav-item__text">SOS</span>
+            </a>
+          </li>
+        <?php } ?>
         <li>
           <a href="<?= vp_url('/admin/help') ?>" class="vp-nav-item<?= $vpNavActive === 'help' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'help' ? ' aria-current="page"' : '' ?>>
             <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_help() ?></span>

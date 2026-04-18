@@ -59,9 +59,11 @@ final class SosIncidentRepository
             . 'FROM sos_incidents s '
             . 'INNER JOIN rides r ON r.id = s.ride_id '
             . 'INNER JOIN rider_users ru ON ru.id = s.reporter_rider_user_id '
-            . 'WHERE s.status = ? ORDER BY s.id DESC LIMIT ' . $limit,
+            . 'WHERE s.status = ? ORDER BY s.id DESC LIMIT ?',
         );
-        $stmt->execute([$status]);
+        $stmt->bindValue(1, $status, PDO::PARAM_STR);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->execute();
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }

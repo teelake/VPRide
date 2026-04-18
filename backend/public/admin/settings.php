@@ -88,6 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'maintenanceMessage' => (string) ($_POST['maintenanceMessage'] ?? ''),
                         'helpCenterUrl' => (string) ($_POST['helpCenterUrl'] ?? ''),
                         'requireSignInForHome' => isset($_POST['feat_require_signin_home']),
+                        'sosEnabled' => isset($_POST['feat_sos']),
+                        'promoCodeEntryEnabled' => isset($_POST['feat_promo_code']),
                     ],
                     'email' => [
                         'mailFrom' => (string) ($_POST['emailMailFrom'] ?? ''),
@@ -95,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'staffNotifyEmails' => (string) ($_POST['emailStaffNotifyEmails'] ?? ''),
                         'staffNotifySubject' => (string) ($_POST['emailStaffNotifySubject'] ?? ''),
                         'staffNotifyBody' => (string) ($_POST['emailStaffNotifyBody'] ?? ''),
+                        'sosNotifyEmails' => (string) ($_POST['emailSosNotifyEmails'] ?? ''),
                         'riderWelcomeEnabled' => isset($_POST['email_rider_welcome']),
                         'riderWelcomeSubject' => (string) ($_POST['emailRiderWelcomeSubject'] ?? ''),
                         'riderWelcomeBody' => (string) ($_POST['emailRiderWelcomeBody'] ?? ''),
@@ -302,6 +305,16 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <span class="vp-toggle__ui"></span>
                 <span class="vp-toggle__text"><strong>Require sign-in for Map / Home</strong><span class="vp-toggle__sub">Recommended: on for production. When on, unsigned users stay on welcome (no guest map link). Turn off only if you want map browsing without an account.</span></span>
               </label>
+              <label class="vp-toggle">
+                <input class="vp-sr-only" type="checkbox" name="feat_sos"<?= ! empty($settings['features']['sosEnabled']) ? ' checked' : '' ?>>
+                <span class="vp-toggle__ui"></span>
+                <span class="vp-toggle__text"><strong>SOS / panic</strong><span class="vp-toggle__sub">Allow riders and assigned drivers to trigger SOS during an active trip (server-enforced).</span></span>
+              </label>
+              <label class="vp-toggle">
+                <input class="vp-sr-only" type="checkbox" name="feat_promo_code"<?= ! empty($settings['features']['promoCodeEntryEnabled']) ? ' checked' : '' ?>>
+                <span class="vp-toggle__ui"></span>
+                <span class="vp-toggle__text"><strong>Promo code field at booking</strong><span class="vp-toggle__sub">When off, automatic promos and loyalty rewards still apply; riders cannot type a code.</span></span>
+              </label>
             </div>
             <div class="vp-field" style="margin-top:1.25rem;">
               <label class="vp-label" for="maintenanceMessage">Maintenance message</label>
@@ -337,6 +350,11 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <label class="vp-label" for="emailStaffNotifyEmails">Staff notification addresses</label>
                 <textarea class="vp-input vp-textarea vp-textarea--sm" id="emailStaffNotifyEmails" name="emailStaffNotifyEmails" rows="2" placeholder="ops@company.com, admin@company.com"><?= vp_h($emailSettings['staffNotifyEmails']) ?></textarea>
                 <p class="vp-field-hint">Comma-separated. If empty, falls back to <code class="vp-inline-code">RIDER_SIGNUP_NOTIFY_EMAIL</code> in <code>.env</code>. No mail is sent to staff if the resolved list is empty.</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="emailSosNotifyEmails">SOS alert addresses (optional)</label>
+                <textarea class="vp-input vp-textarea vp-textarea--sm" id="emailSosNotifyEmails" name="emailSosNotifyEmails" rows="2" placeholder="Leave empty to reuse staff addresses above"><?= vp_h($emailSettings['sosNotifyEmails'] ?? '') ?></textarea>
+                <p class="vp-field-hint">Comma-separated. When empty, SOS emails go to the same list as staff notifications.</p>
               </div>
               <div class="vp-field">
                 <label class="vp-label" for="emailStaffNotifySubject">Staff notification — subject</label>

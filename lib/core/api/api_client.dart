@@ -149,11 +149,57 @@ final class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> getCurrentRide(String bearerToken) async {
+    final res = await _client
+        .get(
+          _uri('/api/v1/rides/current'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
+  Future<Map<String, dynamic>> postSos({
+    required String bearerToken,
+    required int rideId,
+    required double latitude,
+    required double longitude,
+    double? accuracyM,
+    String? message,
+    String? clientRequestId,
+  }) async {
+    final body = <String, dynamic>{
+      'rideId': rideId,
+      'latitude': latitude,
+      'longitude': longitude,
+      if (accuracyM != null) 'accuracyM': accuracyM,
+      if (message != null && message.trim().isNotEmpty) 'message': message.trim(),
+      if (clientRequestId != null && clientRequestId.trim().isNotEmpty)
+        'clientRequestId': clientRequestId.trim(),
+    };
+    final res = await _client
+        .post(
+          _uri('/api/v1/sos'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+          body: jsonEncode(body),
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postRide({
     required String bearerToken,
     required double pickupLat,
     required double pickupLng,
     String? pickupAddress,
+    String? promoCode,
   }) async {
     final body = <String, dynamic>{
       'pickup': <String, dynamic>{
@@ -162,6 +208,8 @@ final class ApiClient {
         if (pickupAddress != null && pickupAddress.trim().isNotEmpty)
           'address': pickupAddress.trim(),
       },
+      if (promoCode != null && promoCode.trim().isNotEmpty)
+        'promoCode': promoCode.trim(),
     };
     final res = await _client
         .post(

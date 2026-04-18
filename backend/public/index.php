@@ -152,6 +152,16 @@ if ($path === '/api/v1/me' && in_array($method, ['GET', 'OPTIONS'], true)) {
     exit;
 }
 
+if ($path === '/api/v1/rides/current' && in_array($method, ['GET', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_rides_current.php';
+    exit;
+}
+
+if ($path === '/api/v1/sos' && in_array($method, ['POST', 'OPTIONS'], true)) {
+    require $backendRoot . '/src/handlers/api_sos.php';
+    exit;
+}
+
 if ($path === '/api/v1/rides' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_rides.php';
     exit;
@@ -197,8 +207,18 @@ if ($path === '/admin/regions' && in_array($method, ['GET', 'POST'], true)) {
     exit;
 }
 
-if ($path === '/admin/rides' && $method === 'GET') {
+if ($path === '/admin/rides' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/rides.php';
+    exit;
+}
+
+if ($path === '/admin/sos' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/sos.php';
+    exit;
+}
+
+if ($path === '/admin/promotions' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/promotions.php';
     exit;
 }
 

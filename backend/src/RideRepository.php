@@ -103,7 +103,8 @@ final class RideRepository
             return null;
         }
         $sel = $this->pdo->prepare(
-            'SELECT rider_user_id FROM rides WHERE id = ? AND payment_status = \'pending\' AND status = \'completed\' LIMIT 1',
+            'SELECT rider_user_id FROM rides WHERE id = ? AND payment_status = \'pending\' '
+            . 'AND status IN (\'requested\', \'accepted\', \'in_progress\', \'completed\') LIMIT 1',
         );
         $sel->execute([$rideId]);
         $rid = $sel->fetchColumn();
@@ -112,7 +113,8 @@ final class RideRepository
         }
         $riderUserId = (int) $rid;
         $stmt = $this->pdo->prepare(
-            'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? AND payment_status = \'pending\' AND status = \'completed\'',
+            'UPDATE rides SET payment_status = \'paid\', paid_at = NOW() WHERE id = ? AND payment_status = \'pending\' '
+            . 'AND status IN (\'requested\', \'accepted\', \'in_progress\', \'completed\')',
         );
         $stmt->execute([$rideId]);
         if ($stmt->rowCount() < 1) {

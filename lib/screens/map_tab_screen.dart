@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -41,6 +42,10 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _didSeedPickup = false;
   bool _didAutoRefreshClientConfig = false;
   bool _configRetryBusy = false;
+  final TextEditingController _promoCodeCtrl = TextEditingController();
+  int? _activeRideId;
+  bool _sosBusy = false;
+  bool _ridePollBusy = false;
 
   static const LatLng _fallbackToronto = LatLng(43.6532, -79.3832);
 
@@ -62,13 +67,114 @@ class _MapTabScreenState extends State<MapTabScreen>
         });
       }
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _refreshActiveRide(context);
+    });
   }
 
   @override
   void dispose() {
     _geoDebounce?.cancel();
     _geocoder.close();
+    _promoCodeCtrl.dispose();
     super.dispose();
+  }
+
+  String _uuidV4() {
+    final r = Random.secure();
+    String h(int n) => n.toRadixString(16).padLeft(2, '0');
+    final b = List<int>.generate(16, (_) => r.nextInt(256));
+    b[6] = (b[6] & 0x0f) | 0x40;
+    b[8] = (b[8] & 0x3f) | 0x80;
+    final s = b.map(h).join();
+    return '${s.substring(0, 8)}-${s.substring(8, 12)}-${s.substring(12, 16)}-${s.substring(16, 20)}-${s.substring(20)}';
+  }
+
+  Future<void> _refreshActiveRide(BuildContext context) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null || !auth.isSignedIn) {
+      if (mounted) setState(() => _activeRideId = null);
+      return;
+    }
+    if (_ridePollBusy) return;
+    setState(() => _ridePollBusy = true);
+    try {
+      final api = ApiScope.of(context);
+      final res = await api.getCurrentRide(token);
+      final ride = res['ride'];
+      final id = ride is Map<String, dynamic> ? ride['id'] : null;
+      if (mounted) {
+        setState(() => _activeRideId = id is int ? id : int.tryParse('$id'));
+      }
+    } catch (_) {
+      if (mounted) setState(() => _activeRideId = null);
+    } finally {
+      if (mounted) setState(() => _ridePollBusy = false);
+    }
+  }
+
+  Future<void> _sendSos(BuildContext context) async {
+    final rideId = _activeRideId;
+    if (rideId == null) return;
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    final messenger = ScaffoldMessenger.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Send SOS?'),
+        content: const Text(
+          'This notifies your operations team about a serious issue on this trip.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
+            child: const Text('Send alert'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _sosBusy = true);
+    try {
+      double lat = _cameraTarget?.latitude ?? _fallbackToronto.latitude;
+      double lng = _cameraTarget?.longitude ?? _fallbackToronto.longitude;
+      try {
+        final pos = await Geolocator.getCurrentPosition(
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high,
+            timeLimit: Duration(seconds: 10),
+          ),
+        );
+        lat = pos.latitude;
+        lng = pos.longitude;
+      } catch (_) {}
+
+      await ApiScope.of(context).postSos(
+        bearerToken: token,
+        rideId: rideId,
+        latitude: lat,
+        longitude: lng,
+        clientRequestId: _uuidV4(),
+      );
+      if (!mounted) return;
+      messenger.showSnackBar(
+        const SnackBar(content: Text('SOS sent. Help is being notified.')),
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+      messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _sosBusy = false);
+    }
   }
 
   LatLng _initialTarget(BuildContext context) {
@@ -170,17 +276,24 @@ class _MapTabScreenState extends State<MapTabScreen>
 
     setState(() => _rideBusy = true);
     try {
+      final promo = cfg.promoCodeEntryEnabled ? _promoCodeCtrl.text.trim() : '';
       final res = await api.postRide(
         bearerToken: token,
         pickupLat: p.latitude,
         pickupLng: p.longitude,
         pickupAddress: pickupCtrl.addressLabel,
+        promoCode: promo.isNotEmpty ? promo : null,
       );
       if (!mounted) return;
       final id = res['id'];
-      messenger.showSnackBar(
-        SnackBar(content: Text('Ride requested${id != null ? ' · #$id' : ''}')),
-      );
+      final pricing = res['pricing'];
+      var sub = 'Ride requested${id != null ? ' · #$id' : ''}';
+      if (pricing is Map && pricing['finalFare'] != null) {
+        final cur = '${pricing['currency'] ?? ''}'.trim();
+        sub += ' · $cur ${pricing['finalFare']}';
+      }
+      messenger.showSnackBar(SnackBar(content: Text(sub)));
+      await _refreshActiveRide(context);
     } on ApiException catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(e.message)));
@@ -276,16 +389,47 @@ class _MapTabScreenState extends State<MapTabScreen>
           Positioned(
             right: 16,
             top: 16,
-            child: Material(
-              color: Colors.white,
-              elevation: 2,
-              shape: const CircleBorder(),
-              child: IconButton(
-                tooltip: 'My location',
-                onPressed: _centerOnUser,
-                icon: const Icon(Icons.my_location_rounded),
-                color: AppColors.secondary,
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (features.sosEnabled &&
+                    AuthScope.of(context).isSignedIn &&
+                    _activeRideId != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Material(
+                      color: Colors.red.shade700,
+                      elevation: 3,
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        tooltip: 'SOS — alert operations',
+                        onPressed: _sosBusy ? null : () => _sendSos(context),
+                        icon: _sosBusy
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.priority_high, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                Material(
+                  color: Colors.white,
+                  elevation: 2,
+                  shape: const CircleBorder(),
+                  child: IconButton(
+                    tooltip: 'My location',
+                    onPressed: _centerOnUser,
+                    icon: const Icon(Icons.my_location_rounded),
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ],
             ),
           ),
           Positioned(
@@ -328,6 +472,18 @@ class _MapTabScreenState extends State<MapTabScreen>
                         );
                       },
                     ),
+                    if (features.promoCodeEntryEnabled) ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _promoCodeCtrl,
+                        textCapitalization: TextCapitalization.characters,
+                        decoration: const InputDecoration(
+                          labelText: 'Promo code (optional)',
+                          isDense: true,
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     AppPrimaryButton(
                       label: rideDisabled

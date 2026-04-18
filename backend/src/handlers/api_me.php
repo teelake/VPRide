@@ -7,11 +7,17 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/ApiMobileCors.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
+require_once $backendRoot . '/src/PlatformPromoSettingsRepository.php';
+require_once $backendRoot . '/src/RiderLoyaltyRepository.php';
+require_once $backendRoot . '/src/RiderRewardGrantRepository.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\PlatformPromoSettingsRepository;
 use VprideBackend\RiderAuthService;
+use VprideBackend\RiderLoyaltyRepository;
+use VprideBackend\RiderRewardGrantRepository;
 
 Config::load($backendRoot . '/.env');
 
@@ -40,14 +46,36 @@ if ($row === null) {
 }
 
 try {
-    echo json_encode([
+    $pdo = Database::pdo();
+    $loyalty = null;
+    if (PlatformPromoSettingsRepository::tableExists($pdo)) {
+        $ps = (new PlatformPromoSettingsRepository($pdo))->getSettings();
+        if ($ps['loyalty_enabled']) {
+            $paid = (new RiderLoyaltyRepository($pdo))->getPaidTripsCount($row['rider_user_id']);
+            $n = max(1, (int) $ps['loyalty_trips_per_reward']);
+            $inCycle = $paid % $n;
+            $loyalty = [
+                'enabled' => true,
+                'paidTrips' => $paid,
+                'tripsPerReward' => $n,
+                'progressInCycle' => $inCycle,
+                'availableRewards' => (new RiderRewardGrantRepository($pdo))->countAvailableForRider($row['rider_user_id']),
+            ];
+        }
+    }
+
+    $payload = [
         'user' => [
             'id' => $row['rider_user_id'],
             'email' => $row['email'],
             'displayName' => $row['display_name'],
             'photoUrl' => $row['photo_url'],
         ],
-    ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+    ];
+    if ($loyalty !== null) {
+        $payload['loyalty'] = $loyalty;
+    }
+    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/me: ' . $e->getMessage());
     http_response_code(500);

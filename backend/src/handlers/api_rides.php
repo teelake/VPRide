@@ -118,9 +118,9 @@ $pdo = Database::pdo();
 $rides = new RideRepository($pdo);
 
 $pricing = [
-    'estimated_fare' => 0.0,
+    'estimated_fare' => 1500.0,
     'promo_discount' => 0.0,
-    'final_fare' => 0.0,
+    'final_fare' => 1500.0,
     'currency' => 'NGN',
     'decimal_places' => 2,
     'applied_promotion_id' => null,
@@ -172,6 +172,13 @@ try {
         }
         if ($grantId !== null && RiderRewardGrantRepository::tableExists($pdo)) {
             (new RiderRewardGrantRepository($pdo))->markApplied((int) $grantId, $id);
+            $chk = $pdo->prepare(
+                'SELECT id FROM rider_reward_grant WHERE id = ? AND status = \'applied\' AND applied_ride_id = ? LIMIT 1',
+            );
+            $chk->execute([(int) $grantId, $id]);
+            if ($chk->fetchColumn() === false) {
+                throw new RuntimeException('reward_grant_not_applied');
+            }
         }
         $pdo->commit();
     } catch (Throwable $e) {

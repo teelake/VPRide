@@ -93,6 +93,9 @@ final class PlatformPromoSettingsRepository
         $loyPid = array_key_exists('loyalty_reward_promotion_id', $patch)
             ? ($patch['loyalty_reward_promotion_id'] === null ? null : (int) $patch['loyalty_reward_promotion_id'])
             : $cur['loyalty_reward_promotion_id'];
+        if ($loyPid !== null && $loyPid < 1) {
+            $loyPid = null;
+        }
 
         $stmt = $this->pdo->prepare(
             'INSERT INTO platform_promo_settings (id, currency_code, decimal_places, default_ride_estimate, promo_timezone, '

@@ -8,10 +8,12 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/RideRepository.php';
 require_once $backendRoot . '/src/SchemaInspector.php';
+require_once $backendRoot . '/src/LoyaltyRewardService.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
+use VprideBackend\LoyaltyRewardService;
 use VprideBackend\RideRepository;
 use VprideBackend\SchemaInspector;
 
@@ -22,10 +24,30 @@ Auth::requirePermission('rides.view');
 
 $admin = Auth::currentAdmin();
 $pdo = Database::pdo();
+$flash = '';
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['mark_paid_ride_id'])) {
+    if (! Auth::validateCsrf($_POST['_csrf'] ?? null)) {
+        $flash = 'Invalid session.';
+    } else {
+        $rid = (int) $_POST['mark_paid_ride_id'];
+        if ($rid > 0) {
+            $repo = new RideRepository($pdo);
+            $res = $repo->markPaid($rid);
+            if ($res !== null) {
+                (new LoyaltyRewardService($pdo))->onRideMarkedPaid($rid, $res['rider_user_id']);
+                $flash = 'Ride #' . $rid . ' marked paid.';
+            } else {
+                $flash = 'Could not mark paid (must be completed and still pending).';
+            }
+        }
+    }
+}
+
 $rows = SchemaInspector::tableExists($pdo, 'rides')
     ? (new RideRepository($pdo))->listRecent(200)
     : [];
 $csrf = Auth::csrfToken();
+$hasPayCol = SchemaInspector::columnExists($pdo, 'rides', 'payment_status');
 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Bookings · VP Ride Console';
@@ -37,6 +59,10 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <?php vp_schema_single_table_alert($pdo, 'rides', 'migration_rides.sql', 'Rides'); ?>
+
+<?php if ($flash !== '') { ?>
+  <p class="vp-banner vp-banner--info" role="status"><?= vp_h($flash) ?></p>
+<?php } ?>
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Bookings</h1>
@@ -91,9 +117,14 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">ID</th>
               <th scope="col">Rider</th>
               <th scope="col">Status</th>
+              <?php if ($hasPayCol) { ?>
+                <th scope="col">Payment</th>
+                <th scope="col">Fare</th>
+              <?php } ?>
               <th scope="col">Pickup</th>
               <th scope="col">Drop-off</th>
               <th scope="col">Created</th>
+              <?php if ($hasPayCol) { ?><th scope="col"></th><?php } ?>
             </tr>
           </thead>
           <tbody>
@@ -102,9 +133,35 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__id"><?= (int) $r['id'] ?></td>
                 <td><?= vp_h((string) $r['rider_email']) ?></td>
                 <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) $r['status']) ?></span></td>
+                <?php if ($hasPayCol) { ?>
+                  <td><span class="vp-pill vp-pill--neutral"><?= vp_h((string) ($r['payment_status'] ?? '—')) ?></span></td>
+                  <td class="vp-table__muted"><?php
+                    $cur = (string) ($r['fare_currency'] ?? '');
+                    $ff = $r['final_fare_amount'] ?? null;
+                    echo $ff !== null ? vp_h($cur . ' ' . (string) $ff) : '—';
+                  ?></td>
+                <?php } ?>
                 <td class="vp-table__muted"><?= vp_h((string) ($r['pickup_address'] ?: (($r['pickup_lat'] ?? '') . ', ' . ($r['pickup_lng'] ?? '')))) ?></td>
                 <td class="vp-table__muted"><?= vp_h((string) ($r['dropoff_address'] ?? '—')) ?></td>
                 <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
+                <?php if ($hasPayCol) { ?>
+                  <td>
+                    <?php
+                      $st = (string) ($r['status'] ?? '');
+                      $canMark = in_array($st, ['requested', 'accepted', 'in_progress', 'completed'], true)
+                          && ($r['payment_status'] ?? 'pending') === 'pending';
+                    ?>
+                    <?php if ($canMark) { ?>
+                      <form method="post" style="margin:0;">
+                        <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
+                        <input type="hidden" name="mark_paid_ride_id" value="<?= (int) $r['id'] ?>">
+                        <button type="submit" class="vp-btn vp-btn--sm vp-btn--ghost">Mark paid</button>
+                      </form>
+                    <?php } else { ?>
+                      —
+                    <?php } ?>
+                  </td>
+                <?php } ?>
               </tr>
             <?php } ?>
           </tbody>
