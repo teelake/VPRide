@@ -103,7 +103,26 @@ final class ConsoleDriverRepository
     {
         $row = $this->normalizeAndValidateVehicle($data);
         $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
-        if ($hasRider) {
+        $hasEarn = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'earnings_percent_override');
+        if ($hasRider && $hasEarn) {
+            $this->assertRiderUserLinkUnique($row['rider_user_id'], null);
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes, rider_user_id, earnings_percent_override) '
+                . 'VALUES (?,?,?,?,?,?,?,?,?,?)',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['rider_user_id'],
+                $row['earnings_percent_override'],
+            ]);
+        } elseif ($hasRider) {
             $this->assertRiderUserLinkUnique($row['rider_user_id'], null);
             $stmt = $this->pdo->prepare(
                 'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes, rider_user_id) '
@@ -119,6 +138,22 @@ final class ConsoleDriverRepository
                 $row['status'],
                 $row['notes'],
                 $row['rider_user_id'],
+            ]);
+        } elseif ($hasEarn) {
+            $stmt = $this->pdo->prepare(
+                'INSERT INTO fleet_drivers (full_name, phone, email, driver_kind, fleet_vehicle_id, license_number, status, notes, earnings_percent_override) '
+                . 'VALUES (?,?,?,?,?,?,?,?,?)',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['earnings_percent_override'],
             ]);
         } else {
             $stmt = $this->pdo->prepare(
@@ -150,7 +185,27 @@ final class ConsoleDriverRepository
         }
         $row = $this->normalizeAndValidateVehicle($data);
         $hasRider = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'rider_user_id');
-        if ($hasRider) {
+        $hasEarn = SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'earnings_percent_override');
+        if ($hasRider && $hasEarn) {
+            $this->assertRiderUserLinkUnique($row['rider_user_id'], $id);
+            $stmt = $this->pdo->prepare(
+                'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
+                . 'license_number = ?, status = ?, notes = ?, rider_user_id = ?, earnings_percent_override = ? WHERE id = ?',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['rider_user_id'],
+                $row['earnings_percent_override'],
+                $id,
+            ]);
+        } elseif ($hasRider) {
             $this->assertRiderUserLinkUnique($row['rider_user_id'], $id);
             $stmt = $this->pdo->prepare(
                 'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
@@ -166,6 +221,23 @@ final class ConsoleDriverRepository
                 $row['status'],
                 $row['notes'],
                 $row['rider_user_id'],
+                $id,
+            ]);
+        } elseif ($hasEarn) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE fleet_drivers SET full_name = ?, phone = ?, email = ?, driver_kind = ?, fleet_vehicle_id = ?, '
+                . 'license_number = ?, status = ?, notes = ?, earnings_percent_override = ? WHERE id = ?',
+            );
+            $stmt->execute([
+                $row['full_name'],
+                $row['phone'],
+                $row['email'],
+                $row['driver_kind'],
+                $row['fleet_vehicle_id'],
+                $row['license_number'],
+                $row['status'],
+                $row['notes'],
+                $row['earnings_percent_override'],
                 $id,
             ]);
         } else {
@@ -228,7 +300,7 @@ final class ConsoleDriverRepository
 
     /**
      * @param array<string, mixed> $data
-     * @return array{full_name: string, phone: ?string, email: ?string, driver_kind: string, fleet_vehicle_id: ?int, license_number: ?string, status: string, notes: ?string, rider_user_id: ?int}
+     * @return array{full_name: string, phone: ?string, email: ?string, driver_kind: string, fleet_vehicle_id: ?int, license_number: ?string, status: string, notes: ?string, rider_user_id: ?int, earnings_percent_override: ?float}
      */
     private function normalizeAndValidateVehicle(array $data): array
     {
@@ -288,6 +360,22 @@ final class ConsoleDriverRepository
             }
         }
 
+        $earnOverride = null;
+        if (SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'earnings_percent_override')
+            && array_key_exists('earnings_percent_override', $data)) {
+            $rawE = $data['earnings_percent_override'];
+            if ($rawE !== null && $rawE !== '') {
+                $ev = (float) str_replace(',', '.', trim((string) $rawE));
+                if (! is_finite($ev)) {
+                    throw new RuntimeException('Driver earnings % override is not a valid number');
+                }
+                if ($ev < 0.0 || $ev > 100.0) {
+                    throw new RuntimeException('Driver earnings % override must be between 0 and 100');
+                }
+                $earnOverride = round($ev, 2, PHP_ROUND_HALF_UP);
+            }
+        }
+
         return [
             'full_name' => $name,
             'phone' => $phone,
@@ -298,6 +386,7 @@ final class ConsoleDriverRepository
             'status' => $status,
             'notes' => $notes,
             'rider_user_id' => $riderUserId,
+            'earnings_percent_override' => $earnOverride,
         ];
     }
 

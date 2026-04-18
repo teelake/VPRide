@@ -23,6 +23,7 @@ Auth::requirePermission('settings.manage');
 $admin = Auth::currentAdmin();
 $repo = new AppSettingsRepository(Database::pdo());
 $settings = $repo->getPublicSettings();
+$operations = $repo->getOperations();
 $emailSettings = $repo->getEmailSettings();
 $message = '';
 $error = '';
@@ -30,7 +31,7 @@ $csrf = Auth::csrfToken();
 $settingsTab = 'keys';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $t = (string) ($_POST['settings_ui_tab'] ?? '');
-    if (in_array($t, ['keys', 'welcome', 'features', 'email'], true)) {
+    if (in_array($t, ['keys', 'welcome', 'features', 'email', 'operations'], true)) {
         $settingsTab = $t;
     }
 }
@@ -102,10 +103,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'riderWelcomeSubject' => (string) ($_POST['emailRiderWelcomeSubject'] ?? ''),
                         'riderWelcomeBody' => (string) ($_POST['emailRiderWelcomeBody'] ?? ''),
                     ],
+                    'operations' => [
+                        'riderCancellationFeeAmount' => (float) str_replace(
+                            ',',
+                            '.',
+                            trim((string) ($_POST['op_rider_cancel_fee'] ?? '0')),
+                        ),
+                        'driverEarningsPercentGlobal' => (float) str_replace(
+                            ',',
+                            '.',
+                            trim((string) ($_POST['op_driver_pct_global'] ?? '80')),
+                        ),
+                    ],
                 ],
                 $admin[0],
             );
             $settings = $repo->getPublicSettings();
+            $operations = $repo->getOperations();
             $emailSettings = $repo->getEmailSettings();
             $message = 'Settings saved. Mobile apps receive key and feature updates on the next config sync.';
         } catch (Throwable $e) {
@@ -149,12 +163,14 @@ require __DIR__ . '/includes/app_shell_start.php';
     <input type="radio" name="settings_ui_tab" id="settings_tab_welcome" class="vp-sr-only" value="welcome"<?= $settingsTab === 'welcome' ? ' checked' : '' ?>>
     <input type="radio" name="settings_ui_tab" id="settings_tab_features" class="vp-sr-only" value="features"<?= $settingsTab === 'features' ? ' checked' : '' ?>>
     <input type="radio" name="settings_ui_tab" id="settings_tab_email" class="vp-sr-only" value="email"<?= $settingsTab === 'email' ? ' checked' : '' ?>>
+    <input type="radio" name="settings_ui_tab" id="settings_tab_operations" class="vp-sr-only" value="operations"<?= $settingsTab === 'operations' ? ' checked' : '' ?>>
 
     <div class="vp-tablist" aria-label="Settings sections">
       <label class="vp-tab" for="settings_tab_keys">Keys &amp; limits</label>
       <label class="vp-tab" for="settings_tab_welcome">Welcome screen</label>
       <label class="vp-tab" for="settings_tab_features">App features</label>
       <label class="vp-tab" for="settings_tab_email">Email</label>
+      <label class="vp-tab" for="settings_tab_operations">Fees &amp; payouts</label>
     </div>
 
     <div class="vp-tab-panels">
@@ -387,6 +403,27 @@ require __DIR__ . '/includes/app_shell_start.php';
           <div class="vp-card__pad">
             <h2 id="email-drivers-note" class="vp-section-title">Drivers</h2>
             <p class="vp-field-hint" style="margin:0;">Driver accounts are provisioned from the console, not from the rider app. When driver onboarding emails are added, they will use this same <strong>From</strong> line and delivery path.</p>
+          </div>
+        </section>
+      </div>
+
+      <div class="vp-tab-panel vp-tab-panel--operations" id="settings_panel_operations">
+        <section class="vp-card" aria-labelledby="operations-heading">
+          <div class="vp-card__pad">
+            <h2 id="operations-heading" class="vp-section-title">Cancellations &amp; driver earnings</h2>
+            <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Cancellation fee is shown to riders in the app and recorded on the ride when they cancel (collection is operational — not auto-charged in-app). Driver earnings % sets each driver&apos;s share of the <strong>final fare</strong> on newly completed trips; you can override per driver on the driver edit screen.</p>
+            <div class="vp-stack-form">
+              <div class="vp-field">
+                <label class="vp-label" for="op_rider_cancel_fee">Rider cancellation fee (fixed, same currency as rides)</label>
+                <input class="vp-input" id="op_rider_cancel_fee" name="op_rider_cancel_fee" type="number" min="0" step="0.01" value="<?= vp_h((string) $operations['riderCancellationFeeAmount']) ?>" inputmode="decimal">
+                <p class="vp-field-hint">Use <code class="vp-inline-code">0</code> for no fee. Amount is stored on the ride row for reporting.</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="op_driver_pct_global">Default driver earnings (% of trip fare)</label>
+                <input class="vp-input" id="op_driver_pct_global" name="op_driver_pct_global" type="number" min="0" max="100" step="0.01" value="<?= vp_h((string) $operations['driverEarningsPercentGlobal']) ?>" inputmode="decimal">
+                <p class="vp-field-hint">Example: <code class="vp-inline-code">80</code> means the driver earns 80% of the fare; the remainder is an approximate platform share in reports.</p>
+              </div>
+            </div>
           </div>
         </section>
       </div>

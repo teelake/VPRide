@@ -38,6 +38,7 @@ $licenseNumber = '';
 $status = 'pending';
 $notes = '';
 $riderUserIdField = '';
+$earningsPercentOverride = '';
 
 $error = '';
 $message = '';
@@ -81,6 +82,9 @@ if (! $isNew) {
     if (isset($row['rider_user_id']) && $row['rider_user_id'] !== null) {
         $riderUserIdField = (string) (int) $row['rider_user_id'];
     }
+    if (isset($row['earnings_percent_override']) && $row['earnings_percent_override'] !== null && $row['earnings_percent_override'] !== '') {
+        $earningsPercentOverride = (string) (float) $row['earnings_percent_override'];
+    }
 }
 
 $vehicles = $vehicleRepo->listActiveForSelect();
@@ -98,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = trim((string) ($_POST['status'] ?? 'pending'));
         $notes = trim((string) ($_POST['notes'] ?? ''));
         $riderUserIdField = trim((string) ($_POST['rider_user_id'] ?? ''));
+        $earningsPercentOverride = trim((string) ($_POST['earnings_percent_override'] ?? ''));
         $payload = [
             'full_name' => $fullName,
             'driver_kind' => $driverKind,
@@ -108,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'status' => $status,
             'notes' => $notes,
             'rider_user_id' => $riderUserIdField === '' ? null : (int) $riderUserIdField,
+            'earnings_percent_override' => $earningsPercentOverride === '' ? null : $earningsPercentOverride,
         ];
         try {
             if ($isNew) {
@@ -180,6 +186,11 @@ require __DIR__ . '/includes/app_shell_start.php';
         <label class="vp-label" for="rider_user_id">Linked app user ID (rider_users.id)</label>
         <input class="vp-input vp-input--mono" id="rider_user_id" name="rider_user_id" type="number" min="0" step="1" value="<?= vp_h($riderUserIdField) ?>" placeholder="e.g. 42 — leave empty until rider has signed up">
         <p class="vp-field-hint">Drivers sign in with the <strong>same</strong> VP Ride app account. Find the numeric user id under <a href="<?= vp_h(vp_url('/admin/riders')) ?>">Riders</a> or your DB.</p>
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="earnings_percent_override">Driver earnings % override (optional)</label>
+        <input class="vp-input" id="earnings_percent_override" name="earnings_percent_override" type="number" min="0" max="100" step="0.01" value="<?= vp_h($earningsPercentOverride) ?>" placeholder="Leave blank for global default (Settings → Fees &amp; payouts)">
+        <p class="vp-field-hint">When set, this driver&apos;s share of each completed trip fare uses this percent instead of the global default. Requires the <code class="vp-inline-code">earnings_percent_override</code> column (run cancellation/earnings migration).</p>
       </div>
       <div class="vp-field">
         <label class="vp-label" for="fleet_vehicle_id">Assigned vehicle</label>

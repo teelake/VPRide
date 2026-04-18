@@ -650,9 +650,31 @@ class _DriverTabScreenState extends State<DriverTabScreen>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '${_earnings!['currency'] ?? ''} ${_earnings!['grossFareTotal'] ?? '—'}',
+                              'Your share: ${_earnings!['currency'] ?? ''} ${_earnings!['driverShareTotal'] ?? _earnings!['grossFareTotal'] ?? '—'}',
                               style: theme.textTheme.titleLarge?.copyWith(
                                 fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Trip fares (gross): ${_earnings!['currency'] ?? ''} ${_earnings!['grossFareTotal'] ?? '—'}',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.secondary.withValues(alpha: 0.65),
+                              ),
+                            ),
+                            if (_earnings!['platformShareApprox'] != null)
+                              Text(
+                                'Est. platform share: ${_earnings!['currency'] ?? ''} ${_earnings!['platformShareApprox']}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.secondary.withValues(alpha: 0.55),
+                                ),
+                              ),
+                            Text(
+                              'Your rate: ${_earnings!['driverEarningsPercentEffective'] ?? '—'}% '
+                              '(global ${_earnings!['driverEarningsPercentGlobal'] ?? '—'}%)',
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.secondary.withValues(alpha: 0.55),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -901,6 +923,17 @@ class _DriverTabScreenState extends State<DriverTabScreen>
           'Est. ${pricing['currency'] ?? ''} ${pricing['estimatedFare']}'
               .trim();
     }
+    var driverShareLine = '';
+    if (pricing is Map && pricing['driverShare'] is Map) {
+      final ds = pricing['driverShare'] as Map;
+      final a = ds['amount'];
+      final pct = ds['percentApplied'];
+      if (a != null) {
+        final cur = '${pricing['currency'] ?? ''}'.trim();
+        driverShareLine =
+            'Your share: $cur $a${pct != null ? ' ($pct%)' : ''}'.trim();
+      }
+    }
 
     return _card(
       context,
@@ -937,6 +970,16 @@ class _DriverTabScreenState extends State<DriverTabScreen>
               fare,
               style: theme.textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (driverShareLine.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              driverShareLine,
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.secondary.withValues(alpha: 0.75),
               ),
             ),
           ],

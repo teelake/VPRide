@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../config/app_config.dart';
 import '../logging/app_error_reporter.dart';
 import 'app_public_features.dart';
+import 'app_public_operations.dart';
 import 'welcome_ui_config.dart';
 
 /// Public keys from [GET /api/v1/config/public] with `--dart-define` fallback.
@@ -19,10 +20,13 @@ class ClientConfigRepository extends ChangeNotifier {
   String _remoteMapsApiKey = '';
   String _remoteMinimumAppVersion = '';
   AppPublicFeatures _features = AppPublicFeatures.fallback;
+  AppPublicOperations _operations = AppPublicOperations.fallback;
   WelcomeUiConfig _welcomeUi = WelcomeUiConfig.fallback;
 
   /// Feature flags from the last successful config fetch (or [AppPublicFeatures.fallback]).
   AppPublicFeatures get features => _features;
+
+  AppPublicOperations get operations => _operations;
 
   WelcomeUiConfig get welcomeUi => _welcomeUi;
 
@@ -71,6 +75,7 @@ class ClientConfigRepository extends ChangeNotifier {
           _remoteMinimumAppVersion =
               '${data['minimumAppVersion'] ?? ''}'.trim();
           _features = AppPublicFeatures.fromJson(data['features']);
+          _operations = AppPublicOperations.fromJson(data['operations']);
           _welcomeUi = WelcomeUiConfig.fromJson(data['welcome']);
           if (_remoteMapsApiKey.isEmpty &&
               AppConfig.mapsApiKey.trim().isEmpty) {

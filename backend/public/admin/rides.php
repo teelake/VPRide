@@ -49,6 +49,7 @@ $rows = SchemaInspector::tableExists($pdo, 'rides')
 $csrf = Auth::csrfToken();
 $hasPayCol = SchemaInspector::columnExists($pdo, 'rides', 'payment_status');
 $hasDriverCol = SchemaInspector::columnExists($pdo, 'rides', 'driver_rider_user_id');
+$hasCancelFeeCol = SchemaInspector::columnExists($pdo, 'rides', 'cancellation_fee_amount');
 $canDispatch = Auth::can('rides.dispatch');
 
 header('Content-Type: text/html; charset=utf-8');
@@ -129,6 +130,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <th scope="col">Payment</th>
                 <th scope="col">Fare</th>
               <?php } ?>
+              <?php if ($hasCancelFeeCol) { ?>
+                <th scope="col">Cancel fee</th>
+              <?php } ?>
               <th scope="col">Pickup</th>
               <th scope="col">Drop-off</th>
               <th scope="col">Created</th>
@@ -153,6 +157,18 @@ require __DIR__ . '/includes/app_shell_start.php';
                     $cur = (string) ($r['fare_currency'] ?? '');
                     $ff = $r['final_fare_amount'] ?? null;
                     echo $ff !== null ? vp_h($cur . ' ' . (string) $ff) : '—';
+                  ?></td>
+                <?php } ?>
+                <?php if ($hasCancelFeeCol) { ?>
+                  <td class="vp-table__muted"><?php
+                    $cf = $r['cancellation_fee_amount'] ?? null;
+                    $cst = (string) ($r['status'] ?? '');
+                    if ($cst === 'cancelled' && $cf !== null && $cf !== '' && (float) $cf > 0) {
+                        $cur = (string) ($r['fare_currency'] ?? '');
+                        echo vp_h($cur . ' ' . (string) $cf);
+                    } else {
+                        echo '—';
+                    }
                   ?></td>
                 <?php } ?>
                 <td class="vp-table__muted"><?= vp_h((string) ($r['pickup_address'] ?: (($r['pickup_lat'] ?? '') . ', ' . ($r['pickup_lng'] ?? '')))) ?></td>

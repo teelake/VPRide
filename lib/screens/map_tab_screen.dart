@@ -50,6 +50,7 @@ class _MapTabScreenState extends State<MapTabScreen>
   Timer? _currentRidePoll;
   bool _sosBusy = false;
   bool _ridePollBusy = false;
+  bool _cancelRideBusy = false;
 
   /// When true, the map pin adjusts pickup; when false, destination.
   bool _pinPickup = true;
@@ -330,11 +331,98 @@ class _MapTabScreenState extends State<MapTabScreen>
                   ),
                 ),
               ),
+              Builder(
+                builder: (ctx) {
+                  final auth = AuthScope.of(ctx);
+                  final profileId = auth.profile?.id;
+                  final ru = ride['riderUserId'];
+                  int? riderUid;
+                  if (ru is int) {
+                    riderUid = ru;
+                  } else if (ru is num) {
+                    riderUid = ru.toInt();
+                  }
+                  final canCancel = profileId != null &&
+                      riderUid != null &&
+                      profileId == riderUid &&
+                      (statusRaw == 'requested' ||
+                          statusRaw == 'accepted' ||
+                          statusRaw == 'in_progress');
+                  if (!canCancel) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: _cancelRideBusy
+                            ? null
+                            : () => _offerCancelRide(ctx, id, ride),
+                        child: const Text('Cancel ride'),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _offerCancelRide(
+    BuildContext context,
+    int rideId,
+    Map<String, dynamic> ride,
+  ) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    final fee = ClientConfigScope.of(context).operations.riderCancellationFeeAmount;
+    var currency = '';
+    final p = ride['pricing'];
+    if (p is Map) {
+      currency = '${p['currency'] ?? ''}'.trim();
+    }
+    final feeLine = fee > 0
+        ? 'A cancellation fee of $currency ${fee.toStringAsFixed(2)} applies and will be recorded on this ride.'
+        : 'No cancellation fee is configured for your area.';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel this ride?'),
+        content: Text(
+          '$feeLine You can request another ride anytime.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep ride')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cancel ride'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+
+    setState(() => _cancelRideBusy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ApiScope.of(context).postRideCancel(bearerToken: token, rideId: rideId);
+      if (!mounted) return;
+      messenger.showSnackBar(const SnackBar(content: Text('Ride cancelled.')));
+      await _refreshActiveRide(context);
+    } on ApiException catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (e) {
+      if (mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) setState(() => _cancelRideBusy = false);
+    }
   }
 
   Future<void> _sendSos(BuildContext context) async {

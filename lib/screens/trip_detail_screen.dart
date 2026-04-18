@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../core/api/api_exception.dart';
 import '../core/api/api_scope.dart';
 import '../core/auth/auth_scope.dart';
+import '../core/client/client_config_scope.dart';
 import '../core/theme/app_colors.dart';
 import '../core/trip/rider_trip_copy.dart';
 
@@ -34,6 +35,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   String? _uploadedProofUrl;
   bool _payBusy = false;
   bool _proofBusy = false;
+  bool _cancelBusy = false;
 
   @override
   void dispose() {
@@ -91,6 +93,62 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       if (mounted && !silent) setState(() => _error = e.toString());
     } finally {
       if (mounted && !silent) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _offerCancel(BuildContext context) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    final ride = _ride;
+    if (ride == null) return;
+    final fee = ClientConfigScope.of(context).operations.riderCancellationFeeAmount;
+    var currency = '';
+    final pr = ride['pricing'];
+    if (pr is Map) {
+      currency = '${pr['currency'] ?? ''}'.trim();
+    }
+    final feeLine = fee > 0
+        ? 'A cancellation fee of $currency ${fee.toStringAsFixed(2)} applies and will be recorded on this ride.'
+        : 'No cancellation fee is configured for your area.';
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancel this ride?'),
+        content: Text('$feeLine You can book again anytime.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Keep ride')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Cancel ride'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    setState(() => _cancelBusy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      final res = await ApiScope.of(context).postRideCancel(
+        bearerToken: token,
+        rideId: widget.rideId,
+      );
+      if (!mounted) return;
+      final updated = res['ride'];
+      if (updated is Map<String, dynamic>) {
+        setState(() => _ride = updated);
+      } else {
+        await _fetch(silent: true);
+      }
+      _poll?.cancel();
+      _poll = null;
+      messenger.showSnackBar(const SnackBar(content: Text('Ride cancelled.')));
+    } on ApiException catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _cancelBusy = false);
     }
   }
 
@@ -274,6 +332,92 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             ),
                           ),
                         ],
+                        Builder(
+                          builder: (context) {
+                            final st = '${ride['status'] ?? ''}';
+                            if (st == 'cancelled') {
+                              final c = ride['cancellation'];
+                              if (c is! Map) {
+                                return const SizedBox.shrink();
+                              }
+                              final fee = c['feeAmount'];
+                              final by = c['cancelledBy']?.toString().trim() ?? '';
+                              double? feeVal;
+                              if (fee is num) {
+                                feeVal = fee.toDouble();
+                              }
+                              var cur = '';
+                              final pr = ride['pricing'];
+                              if (pr is Map) {
+                                cur = '${pr['currency'] ?? ''}'.trim();
+                              }
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 16),
+                                child: Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(14),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Cancellation',
+                                          style: theme.textTheme.titleSmall?.copyWith(
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        if (feeVal != null && feeVal > 0)
+                                          Text(
+                                            'Fee recorded: $cur ${feeVal.toStringAsFixed(2)}',
+                                            style: theme.textTheme.bodyMedium,
+                                          )
+                                        else
+                                          Text(
+                                            'No cancellation fee was recorded.',
+                                            style: theme.textTheme.bodyMedium?.copyWith(
+                                              color: AppColors.secondary.withValues(alpha: 0.65),
+                                            ),
+                                          ),
+                                        if (by.isNotEmpty)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 6),
+                                            child: Text(
+                                              'Cancelled by: $by',
+                                              style: theme.textTheme.bodySmall,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
+                            final auth = AuthScope.of(context);
+                            final profileId = auth.profile?.id;
+                            final ru = ride['riderUserId'];
+                            int? riderUid;
+                            if (ru is int) {
+                              riderUid = ru;
+                            } else if (ru is num) {
+                              riderUid = ru.toInt();
+                            }
+                            final canCancel = profileId != null &&
+                                riderUid != null &&
+                                profileId == riderUid &&
+                                (st == 'requested' || st == 'accepted' || st == 'in_progress');
+                            if (!canCancel) return const SizedBox.shrink();
+                            return Padding(
+                              padding: const EdgeInsets.only(top: 16),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: _cancelBusy ? null : () => _offerCancel(context),
+                                  child: const Text('Cancel ride'),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                         Builder(
                           builder: (context) {
                             final d = ride['driver'];

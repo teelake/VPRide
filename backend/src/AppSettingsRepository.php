@@ -40,12 +40,14 @@ final class AppSettingsRepository
      *   mapsApiKey: string,
      *   minimumAppVersion: string,
      *   welcome: array<string, mixed>,
-     *   features: array<string, mixed>
+     *   features: array<string, mixed>,
+     *   operations: array{riderCancellationFeeAmount: float}
      * }
      */
     public function getPublicSettings(): array
     {
         $p = $this->loadFullPayload();
+        $op = $p['operations'];
 
         return [
             'googleWebClientId' => $p['googleWebClientId'],
@@ -53,7 +55,23 @@ final class AppSettingsRepository
             'minimumAppVersion' => $p['minimumAppVersion'],
             'welcome' => $p['welcome'],
             'features' => $p['features'],
+            'operations' => [
+                'riderCancellationFeeAmount' => (float) $op['riderCancellationFeeAmount'],
+            ],
         ];
+    }
+
+    /**
+     * Operations & payout settings (admin + server). Not fully exposed to mobile.
+     *
+     * @return array{
+     *   riderCancellationFeeAmount: float,
+     *   driverEarningsPercentGlobal: float
+     * }
+     */
+    public function getOperations(): array
+    {
+        return $this->loadFullPayload()['operations'];
     }
 
     /**
@@ -123,7 +141,8 @@ final class AppSettingsRepository
      *   minimumAppVersion?: string,
      *   welcome?: array<string, mixed>,
      *   features?: array<string, mixed>,
-     *   email?: array<string, mixed>
+     *   email?: array<string, mixed>,
+     *   operations?: array<string, mixed>
      * } $patch
      */
     public function savePublicSettings(array $patch, int $updatedByAdminId): void
@@ -172,6 +191,11 @@ final class AppSettingsRepository
             $mergedEmail = self::normalizeEmail($patch['email'], $current['email']);
         }
 
+        $mergedOperations = $current['operations'];
+        if (isset($patch['operations']) && is_array($patch['operations'])) {
+            $mergedOperations = self::normalizeOperations($patch['operations'], $current['operations']);
+        }
+
         $merged = [
             'googleWebClientId' => isset($patch['googleWebClientId'])
                 ? trim((string) $patch['googleWebClientId'])
@@ -185,6 +209,7 @@ final class AppSettingsRepository
             'welcome' => $welcomeMerged,
             'features' => $mergedFeatures,
             'email' => $mergedEmail,
+            'operations' => $mergedOperations,
         ];
         if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
             throw new RuntimeException('Value too long');
@@ -263,6 +288,7 @@ final class AppSettingsRepository
 
         $welcomeIn = is_array($decoded['welcome'] ?? null) ? $decoded['welcome'] : [];
         $emailIn = is_array($decoded['email'] ?? null) ? $decoded['email'] : [];
+        $opIn = is_array($decoded['operations'] ?? null) ? $decoded['operations'] : [];
 
         return [
             'googleWebClientId' => trim((string) ($decoded['googleWebClientId'] ?? $defaults['googleWebClientId'])),
@@ -271,6 +297,57 @@ final class AppSettingsRepository
             'welcome' => self::normalizeWelcome($welcomeIn, $defaults['welcome']),
             'features' => $features,
             'email' => self::normalizeEmail($emailIn, self::defaultEmail()),
+            'operations' => self::normalizeOperations($opIn, $defaults['operations']),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $in
+     * @param array<string, mixed> $base
+     * @return array{riderCancellationFeeAmount: float, driverEarningsPercentGlobal: float}
+     */
+    private static function normalizeOperations(array $in, array $base): array
+    {
+        $def = self::defaultOperations();
+        $base = array_merge($def, $base);
+        $fee = array_key_exists('riderCancellationFeeAmount', $in)
+            ? (float) $in['riderCancellationFeeAmount']
+            : (float) $base['riderCancellationFeeAmount'];
+        if (! is_finite($fee) || $fee < 0.0) {
+            $fee = 0.0;
+        }
+        if ($fee > 99_999_999.0) {
+            $fee = 99_999_999.0;
+        }
+        $fee = round($fee, 2, PHP_ROUND_HALF_UP);
+        $pct = array_key_exists('driverEarningsPercentGlobal', $in)
+            ? (float) $in['driverEarningsPercentGlobal']
+            : (float) $base['driverEarningsPercentGlobal'];
+        if (! is_finite($pct)) {
+            $pct = 80.0;
+        }
+        if ($pct < 0.0) {
+            $pct = 0.0;
+        }
+        if ($pct > 100.0) {
+            $pct = 100.0;
+        }
+        $pct = round($pct, 2, PHP_ROUND_HALF_UP);
+
+        return [
+            'riderCancellationFeeAmount' => $fee,
+            'driverEarningsPercentGlobal' => $pct,
+        ];
+    }
+
+    /**
+     * @return array{riderCancellationFeeAmount: float, driverEarningsPercentGlobal: float}
+     */
+    private static function defaultOperations(): array
+    {
+        return [
+            'riderCancellationFeeAmount' => 0.0,
+            'driverEarningsPercentGlobal' => 80.0,
         ];
     }
 
@@ -485,6 +562,7 @@ final class AppSettingsRepository
                 'promoCodeEntryEnabled' => true,
             ],
             'email' => self::defaultEmail(),
+            'operations' => self::defaultOperations(),
         ];
     }
 

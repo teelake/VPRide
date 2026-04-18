@@ -39,6 +39,7 @@ try {
             'minimumAppVersion' => $settings['minimumAppVersion'],
             'welcome' => $settings['welcome'],
             'features' => $settings['features'],
+            'operations' => $settings['operations'] ?? ['riderCancellationFeeAmount' => 0.0],
         ],
         JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
     );

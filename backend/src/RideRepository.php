@@ -593,6 +593,45 @@ final class RideRepository
     }
 
     /**
+     * Rider cancels their own ride before completion. Fee is taken from server policy (admin-configured).
+     *
+     * @return 'ok'|'not_found'|'not_rider'|'cannot_cancel'
+     */
+    public function riderCancelRide(int $rideId, int $riderUserId, float $cancellationFee): string
+    {
+        $row = $this->findById($rideId);
+        if ($row === null) {
+            return 'not_found';
+        }
+        if ((int) ($row['rider_user_id'] ?? 0) !== $riderUserId) {
+            return 'not_rider';
+        }
+        $st = (string) ($row['status'] ?? '');
+        if (! in_array($st, ['requested', 'accepted', 'in_progress'], true)) {
+            return 'cannot_cancel';
+        }
+        $fee = round(max(0.0, min(99_999_999.0, $cancellationFee)), 2, PHP_ROUND_HALF_UP);
+        $hasFeeCol = SchemaInspector::columnExists($this->pdo, 'rides', 'cancellation_fee_amount');
+        if ($hasFeeCol) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET status = \'cancelled\', cancellation_fee_amount = ?, '
+                . "cancelled_by = 'rider', cancelled_at = UTC_TIMESTAMP() "
+                . 'WHERE id = ? AND rider_user_id = ? '
+                . "AND status IN ('requested', 'accepted', 'in_progress')",
+            );
+            $stmt->execute([$fee, $rideId, $riderUserId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET status = \'cancelled\' WHERE id = ? AND rider_user_id = ? '
+                . "AND status IN ('requested', 'accepted', 'in_progress')",
+            );
+            $stmt->execute([$rideId, $riderUserId]);
+        }
+
+        return $stmt->rowCount() > 0 ? 'ok' : 'cannot_cancel';
+    }
+
+    /**
      * Completes trip. Optional final fare (validated, rounded) when console / manual-dispatch rules allow.
      *
      * @return 'ok'|'cannot_complete'|'fare_not_allowed'|'invalid_fare'
@@ -610,6 +649,10 @@ final class RideRepository
             return 'cannot_complete';
         }
 
+        $hasEarn = SchemaInspector::columnExists($this->pdo, 'rides', 'driver_earnings_amount')
+            && SchemaInspector::columnExists($this->pdo, 'rides', 'driver_earnings_percent_applied');
+        $pct = DriverEarningsPolicy::effectivePercentForDriverRiderUserId($this->pdo, $driverRiderUserId);
+
         if ($finalFare !== null) {
             if (! RideJsonPresenter::driverMaySetFinalFare($row)) {
                 return 'fare_not_allowed';
@@ -618,29 +661,60 @@ final class RideRepository
                 return 'invalid_fare';
             }
             $finalFare = round($finalFare, 2, PHP_ROUND_HALF_UP);
+            $gross = DriverEarningsPolicy::grossFareForEarnings($row, $finalFare);
+            $net = DriverEarningsPolicy::driverShareAmount($gross, $pct);
             if (! SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
-                $stmt = $this->pdo->prepare(
-                    'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
-                    . "AND status = 'in_progress'",
-                );
-                $stmt->execute([$rideId, $driverRiderUserId]);
+                if ($hasEarn) {
+                    $stmt = $this->pdo->prepare(
+                        'UPDATE rides SET status = \'completed\', driver_earnings_amount = ?, '
+                        . 'driver_earnings_percent_applied = ? WHERE id = ? AND driver_rider_user_id = ? '
+                        . "AND status = 'in_progress'",
+                    );
+                    $stmt->execute([$net, $pct, $rideId, $driverRiderUserId]);
+                } else {
+                    $stmt = $this->pdo->prepare(
+                        'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
+                        . "AND status = 'in_progress'",
+                    );
+                    $stmt->execute([$rideId, $driverRiderUserId]);
+                }
 
                 return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
             }
-            $stmt = $this->pdo->prepare(
-                'UPDATE rides SET status = \'completed\', final_fare_amount = ? '
-                . 'WHERE id = ? AND driver_rider_user_id = ? AND status = \'in_progress\'',
-            );
-            $stmt->execute([$finalFare, $rideId, $driverRiderUserId]);
+            if ($hasEarn) {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET status = \'completed\', final_fare_amount = ?, '
+                    . 'driver_earnings_amount = ?, driver_earnings_percent_applied = ? '
+                    . 'WHERE id = ? AND driver_rider_user_id = ? AND status = \'in_progress\'',
+                );
+                $stmt->execute([$finalFare, $net, $pct, $rideId, $driverRiderUserId]);
+            } else {
+                $stmt = $this->pdo->prepare(
+                    'UPDATE rides SET status = \'completed\', final_fare_amount = ? '
+                    . 'WHERE id = ? AND driver_rider_user_id = ? AND status = \'in_progress\'',
+                );
+                $stmt->execute([$finalFare, $rideId, $driverRiderUserId]);
+            }
 
             return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
         }
 
-        $stmt = $this->pdo->prepare(
-            'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
-            . "AND status = 'in_progress'",
-        );
-        $stmt->execute([$rideId, $driverRiderUserId]);
+        $gross = DriverEarningsPolicy::grossFareForEarnings($row, null);
+        $net = DriverEarningsPolicy::driverShareAmount($gross, $pct);
+        if ($hasEarn) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET status = \'completed\', driver_earnings_amount = ?, '
+                . 'driver_earnings_percent_applied = ? WHERE id = ? AND driver_rider_user_id = ? '
+                . "AND status = 'in_progress'",
+            );
+            $stmt->execute([$net, $pct, $rideId, $driverRiderUserId]);
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET status = \'completed\' WHERE id = ? AND driver_rider_user_id = ? '
+                . "AND status = 'in_progress'",
+            );
+            $stmt->execute([$rideId, $driverRiderUserId]);
+        }
 
         return $stmt->rowCount() > 0 ? 'ok' : 'cannot_complete';
     }
@@ -684,9 +758,9 @@ final class RideRepository
     }
 
     /**
-     * Sum final fares for completed trips (gross — platform/deductions not modeled).
+     * Sum final fares for completed trips (rider gross / trip total).
      */
-    public function sumCompletedEarningsForDriver(int $driverRiderUserId): float
+    public function sumCompletedGrossFareForDriver(int $driverRiderUserId): float
     {
         if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')
             || ! SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
@@ -700,6 +774,45 @@ final class RideRepository
         $stmt->execute([$driverRiderUserId]);
 
         return round((float) $stmt->fetchColumn(), 4);
+    }
+
+    /**
+     * Driver-retained share. Uses stored driver_earnings_amount when present; otherwise approximates
+     * with global platform percent on final_fare_amount (legacy trips — per-driver override not applied).
+     */
+    public function sumCompletedDriverShareForDriver(int $driverRiderUserId, float $globalPercentFallback): float
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
+            return 0.0;
+        }
+        $pct = max(0.0, min(100.0, $globalPercentFallback));
+        if (SchemaInspector::columnExists($this->pdo, 'rides', 'driver_earnings_amount')
+            && SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
+            $stmt = $this->pdo->prepare(
+                'SELECT COALESCE(SUM(CASE '
+                . 'WHEN driver_earnings_amount IS NOT NULL THEN driver_earnings_amount '
+                . 'WHEN final_fare_amount IS NOT NULL AND final_fare_amount > 0 '
+                . 'THEN ROUND(final_fare_amount * (? / 100), 2) '
+                . 'ELSE 0 END), 0) FROM rides '
+                . "WHERE driver_rider_user_id = ? AND status = 'completed'",
+            );
+            $stmt->execute([$pct, $driverRiderUserId]);
+
+            return round((float) $stmt->fetchColumn(), 4);
+        }
+        if (SchemaInspector::columnExists($this->pdo, 'rides', 'final_fare_amount')) {
+            $gross = $this->sumCompletedGrossFareForDriver($driverRiderUserId);
+
+            return round($gross * ($pct / 100.0), 4);
+        }
+
+        return 0.0;
+    }
+
+    /** @deprecated Use sumCompletedGrossFareForDriver */
+    public function sumCompletedEarningsForDriver(int $driverRiderUserId): float
+    {
+        return $this->sumCompletedGrossFareForDriver($driverRiderUserId);
     }
 
     public function countCompletedTripsForDriver(int $driverRiderUserId): int

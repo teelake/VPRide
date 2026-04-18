@@ -81,6 +81,34 @@ final class RideJsonPresenter
             ],
         ];
 
+        if (($ride['status'] ?? '') === 'cancelled') {
+            $ca = $ride['cancelled_at'] ?? null;
+            $out['cancellation'] = [
+                'feeAmount' => isset($ride['cancellation_fee_amount']) && $ride['cancellation_fee_amount'] !== null
+                    ? round((float) $ride['cancellation_fee_amount'], $decimals)
+                    : null,
+                'cancelledBy' => isset($ride['cancelled_by']) && $ride['cancelled_by'] !== null
+                    ? (string) $ride['cancelled_by']
+                    : null,
+                'cancelledAt' => $ca !== null && $ca !== ''
+                    ? str_replace(' ', 'T', (string) $ca) . 'Z'
+                    : null,
+            ];
+        }
+
+        if (($ride['status'] ?? '') === 'completed'
+            && isset($ride['driver_earnings_amount'])
+            && $ride['driver_earnings_amount'] !== null
+            && is_numeric($ride['driver_earnings_amount'])) {
+            $pct = $ride['driver_earnings_percent_applied'] ?? null;
+            $out['pricing']['driverShare'] = [
+                'amount' => round((float) $ride['driver_earnings_amount'], $decimals),
+                'percentApplied' => $pct !== null && $pct !== '' && is_numeric($pct)
+                    ? round((float) $pct, 2)
+                    : null,
+            ];
+        }
+
         if (array_key_exists('payment_status', $ride)) {
             $sub = $ride['payment_submitted_at'] ?? null;
             $paid = $ride['paid_at'] ?? null;
