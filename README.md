@@ -1,13 +1,14 @@
 # vpride
 
-<<<<<<< HEAD
 Monorepo for **VP Ride**.
 
 | Path | What it is |
 |------|------------|
 | **`index.html`**, `favicon.png`, `assets/` | Static “coming soon” / marketing shell for the main domain. Replace or extend with your public landing when you launch. |
 | **`mobile/`** | Flutter app (iOS, Android, web, desktop). Run Flutter commands from this folder. |
-| **`backend/`** | PHP admin API, MySQL, public config JSON for the app. See `backend/README.md`. |
+| **`backend/`** | PHP admin API, MySQL, public config JSON. See `backend/README.md`. |
+
+**Production on `vpride.ca`:** the **website root** is the static page. The **backend** (API + **admin** UI) is served at **`https://vpride.ca/backend/`** (no trailing slash in `API_BASE_URL` / `PUBLIC_BASE_URL` config — use `https://vpride.ca/backend`).
 
 ## Flutter app
 
@@ -17,13 +18,16 @@ flutter pub get
 flutter run --dart-define=API_BASE_URL=http://localhost:8080
 ```
 
+For a device hitting your production API base (same as admin URL path):
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
+```
+
 ## Public site (vpride.ca)
 
-Upload the repository **root** files used by the static page: `index.html`, `favicon.png`, `assets/`, and optionally root `.htaccess` (Apache `DirectoryIndex`).
+Upload the repository **root** static files: `index.html`, `favicon.png`, `assets/`, and optionally root `.htaccess` (Apache `DirectoryIndex`).
 
-**Optional:** if you need the same repository layout on the host and want `/` to redirect into `backend/`, use `backend/docs/root-redirect-to-backend.example.php` (rename to `index.php` only if you are **not** serving `index.html` as the home page).
-=======
-Flutter rider and driver app 
+Upload the **`backend/`** folder so the admin and API are available at **`/backend/`** on the host. See `backend/README.md` for `APP_BASE_PATH` and `PUBLIC_BASE_URL`.
 
-
->>>>>>> 492ed256338a759b78f90739536643ec800a4975
+**Optional:** to send visitors from a bare `index.html` or folder index into `backend/`, you can use `backend/docs/root-redirect-to-backend.example.php` (only if you are not relying on a different `index` for the marketing page — usually the static site and `/backend` coexist without redirect).

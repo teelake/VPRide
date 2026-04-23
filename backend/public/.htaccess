@@ -1,7 +1,8 @@
-# VP Ride API + admin — document root should be this /public folder.
-# Production: https://vpride.ca/  (or a subpath — then set RewriteBase to match, e.g. /backend/public/)
+# VP Ride API + admin — used when the web server’s document root is this /public folder.
+# Production (vpride.ca): if the site serves the app only under https://vpride.ca/backend/ and maps
+# that subpath to this folder, set RewriteBase to e.g. /backend/public/ . Local php -S from here: / .
 #
-# If you change folder names, update RewriteBase to match (leading + trailing slash).
+# If the host uses the parent folder’s backend/.htaccess instead, this file may not apply to every request.
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
