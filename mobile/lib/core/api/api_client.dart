@@ -243,10 +243,10 @@ final class ApiClient {
       'rideId': rideId,
       'latitude': latitude,
       'longitude': longitude,
-      if (accuracyM != null) 'accuracyM': accuracyM,
-      if (message != null && message.trim().isNotEmpty) 'message': message.trim(),
-      if (clientRequestId != null && clientRequestId.trim().isNotEmpty)
-        'clientRequestId': clientRequestId.trim(),
+      'accuracyM': ?accuracyM,
+      if (message case final String m when m.trim().isNotEmpty) 'message': m.trim(),
+      if (clientRequestId case final String id when id.trim().isNotEmpty)
+        'clientRequestId': id.trim(),
     };
     final res = await _client
         .post(
@@ -573,7 +573,7 @@ final class ApiClient {
     double? finalFare,
   }) async {
     final body = <String, dynamic>{
-      if (finalFare != null) 'finalFare': finalFare,
+      'finalFare': ?finalFare,
     };
     final res = await _client
         .post(
