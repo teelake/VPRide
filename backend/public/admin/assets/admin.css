@@ -31,6 +31,13 @@
   --vp-radius: 18px;
   --vp-radius-sm: 12px;
   --vp-radius-xs: 8px;
+  /* Buttons: contemporary pill-ish radius + depth */
+  --vp-btn-radius: 0.75rem; /* 12px: matches inputs, reads “product” on dense UIs */
+  --vp-btn-radius-pill: 999px;
+  --vp-btn-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --vp-btn-primary-glow: 0 4px 20px -2px rgba(200, 145, 0, 0.22), 0 2px 8px -2px rgba(12, 12, 15, 0.08);
+  --vp-btn-primary-glow-hover: 0 8px 28px -4px rgba(210, 155, 0, 0.28), 0 4px 12px -2px rgba(12, 12, 15, 0.1);
+  --vp-btn-press: cubic-bezier(0.33, 1, 0.68, 1);
   --vp-space-page: clamp(1rem, 3vw, 1.75rem);
   --vp-max-content: 1280px;
   --vp-sidebar-w: 280px;
@@ -441,11 +448,12 @@ html {
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: 2.75rem;
+  min-height: 2.875rem;
   margin-top: 0.5rem;
   font-size: 0.9375rem;
-  font-weight: 700;
-  border-radius: 0.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  border-radius: var(--vp-btn-radius);
 }
 
 .vp-body--login .vp-login__submit--stack {
@@ -453,7 +461,9 @@ html {
 }
 
 .vp-body--login .vp-btn--ghost {
-  background: var(--vp-surface);
+  /* Match light sign-in column: flatter, legible on #fafbfc */
+  background: rgba(255, 255, 255, 0.75);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 .vp-login__foot {
@@ -1396,101 +1406,178 @@ html {
   margin-bottom: 1.25rem;
 }
 
-/* ——— Buttons ——— */
+/* ——— Buttons (premium: depth, soft lift, quiet secondaries) ——— */
 .vp-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.45rem;
   font-family: var(--vp-font);
   font-weight: 600;
   font-size: 0.875rem;
-  line-height: 1.2;
-  padding: 0.65rem 1.15rem;
-  border-radius: var(--vp-radius-sm);
-  border: none;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  padding: 0.625rem 1.2rem;
+  min-height: 2.5rem;
+  border-radius: var(--vp-btn-radius);
+  border: 1px solid transparent;
   cursor: pointer;
   text-decoration: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
-    box-shadow 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s var(--vp-btn-ease), border-color 0.2s var(--vp-btn-ease), color 0.2s var(--vp-btn-ease),
+    box-shadow 0.22s var(--vp-btn-ease), transform 0.2s var(--vp-btn-press);
 }
 
 .vp-btn:focus-visible {
-  outline: 2px solid var(--vp-gold);
-  outline-offset: 2px;
+  outline: none;
+  box-shadow: 0 0 0 2px var(--vp-surface), 0 0 0 4px color-mix(in srgb, var(--vp-gold) 80%, var(--vp-black) 0%);
 }
 
 .vp-btn--primary {
-  background: linear-gradient(165deg, var(--vp-gold-bright) 0%, var(--vp-gold) 42%, var(--vp-gold-dim) 100%);
   color: var(--vp-black);
-  box-shadow: var(--vp-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.38);
-  border: 1px solid color-mix(in srgb, var(--vp-gold-dim) 55%, var(--vp-black) 12%);
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--vp-gold-bright) 100%, #fff 6%) 0%,
+    var(--vp-gold) 45%,
+    var(--vp-gold-dim) 100%
+  );
+  border-color: color-mix(in srgb, var(--vp-gold-dim) 50%, var(--vp-black) 16%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(12, 12, 15, 0.06),
+    0 1px 1px rgba(12, 12, 15, 0.04),
+    var(--vp-btn-primary-glow);
 }
 
 .vp-btn--primary:hover {
-  background: linear-gradient(165deg, var(--vp-gold) 0%, var(--vp-gold-dim) 55%, color-mix(in srgb, var(--vp-gold-dim) 85%, var(--vp-black) 10%) 100%);
-  border-color: color-mix(in srgb, var(--vp-gold-dim) 70%, var(--vp-black) 18%);
-  box-shadow: var(--vp-shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+  background: linear-gradient(
+    168deg,
+    var(--vp-gold-bright) 0%,
+    var(--vp-gold) 50%,
+    color-mix(in srgb, var(--vp-gold-dim) 88%, var(--vp-black) 8%) 100%
+  );
+  border-color: color-mix(in srgb, var(--vp-gold-dim) 58%, var(--vp-black) 20%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(12, 12, 15, 0.05),
+    0 1px 1px rgba(12, 12, 15, 0.05),
+    var(--vp-btn-primary-glow-hover);
+  transform: translateY(-1px);
 }
 
 .vp-btn--primary:active {
-  background: color-mix(in srgb, var(--vp-gold-dim) 88%, var(--vp-black) 8%);
-  box-shadow: inset 0 2px 4px rgba(12, 12, 13, 0.12);
+  background: linear-gradient(180deg, var(--vp-gold) 0%, color-mix(in srgb, var(--vp-gold-dim) 90%, var(--vp-black) 10%) 100%);
+  box-shadow: inset 0 2px 4px rgba(12, 12, 15, 0.12), 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+  transform: translateY(0) scale(0.99);
 }
 
 .vp-btn--ghost {
-  background: transparent;
-  color: var(--vp-black);
-  border: 1px solid var(--vp-border-strong);
+  background: rgba(255, 255, 255, 0.4);
+  color: var(--vp-text);
+  border-color: color-mix(in srgb, var(--vp-border-strong) 88%, var(--vp-black) 4%);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset;
 }
 
 .vp-btn--ghost:hover {
-  background: var(--vp-surface-elevated);
+  background: var(--vp-surface);
+  border-color: color-mix(in srgb, var(--vp-border-strong) 75%, var(--vp-black) 8%);
+  box-shadow: 0 1px 2px rgba(12, 12, 15, 0.04);
+  transform: translateY(-0.5px);
+}
+
+.vp-btn--ghost:active {
+  background: var(--vp-surface-muted);
+  transform: translateY(0) scale(0.995);
 }
 
 .vp-btn--soft {
-  background: var(--vp-surface-elevated);
+  background: linear-gradient(180deg, var(--vp-surface) 0%, var(--vp-surface-elevated) 100%);
   color: var(--vp-text);
-  border: 1px solid var(--vp-border);
-  box-shadow: none;
-  border-radius: 999px;
+  border-color: color-mix(in srgb, var(--vp-border) 92%, var(--vp-text) 3%);
+  border-radius: var(--vp-btn-radius-pill);
+  box-shadow: 0 1px 2px rgba(12, 12, 15, 0.04);
 }
 
 .vp-btn--soft:hover {
-  background: var(--vp-surface-muted);
+  background: var(--vp-surface);
   border-color: var(--vp-border-strong);
+  box-shadow: 0 2px 8px rgba(12, 12, 15, 0.06);
+  transform: translateY(-0.5px);
 }
 
 .vp-btn--soft:active {
-  background: #e8e8ed;
+  background: var(--vp-surface-muted);
+  box-shadow: inset 0 1px 2px rgba(12, 12, 15, 0.06);
+  transform: translateY(0);
 }
 
 .vp-btn--sm {
-  padding: 0.45rem 0.85rem;
+  min-height: 2.1rem;
+  padding: 0.4rem 0.9rem;
   font-size: 0.8125rem;
+  border-radius: calc(var(--vp-btn-radius) - 2px);
 }
 
 .vp-btn--inline {
-  padding: 0.45rem 0.75rem;
+  min-height: auto;
+  padding: 0.45rem 0.8rem;
   font-size: 0.8125rem;
-  background: var(--vp-surface-elevated);
-  color: var(--vp-black);
+  background: var(--vp-surface);
+  color: var(--vp-text);
   border: 1px solid var(--vp-border);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.65) inset;
+  border-radius: var(--vp-btn-radius);
 }
 
 .vp-btn--inline:hover {
-  border-color: var(--vp-gold);
-  background: rgba(255, 195, 0, 0.12);
+  border-color: color-mix(in srgb, var(--vp-gold) 55%, var(--vp-border) 45%);
+  background: color-mix(in srgb, var(--vp-surface) 90%, var(--vp-gold) 10%);
+  box-shadow: 0 1px 2px rgba(12, 12, 15, 0.04);
+  transform: translateY(-0.5px);
+}
+
+.vp-btn--inline:active {
+  transform: translateY(0) scale(0.99);
 }
 
 .vp-btn--danger-ghost {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.35);
   color: var(--vp-danger);
-  border: 1px solid rgba(180, 35, 24, 0.35);
+  border-color: color-mix(in srgb, var(--vp-danger) 28%, var(--vp-border) 72%);
 }
 
 .vp-btn--danger-ghost:hover {
   background: var(--vp-danger-bg);
+  border-color: color-mix(in srgb, var(--vp-danger) 38%, transparent);
+  transform: translateY(-0.5px);
+}
+
+.vp-btn--danger-ghost:active {
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-btn,
+  .vp-btn--primary,
+  .vp-btn--ghost,
+  .vp-btn--soft,
+  .vp-btn--inline,
+  .vp-btn--danger-ghost {
+    transition-duration: 0.01ms;
+  }
+
+  .vp-btn--primary:hover,
+  .vp-btn--ghost:hover,
+  .vp-btn--soft:hover,
+  .vp-btn--inline:hover,
+  .vp-btn--danger-ghost:hover,
+  .vp-btn--primary:active,
+  .vp-btn--ghost:active,
+  .vp-btn--soft:active,
+  .vp-btn--inline:active,
+  .vp-btn--danger-ghost:active {
+    transform: none;
+  }
 }
 
 .vp-inline-form {
