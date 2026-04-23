@@ -23,13 +23,16 @@ migrate_working_dir/
 # is commented out by default.
 #.vscode/
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Flutter/Dart/Pub (app lives in mobile/)
+mobile/**/doc/api/
+mobile/**/ios/Flutter/.last_build_id
+mobile/.dart_tool/
+mobile/.flutter-plugins-dependencies
+mobile/build/
+mobile/coverage/
+# Stale: delete these at repo root if they remain after the move
 .dart_tool/
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
 /build/
 /coverage/
 
@@ -40,9 +43,9 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+/mobile/android/app/debug
+/mobile/android/app/profile
+/mobile/android/app/release
 
 # PHP backend secrets
 backend/.env

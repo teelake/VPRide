@@ -51,9 +51,10 @@ Only **`system_admin`** may create/edit configs or activate. Other roles (`dispa
 
 ## Flutter app
 
-Point the app at this host:
+The Flutter project is in the repo’s **`mobile/`** folder. Point the app at this host:
 
 ```bash
+cd mobile
 flutter run --dart-define=API_BASE_URL=http://localhost:8080
 ```
 
@@ -91,13 +92,16 @@ Open (adjust path if you use a subfolder):
 - `https://vpride.ca/api/v1/config/regions` → JSON
 - `https://vpride.ca/admin/login` → login
 
-**Optional:** whole Flutter **web** build under a folder on the same host: add the repo’s root **`index.php`** (redirects to `backend/`) if you split app vs admin paths. If a route 404s, set the host’s **DirectoryIndex** to include `index.php` or remove a conflicting `index.html`.
+**Optional:** whole Flutter **web** build under a folder on the same host: use **`backend/docs/root-redirect-to-backend.example.php`** as `index.php` to redirect to `backend/` (only if you are not using root `index.html` for a static or marketing page). If a route 404s, set the host’s **DirectoryIndex** to include `index.php` or remove a conflicting `index.html`.
 
 ```bash
+cd mobile
 flutter run --dart-define=API_BASE_URL=https://vpride.ca
 ```
 
-Release builds and CI should use the same `API_BASE_URL` (or the subfolder URL, e.g. `https://vpride.ca/backend`, if that is how you deploy).
+Release builds and CI should use the same `API_BASE_URL` (or the subfolder URL, e.g. `https://vpride.ca/backend`, if that is how you deploy), with Flutter commands run from `mobile/`.
+
+**Note:** if the public domain’s document root is the **static** site from the repo root (`index.html` coming soon), run the **backend** on a subdomain, subpath, or another host, and set `API_BASE_URL` in the app to that API base. The `https://vpride.ca/…` URLs above assume the PHP app is the root of that same host.
 
 ## Production notes
 

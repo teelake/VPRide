@@ -1,6 +1,6 @@
-# VP Ride
+# VP Ride (Flutter)
 
-Flutter rider and driver app (repo folder: `vpride`).
+Flutter rider and driver app. This folder is the **mobile** app in the `vpride` monorepo (see repo root `README.md`).
 
 ## Getting Started
 
