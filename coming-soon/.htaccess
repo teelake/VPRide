@@ -1,0 +1,2 @@
+# Static coming-soon page — optional on Apache. Safe to delete on nginx / static CDNs.
+DirectoryIndex index.html
