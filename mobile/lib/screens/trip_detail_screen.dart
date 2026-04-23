@@ -36,6 +36,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   bool _payBusy = false;
   bool _proofBusy = false;
   bool _cancelBusy = false;
+  bool _swapBusy = false;
 
   @override
   void dispose() {
@@ -97,6 +98,53 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       if (mounted && !silent) setState(() => _error = e.toString());
     } finally {
       if (mounted && !silent) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _offerSwapDriver(BuildContext context) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Request a different driver?'),
+        content: const Text(
+          'The current assignment will be released and we will try to match another available driver, '
+          'subject to limits set by the operator.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep this driver'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Request another driver'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    setState(() => _swapBusy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final api = ApiScope.of(context);
+    try {
+      await api.postRideRejectAssignedDriver(
+        bearerToken: token,
+        rideId: widget.rideId,
+      );
+      if (!mounted) return;
+      await _fetch(silent: true);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Looking for another driver…')),
+      );
+    } on ApiException catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _swapBusy = false);
     }
   }
 
@@ -337,6 +385,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                             ),
                           ),
                         ],
+                        if (ride['tripConfirmed'] == true) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'Trip confirmed (per operator rules)',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: const Color(0xFF0D7A3E),
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
                         Builder(
                           builder: (context) {
                             final st = '${ride['status'] ?? ''}';
@@ -410,15 +468,33 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
                                 riderUid != null &&
                                 profileId == riderUid &&
                                 (st == 'requested' || st == 'accepted' || st == 'in_progress');
-                            if (!canCancel) return const SizedBox.shrink();
+                            final canSwap = profileId != null &&
+                                riderUid != null &&
+                                profileId == riderUid &&
+                                st == 'requested' &&
+                                ride['riderCanRequestDifferentDriver'] == true;
+                            if (!canCancel && !canSwap) return const SizedBox.shrink();
                             return Padding(
                               padding: const EdgeInsets.only(top: 16),
-                              child: SizedBox(
-                                width: double.infinity,
-                                child: OutlinedButton(
-                                  onPressed: _cancelBusy ? null : () => _offerCancel(context),
-                                  child: const Text('Cancel ride'),
-                                ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  if (canSwap)
+                                    OutlinedButton(
+                                      onPressed: _swapBusy || _cancelBusy
+                                          ? null
+                                          : () => _offerSwapDriver(context),
+                                      child: const Text('Request a different driver'),
+                                    ),
+                                  if (canSwap && canCancel) const SizedBox(height: 8),
+                                  if (canCancel)
+                                    OutlinedButton(
+                                      onPressed: _cancelBusy || _swapBusy
+                                          ? null
+                                          : () => _offerCancel(context),
+                                      child: const Text('Cancel ride'),
+                                    ),
+                                ],
                               ),
                             );
                           },

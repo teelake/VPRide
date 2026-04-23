@@ -11,8 +11,6 @@ use PDO;
  */
 final class DispatchService
 {
-    private const MAX_AUTO_ATTEMPTS = 8;
-
     public function __construct(private PDO $pdo) {}
 
     public function tryAutoAssign(int $rideId): void
@@ -26,6 +24,7 @@ final class DispatchService
         if (! SchemaInspector::tableExists($this->pdo, 'ride_driver_refusals')) {
             return;
         }
+        $maxAttempts = (new AppSettingsRepository($this->pdo))->getDispatchSettings()['maxAutoDriverAttempts'];
         $rides = new RideRepository($this->pdo);
         $row = $rides->findById($rideId);
         if ($row === null || ($row['status'] ?? '') !== 'requested') {
@@ -34,7 +33,7 @@ final class DispatchService
         if (($row['driver_rider_user_id'] ?? null) !== null && (int) $row['driver_rider_user_id'] > 0) {
             return;
         }
-        if ($rides->countRefusalsForRide($rideId) >= self::MAX_AUTO_ATTEMPTS) {
+        if ($rides->countRefusalsForRide($rideId) >= $maxAttempts) {
             return;
         }
 

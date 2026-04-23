@@ -19,9 +19,10 @@ final class RiderRideViewPresenter
     {
         /** @var array<int, array<string, mixed>> $cache */
         $cache = [];
+        $dispatch = (new AppSettingsRepository($pdo))->getDispatchSettings();
         $out = [];
         foreach ($rows as $row) {
-            $out[] = self::buildRiderArray($pdo, $row, $decimals, $cache);
+            $out[] = self::buildRiderArray($pdo, $row, $decimals, $cache, $dispatch);
         }
 
         return $out;
@@ -35,17 +36,24 @@ final class RiderRideViewPresenter
     {
         /** @var array<int, array<string, mixed>> $cache */
         $cache = [];
+        $dispatch = (new AppSettingsRepository($pdo))->getDispatchSettings();
 
-        return self::buildRiderArray($pdo, $ride, $decimals, $cache);
+        return self::buildRiderArray($pdo, $ride, $decimals, $cache, $dispatch);
     }
 
     /**
      * @param array<string, mixed> $ride
      * @param array<int, array<string, mixed>> $driverSnapByRiderId
+     * @param array{maxAutoDriverAttempts: int, maxRiderDriverRejects: int, tripConfirmedWhen: string} $dispatch
      * @return array<string, mixed>
      */
-    private static function buildRiderArray(PDO $pdo, array $ride, int $decimals, array &$driverSnapByRiderId): array
-    {
+    private static function buildRiderArray(
+        PDO $pdo,
+        array $ride,
+        int $decimals,
+        array &$driverSnapByRiderId,
+        array $dispatch,
+    ): array {
         $out = RideJsonPresenter::toPublicArray($ride, $decimals);
         $out['lifecyclePhase'] = self::lifecyclePhase($ride);
         $driverRiderId = isset($ride['driver_rider_user_id']) && $ride['driver_rider_user_id'] !== null
@@ -62,7 +70,45 @@ final class RiderRideViewPresenter
         $out['driver'] = $driverSnap;
         $out['eta'] = self::etaSnapshot($ride, $driverSnap);
 
+        $when = (string) ($dispatch['tripConfirmedWhen'] ?? 'driver_accepted');
+        if (! in_array($when, ['driver_assigned', 'driver_accepted'], true)) {
+            $when = 'driver_accepted';
+        }
+        $out['tripConfirmed'] = self::tripConfirmed($ride, $when);
+        $rid = (int) ($ride['id'] ?? 0);
+        $swapsMax = (int) ($dispatch['maxRiderDriverRejects'] ?? 0);
+        $swapsUsed = 0;
+        if ($rid > 0 && SchemaInspector::tableExists($pdo, 'ride_rider_rejects')) {
+            $swapsUsed = (new RideRepository($pdo))->countRiderRejectsForRide($rid);
+        }
+        $st = (string) ($ride['status'] ?? '');
+        $du = $ride['driver_rider_user_id'] ?? null;
+        $hasDriver = $du !== null && $du !== '' && (int) $du > 0;
+        $out['riderDriverSwapsUsed'] = $swapsUsed;
+        $out['riderDriverSwapsMax'] = $swapsMax;
+        $out['riderCanRequestDifferentDriver'] = $st === 'requested' && $hasDriver && $swapsUsed < $swapsMax
+            && SchemaInspector::tableExists($pdo, 'ride_rider_rejects');
+
         return $out;
+    }
+
+    /**
+     * @param array<string, mixed> $ride
+     */
+    private static function tripConfirmed(array $ride, string $when): bool
+    {
+        $st = (string) ($ride['status'] ?? '');
+        if ($st === 'cancelled') {
+            return false;
+        }
+        $du = $ride['driver_rider_user_id'] ?? null;
+        $hasDriver = $du !== null && $du !== '' && (int) $du > 0;
+        if ($when === 'driver_assigned') {
+            return $hasDriver
+                && in_array($st, ['requested', 'accepted', 'in_progress', 'completed'], true);
+        }
+
+        return in_array($st, ['accepted', 'in_progress', 'completed'], true);
     }
 
     /**

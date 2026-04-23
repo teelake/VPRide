@@ -41,7 +41,8 @@ final class AppSettingsRepository
      *   minimumAppVersion: string,
      *   welcome: array<string, mixed>,
      *   features: array<string, mixed>,
-     *   operations: array{riderCancellationFeeAmount: float}
+     *   operations: array{riderCancellationFeeAmount: float},
+     *   dispatch: array{maxAutoDriverAttempts: int, maxRiderDriverRejects: int, tripConfirmedWhen: string}
      * }
      */
     public function getPublicSettings(): array
@@ -54,6 +55,7 @@ final class AppSettingsRepository
                 $welcome['backgroundImageUrl'],
             );
         }
+        $dispatch = $p['dispatch'];
 
         return [
             'googleWebClientId' => $p['googleWebClientId'],
@@ -64,7 +66,27 @@ final class AppSettingsRepository
             'operations' => [
                 'riderCancellationFeeAmount' => (float) $op['riderCancellationFeeAmount'],
             ],
+            'dispatch' => [
+                'maxAutoDriverAttempts' => (int) $dispatch['maxAutoDriverAttempts'],
+                'maxRiderDriverRejects' => (int) $dispatch['maxRiderDriverRejects'],
+                'tripConfirmedWhen' => (string) $dispatch['tripConfirmedWhen'],
+            ],
         ];
+    }
+
+    /**
+     * Dispatch / matching rules for mobile and server. Same values as the public `dispatch` block.
+     *
+     * @return array{maxAutoDriverAttempts: int, maxRiderDriverRejects: int, tripConfirmedWhen: string}
+     */
+    public function getDispatchSettings(): array
+    {
+        $p = $this->loadFullPayload();
+
+        return self::normalizeDispatch(
+            is_array($p['dispatch'] ?? null) ? $p['dispatch'] : [],
+            self::defaultDispatch(),
+        );
     }
 
     /**
@@ -188,7 +210,8 @@ final class AppSettingsRepository
      *   welcome?: array<string, mixed>,
      *   features?: array<string, mixed>,
      *   email?: array<string, mixed>,
-     *   operations?: array<string, mixed>
+     *   operations?: array<string, mixed>,
+     *   dispatch?: array<string, mixed>
      * } $patch
      */
     public function savePublicSettings(array $patch, int $updatedByAdminId): void
@@ -242,6 +265,11 @@ final class AppSettingsRepository
             $mergedOperations = self::normalizeOperations($patch['operations'], $current['operations']);
         }
 
+        $mergedDispatch = $current['dispatch'];
+        if (isset($patch['dispatch']) && is_array($patch['dispatch'])) {
+            $mergedDispatch = self::normalizeDispatch($patch['dispatch'], $current['dispatch']);
+        }
+
         $merged = [
             'googleWebClientId' => isset($patch['googleWebClientId'])
                 ? trim((string) $patch['googleWebClientId'])
@@ -256,6 +284,7 @@ final class AppSettingsRepository
             'features' => $mergedFeatures,
             'email' => $mergedEmail,
             'operations' => $mergedOperations,
+            'dispatch' => $mergedDispatch,
         ];
         if (strlen($merged['googleWebClientId']) > 512 || strlen($merged['mapsApiKey']) > 512) {
             throw new RuntimeException('Value too long');
@@ -313,6 +342,8 @@ final class AppSettingsRepository
             return $defaults;
         }
 
+        $dispatchIn = is_array($decoded['dispatch'] ?? null) ? $decoded['dispatch'] : [];
+
         $featIn = $decoded['features'] ?? [];
         $featDef = $defaults['features'];
         $features = [
@@ -344,6 +375,7 @@ final class AppSettingsRepository
             'features' => $features,
             'email' => self::normalizeEmail($emailIn, self::defaultEmail()),
             'operations' => self::normalizeOperations($opIn, $defaults['operations']),
+            'dispatch' => self::normalizeDispatch($dispatchIn, $defaults['dispatch']),
         ];
     }
 
@@ -394,6 +426,59 @@ final class AppSettingsRepository
         return [
             'riderCancellationFeeAmount' => 0.0,
             'driverEarningsPercentGlobal' => 80.0,
+        ];
+    }
+
+    /**
+     * @return array{maxAutoDriverAttempts: int, maxRiderDriverRejects: int, tripConfirmedWhen: string}
+     */
+    private static function defaultDispatch(): array
+    {
+        return [
+            'maxAutoDriverAttempts' => 8,
+            'maxRiderDriverRejects' => 2,
+            'tripConfirmedWhen' => 'driver_accepted',
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $in
+     * @param array<string, mixed> $base
+     * @return array{maxAutoDriverAttempts: int, maxRiderDriverRejects: int, tripConfirmedWhen: string}
+     */
+    private static function normalizeDispatch(array $in, array $base): array
+    {
+        $def = self::defaultDispatch();
+        $base = array_merge($def, $base);
+        $a = array_key_exists('maxAutoDriverAttempts', $in)
+            ? (int) $in['maxAutoDriverAttempts']
+            : (int) $base['maxAutoDriverAttempts'];
+        if ($a < 1) {
+            $a = 1;
+        }
+        if ($a > 50) {
+            $a = 50;
+        }
+        $r = array_key_exists('maxRiderDriverRejects', $in)
+            ? (int) $in['maxRiderDriverRejects']
+            : (int) $base['maxRiderDriverRejects'];
+        if ($r < 0) {
+            $r = 0;
+        }
+        if ($r > 20) {
+            $r = 20;
+        }
+        $w = array_key_exists('tripConfirmedWhen', $in)
+            ? trim((string) $in['tripConfirmedWhen'])
+            : (string) $base['tripConfirmedWhen'];
+        if (! in_array($w, ['driver_assigned', 'driver_accepted'], true)) {
+            $w = 'driver_accepted';
+        }
+
+        return [
+            'maxAutoDriverAttempts' => $a,
+            'maxRiderDriverRejects' => $r,
+            'tripConfirmedWhen' => $w,
         ];
     }
 
@@ -468,6 +553,33 @@ final class AppSettingsRepository
             throw new RuntimeException('SOS notify list too long');
         }
 
+        $newRideNotifyEmails = array_key_exists('newRideNotifyEmails', $in)
+            ? trim((string) $in['newRideNotifyEmails'])
+            : trim((string) ($base['newRideNotifyEmails'] ?? ''));
+        if (strlen($newRideNotifyEmails) > 2000) {
+            throw new RuntimeException('New-ride notify list too long');
+        }
+
+        $newRideNotifySubject = array_key_exists('newRideNotifySubject', $in)
+            ? trim((string) $in['newRideNotifySubject'])
+            : trim((string) ($base['newRideNotifySubject'] ?? $def['newRideNotifySubject'] ?? ''));
+        if ($newRideNotifySubject === '') {
+            $newRideNotifySubject = (string) ($def['newRideNotifySubject'] ?? 'VP Ride: new ride request');
+        }
+        if (strlen($newRideNotifySubject) > 200) {
+            throw new RuntimeException('New-ride notify subject too long');
+        }
+
+        $newRideNotifyBody = array_key_exists('newRideNotifyBody', $in)
+            ? trim((string) $in['newRideNotifyBody'])
+            : trim((string) ($base['newRideNotifyBody'] ?? $def['newRideNotifyBody'] ?? ''));
+        if ($newRideNotifyBody === '') {
+            $newRideNotifyBody = (string) ($def['newRideNotifyBody'] ?? '');
+        }
+        if (strlen($newRideNotifyBody) > 4000) {
+            throw new RuntimeException('New-ride notify body too long');
+        }
+
         return [
             'mailFrom' => $mailFrom,
             'staffNotifyOnRiderSignup' => array_key_exists('staffNotifyOnRiderSignup', $in)
@@ -482,6 +594,12 @@ final class AppSettingsRepository
                 : self::boolish($base['riderWelcomeEnabled']),
             'riderWelcomeSubject' => $riderWelcomeSubject,
             'riderWelcomeBody' => $riderWelcomeBody,
+            'notifyOnNewRide' => array_key_exists('notifyOnNewRide', $in)
+                ? self::boolish($in['notifyOnNewRide'])
+                : self::boolish($base['notifyOnNewRide'] ?? $def['notifyOnNewRide'] ?? false),
+            'newRideNotifyEmails' => $newRideNotifyEmails,
+            'newRideNotifySubject' => $newRideNotifySubject,
+            'newRideNotifyBody' => $newRideNotifyBody,
         ];
     }
 
@@ -500,6 +618,10 @@ final class AppSettingsRepository
             'riderWelcomeEnabled' => true,
             'riderWelcomeSubject' => 'Welcome to VP Ride',
             'riderWelcomeBody' => "{greeting}Thanks for creating your rider account. Open the VP Ride app to book a ride.\n\n— VP Ride",
+            'notifyOnNewRide' => false,
+            'newRideNotifyEmails' => '',
+            'newRideNotifySubject' => 'VP Ride: new ride request',
+            'newRideNotifyBody' => "New ride #{rideId} (status: {status})\n\nRider: {riderName} (user #{riderUserId}, {riderEmail})\nPickup: {pickupLine}\nDrop-off: {dropoffLine}\nConsole: {consoleUrl}\n",
         ];
     }
 
@@ -609,6 +731,7 @@ final class AppSettingsRepository
             ],
             'email' => self::defaultEmail(),
             'operations' => self::defaultOperations(),
+            'dispatch' => self::defaultDispatch(),
         ];
     }
 

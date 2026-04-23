@@ -16,6 +16,7 @@ require_once $backendRoot . '/src/PromotionRepository.php';
 require_once $backendRoot . '/src/RiderRewardGrantRepository.php';
 require_once $backendRoot . '/src/DispatchService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
+require_once $backendRoot . '/src/RideRequestNotifier.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
@@ -30,6 +31,7 @@ use VprideBackend\RideRepository;
 use VprideBackend\RateLimiter;
 use VprideBackend\RiderAuthService;
 use VprideBackend\RiderRewardGrantRepository;
+use VprideBackend\RideRequestNotifier;
 
 Config::load($backendRoot . '/.env');
 
@@ -370,6 +372,14 @@ try {
         }
 
         $pdo->commit();
+
+        foreach ($bookings as $b) {
+            try {
+                RideRequestNotifier::notifyIfEnabled($pdo, (int) $b['id']);
+            } catch (Throwable $e) {
+                error_log('[vpride] new-ride email notify: ' . $e->getMessage());
+            }
+        }
 
         try {
             $dispatch = new DispatchService($pdo);

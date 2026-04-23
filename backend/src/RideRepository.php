@@ -490,6 +490,56 @@ final class RideRepository
         return (int) $stmt->fetchColumn();
     }
 
+    public function countRiderRejectsForRide(int $rideId): int
+    {
+        if (! SchemaInspector::tableExists($this->pdo, 'ride_rider_rejects')) {
+            return 0;
+        }
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM ride_rider_rejects WHERE ride_id = ?');
+        $stmt->execute([$rideId]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
+     * Rider asks for a different driver before the trip is accepted. Clears the assignment and
+     * records the current driver as refused for re-offer, subject to per-ride limits in settings.
+     *
+     * @return 'ok'|'not_found'|'not_rider'|'bad_state'|'limit'
+     */
+    public function riderRejectAssignedDriver(int $rideId, int $riderUserId, int $maxRiderRejects): string
+    {
+        $row = $this->findById($rideId);
+        if ($row === null) {
+            return 'not_found';
+        }
+        if ((int) ($row['rider_user_id'] ?? 0) !== $riderUserId) {
+            return 'not_rider';
+        }
+        if (($row['status'] ?? '') !== 'requested') {
+            return 'bad_state';
+        }
+        $du = $row['driver_rider_user_id'] ?? null;
+        if ($du === null || $du === '' || (int) $du < 1) {
+            return 'bad_state';
+        }
+        if (! SchemaInspector::tableExists($this->pdo, 'ride_rider_rejects')) {
+            return 'bad_state';
+        }
+        if ($this->countRiderRejectsForRide($rideId) >= $maxRiderRejects) {
+            return 'limit';
+        }
+        $driverId = (int) $du;
+        $ins = $this->pdo->prepare(
+            'INSERT INTO ride_rider_rejects (ride_id, rejected_driver_rider_user_id) VALUES (?, ?)',
+        );
+        $ins->execute([$rideId, $driverId]);
+        $this->recordDriverRefusal($rideId, $driverId);
+        $this->clearDriverOnRequestedRide($rideId);
+
+        return 'ok';
+    }
+
     public function recordDriverRefusal(int $rideId, int $driverRiderUserId): void
     {
         if (! SchemaInspector::tableExists($this->pdo, 'ride_driver_refusals')) {

@@ -42,6 +42,11 @@ try {
             'welcome' => $settings['welcome'],
             'features' => $settings['features'],
             'operations' => $settings['operations'] ?? ['riderCancellationFeeAmount' => 0.0],
+            'dispatch' => $settings['dispatch'] ?? [
+                'maxAutoDriverAttempts' => 8,
+                'maxRiderDriverRejects' => 2,
+                'tripConfirmedWhen' => 'driver_accepted',
+            ],
         ],
         JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
     );

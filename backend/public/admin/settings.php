@@ -25,6 +25,7 @@ $repo = new AppSettingsRepository(Database::pdo());
 $settings = $repo->getPublicSettings();
 $operations = $repo->getOperations();
 $emailSettings = $repo->getEmailSettings();
+$dispatch = $repo->getDispatchSettings();
 $message = '';
 $error = '';
 $csrf = Auth::csrfToken();
@@ -102,6 +103,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'riderWelcomeEnabled' => isset($_POST['email_rider_welcome']),
                         'riderWelcomeSubject' => (string) ($_POST['emailRiderWelcomeSubject'] ?? ''),
                         'riderWelcomeBody' => (string) ($_POST['emailRiderWelcomeBody'] ?? ''),
+                        'notifyOnNewRide' => isset($_POST['email_notify_new_ride']),
+                        'newRideNotifyEmails' => (string) ($_POST['emailNewRideNotifyEmails'] ?? ''),
+                        'newRideNotifySubject' => (string) ($_POST['emailNewRideNotifySubject'] ?? ''),
+                        'newRideNotifyBody' => (string) ($_POST['emailNewRideNotifyBody'] ?? ''),
                     ],
                     'operations' => [
                         'riderCancellationFeeAmount' => (float) str_replace(
@@ -115,12 +120,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             trim((string) ($_POST['op_driver_pct_global'] ?? '80')),
                         ),
                     ],
+                    'dispatch' => [
+                        'maxAutoDriverAttempts' => (int) ($_POST['dispatch_max_auto'] ?? 8),
+                        'maxRiderDriverRejects' => (int) ($_POST['dispatch_max_rider_rejects'] ?? 2),
+                        'tripConfirmedWhen' => in_array(
+                            (string) ($_POST['dispatch_trip_confirmed'] ?? ''),
+                            ['driver_assigned', 'driver_accepted'],
+                            true,
+                        ) ? (string) $_POST['dispatch_trip_confirmed'] : 'driver_accepted',
+                    ],
                 ],
                 $admin[0],
             );
             $settings = $repo->getPublicSettings();
             $operations = $repo->getOperations();
             $emailSettings = $repo->getEmailSettings();
+            $dispatch = $repo->getDispatchSettings();
             $message = 'Settings saved. Mobile apps receive key and feature updates on the next config sync.';
         } catch (Throwable $e) {
             $error = 'Could not save: ' . $e->getMessage();
@@ -396,6 +411,21 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <textarea class="vp-input vp-textarea" id="emailRiderWelcomeBody" name="emailRiderWelcomeBody" rows="6" maxlength="4000"><?= vp_h($emailSettings['riderWelcomeBody']) ?></textarea>
                 <p class="vp-field-hint">Use <code class="vp-inline-code">{greeting}</code> for &ldquo;Hi Name,&rdquo; vs &ldquo;Hello,&rdquo; plus <code class="vp-inline-code">{email}</code>, <code class="vp-inline-code">{displayName}</code>, <code class="vp-inline-code">{userId}</code>.</p>
               </div>
+              <div class="vp-field" style="margin-top:1.5rem;padding-top:1.25rem;border-top:1px solid rgba(0,0,0,0.08);">
+                <h3 class="vp-section-title" style="font-size:1rem;margin:0 0 0.75rem;">New ride request (app + console)</h3>
+                <p class="vp-field-hint" style="margin:-0.2rem 0 1rem;">Sends a plain-text message when a ride is created. If the dedicated address list is empty, the same list as <strong>Staff notification addresses</strong> is used (and then <code class="vp-inline-code">RIDER_SIGNUP_NOTIFY_EMAIL</code> from <code>.env</code> for From only — see outbound rules above).</p>
+                <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+                  <input type="checkbox" name="email_notify_new_ride" value="1"<?= ! empty($emailSettings['notifyOnNewRide']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+                  <span><strong>Email staff on every new ride</strong> (in addition to in-app / dispatch flow)</span>
+                </label>
+                <label class="vp-label" for="emailNewRideNotifyEmails" style="margin-top:1rem;">New-ride addresses (optional)</label>
+                <textarea class="vp-input vp-textarea vp-textarea--sm" id="emailNewRideNotifyEmails" name="emailNewRideNotifyEmails" rows="2" placeholder="Empty = reuse staff list"><?= vp_h($emailSettings['newRideNotifyEmails'] ?? '') ?></textarea>
+                <label class="vp-label" for="emailNewRideNotifySubject">New ride — subject</label>
+                <input class="vp-input" id="emailNewRideNotifySubject" name="emailNewRideNotifySubject" type="text" value="<?= vp_h($emailSettings['newRideNotifySubject'] ?? 'VP Ride: new ride request') ?>" maxlength="200">
+                <label class="vp-label" for="emailNewRideNotifyBody">New ride — body (plain text)</label>
+                <textarea class="vp-input vp-textarea" id="emailNewRideNotifyBody" name="emailNewRideNotifyBody" rows="6" maxlength="4000"><?= vp_h($emailSettings['newRideNotifyBody'] ?? '') ?></textarea>
+                <p class="vp-field-hint">Placeholders: <code class="vp-inline-code">{rideId}</code>, <code class="vp-inline-code">{status}</code>, <code class="vp-inline-code">{riderUserId}</code>, <code class="vp-inline-code">{riderEmail}</code>, <code class="vp-inline-code">{riderName}</code>, <code class="vp-inline-code">{pickupLine}</code>, <code class="vp-inline-code">{dropoffLine}</code>, <code class="vp-inline-code">{consoleUrl}</code>.</p>
+              </div>
             </div>
           </div>
         </section>
@@ -422,6 +452,30 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <label class="vp-label" for="op_driver_pct_global">Default driver earnings (% of trip fare)</label>
                 <input class="vp-input" id="op_driver_pct_global" name="op_driver_pct_global" type="number" min="0" max="100" step="0.01" value="<?= vp_h((string) $operations['driverEarningsPercentGlobal']) ?>" inputmode="decimal">
                 <p class="vp-field-hint">Example: <code class="vp-inline-code">80</code> means the driver earns 80% of the fare; the remainder is an approximate platform share in reports.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="vp-card" aria-labelledby="dispatch-heading" style="margin-top:1rem;">
+          <div class="vp-card__pad">
+            <h2 id="dispatch-heading" class="vp-section-title">Dispatch &amp; matching</h2>
+            <p class="vp-field-hint" style="margin:-0.35rem 0 1.25rem;">Tuning for automatic re-offers when drivers decline, rider-requested driver swaps, and when the app should treat a trip as <strong>confirmed</strong> (exposed in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">dispatch</code>).</p>
+            <div class="vp-stack-form">
+              <div class="vp-field">
+                <label class="vp-label" for="dispatch_max_auto">Max automatic driver re-offers per ride (driver refusals / pool exhaustion)</label>
+                <input class="vp-input" id="dispatch_max_auto" name="dispatch_max_auto" type="number" min="1" max="50" step="1" value="<?= (int) ($dispatch['maxAutoDriverAttempts'] ?? 8) ?>" inputmode="numeric">
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="dispatch_max_rider_rejects">Max times rider can request a different driver (before accept)</label>
+                <input class="vp-input" id="dispatch_max_rider_rejects" name="dispatch_max_rider_rejects" type="number" min="0" max="20" step="1" value="<?= (int) ($dispatch['maxRiderDriverRejects'] ?? 2) ?>" inputmode="numeric">
+                <p class="vp-field-hint">Set to <code class="vp-inline-code">0</code> to disable the &ldquo;choose another driver&rdquo; action in the app.</p>
+              </div>
+              <div class="vp-field">
+                <label class="vp-label" for="dispatch_trip_confirmed">“Trip confirmed” in the app means</label>
+                <select class="vp-input" id="dispatch_trip_confirmed" name="dispatch_trip_confirmed">
+                  <option value="driver_assigned"<?= (($dispatch['tripConfirmedWhen'] ?? '') === 'driver_assigned') ? ' selected' : '' ?>>A driver was assigned (may still be pending their accept)</option>
+                  <option value="driver_accepted"<?= (($dispatch['tripConfirmedWhen'] ?? 'driver_accepted') === 'driver_accepted') ? ' selected' : '' ?>>The assigned driver has accepted the trip</option>
+                </select>
               </div>
             </div>
           </div>

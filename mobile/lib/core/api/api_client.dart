@@ -413,6 +413,23 @@ final class ApiClient {
     return _decode(res);
   }
 
+  /// Asks for a different driver before the current one has accepted (per-ride limit).
+  Future<Map<String, dynamic>> postRideRejectAssignedDriver({
+    required String bearerToken,
+    required int rideId,
+  }) async {
+    final res = await _client
+        .post(
+          _uri('/api/v1/rides/$rideId/reject-assigned-driver'),
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer $bearerToken',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postDriverLocation({
     required String bearerToken,
     required double latitude,

@@ -307,6 +307,12 @@ if (preg_match('#^/api/v1/rides/(\\d+)/cancel$#', $path, $vpridePathMatch) && in
     exit;
 }
 
+if (preg_match('#^/api/v1/rides/(\\d+)/reject-assigned-driver$#', $path, $vpridePathMatch) && in_array($method, ['POST', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
+    require $backendRoot . '/src/handlers/api_ride_reject_assigned.php';
+    exit;
+}
+
 if (preg_match('#^/api/v1/rides/(\\d+)$#', $path, $vpridePathMatch) && in_array($method, ['GET', 'OPTIONS'], true)) {
     $GLOBALS['vpride_ride_path_id'] = (int) $vpridePathMatch[1];
     require $backendRoot . '/src/handlers/api_ride_detail.php';
