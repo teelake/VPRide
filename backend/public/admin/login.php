@@ -50,31 +50,34 @@ $bodyClass = 'vp-body vp-body--login';
 require __DIR__ . '/includes/head.php';
 ?>
 
+<a class="vp-skip-link" href="#login-main">Skip to sign in</a>
 <div class="vp-login">
-  <div class="vp-login__card">
-    <div class="vp-login__accent" aria-hidden="true"></div>
-    <div class="vp-login__inner">
-      <div class="vp-login__brand">
-        <img
-          class="vp-login__brand-icon"
-          src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
-          width="72"
-          height="72"
-          alt=""
-          decoding="async"
-        >
-        <img
-          class="vp-login__brand-wordmark"
-          src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
-          width="200"
-          height="48"
-          alt="VP Ride"
-          decoding="async"
-        >
-      </div>
-      <p class="vp-login__kicker">VP Ride</p>
-      <h1 class="vp-login__title">Sign in to console</h1>
-      <p class="vp-login__lead">Manage regions, riders, rides, reports, and mobile feature flags for the VP Ride platform.</p>
+  <div class="vp-login__layout">
+    <?php require __DIR__ . '/includes/login_aside.php'; ?>
+    <div class="vp-login__main" id="login-main" tabindex="-1">
+      <div class="vp-login__card" role="region" aria-labelledby="login-heading">
+        <div class="vp-login__inner">
+          <div class="vp-login__brand" aria-hidden="true">
+            <img
+              class="vp-login__brand-icon"
+              src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+              width="72"
+              height="72"
+              alt=""
+              decoding="async"
+            >
+            <img
+              class="vp-login__brand-wordmark"
+              src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+              width="200"
+              height="48"
+              alt="VP Ride"
+              decoding="async"
+            >
+          </div>
+          <p class="vp-login__kicker">Sign in</p>
+          <h1 class="vp-login__title" id="login-heading">Console access</h1>
+          <p class="vp-login__lead">Regions, riders, rides, and operations — in one place.</p>
 
       <?php if ($notice !== '') { ?>
         <div class="vp-alert vp-alert--success" role="status"><?= vp_h($notice) ?></div>
@@ -83,20 +86,22 @@ require __DIR__ . '/includes/head.php';
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
       <?php } ?>
 
-      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form">
+      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form" novalidate>
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <div class="vp-field">
-          <label class="vp-label" for="email">Email</label>
-          <input class="vp-input" id="email" type="email" name="email" required autocomplete="username" placeholder="you@company.com">
+          <label class="vp-label" for="email">Work email</label>
+          <input class="vp-input" id="email" type="email" name="email" required autocomplete="username" inputmode="email" placeholder="you@company.com" autocapitalize="off" autocorrect="off" spellcheck="false">
         </div>
         <div class="vp-field">
           <label class="vp-label" for="password">Password</label>
           <input class="vp-input" id="password" type="password" name="password" required autocomplete="current-password" placeholder="••••••••">
         </div>
-        <button type="submit" class="vp-btn vp-btn--primary" style="width:100%; margin-top:0.25rem;">Sign in</button>
+        <button type="submit" class="vp-btn vp-btn--primary vp-login__submit">Sign in</button>
       </form>
       <p class="vp-login__forgot"><a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>">Forgot password?</a></p>
     </div>
+  </div>
+  </div>
   </div>
   <p class="vp-login__foot">VP Ride operations console</p>
 </div>

@@ -9,6 +9,9 @@ use VprideBackend\Config;
 
 Config::load($backendRoot . '/.env');
 
+// Do not index admin, API, or any entry served from this app (tells crawlers; pairs with public robots.txt on the site).
+header('X-Robots-Tag: noindex, nofollow, noarchive', true);
+
 // Send PHP errors to a file (default: backend/storage/logs/php-error.log).
 // Disable: PHP_ERROR_LOG_DISABLE=1 in .env. Override path: PHP_ERROR_LOG_FILE=/full/path/to.log
 if (trim((string) getenv('PHP_ERROR_LOG_DISABLE')) !== '1') {

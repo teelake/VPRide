@@ -1,0 +1,14 @@
+# VP Ride public site: allow marketing root. Do not crawl application code paths.
+User-agent: *
+
+# PHP API + admin + uploads when hosted under this path
+Disallow: /backend/
+
+# Flutter / mobile project folder if exposed on the same origin (e.g. static or CI artifacts)
+Disallow: /mobile/
+
+# Optional: if you also expose other tooling or CI paths, add:
+# Disallow: /.git/
+# Disallow: /.github/
+
+# Note: the backend sends X-Robots-Tag: noindex on all admin/API responses; this file supports the main domain (e.g. vpride.ca) document root.
