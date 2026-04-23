@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// from [RegionConfigRepository] for runtime values.
 abstract final class AppRegion {
   /// Shown to riders and drivers as the served area (e.g. “Serving …”).
-  static const String fallbackServiceAreaLabel = 'Modern Canada';
+  static const String fallbackServiceAreaLabel = 'Winkler, MB';
 
   static const Locale fallbackDefaultLocale = Locale('en', 'CA');
 

@@ -17,8 +17,8 @@ INSERT INTO admins (email, password_hash, role_id) VALUES (
 );
 
 INSERT INTO region_configs (label, payload, is_active, updated_by_admin_id) VALUES (
-  'Default — Modern Canada',
-  '{"version":1,"updatedAt":"2026-04-13T00:00:00Z","branding":{"serviceAreaLabel":"Modern Canada"},"localization":{"defaultLocale":"en_CA","supportedLocales":["en_CA","fr_CA"]},"countries":[{"code":"CA","name":"Canada","currencyCode":"CAD","distanceUnit":"km","cities":[{"id":"yyz","name":"Toronto","subdivision":"ON","isActive":true,"center":{"latitude":43.6532,"longitude":-79.3832}},{"id":"yvr","name":"Vancouver","subdivision":"BC","isActive":true,"center":{"latitude":49.2827,"longitude":-123.1207}}]}],"defaults":{"countryCode":"CA","cityId":"yyz"}}',
+  'Default — Winkler, MB',
+  '{"version":1,"updatedAt":"2026-04-13T00:00:00Z","branding":{"serviceAreaLabel":"Winkler, MB"},"localization":{"defaultLocale":"en_CA","supportedLocales":["en_CA","fr_CA"]},"countries":[{"code":"CA","name":"Canada","currencyCode":"CAD","distanceUnit":"km","cities":[{"id":"winkler","name":"Winkler","subdivision":"MB","isActive":true,"center":{"latitude":49.1817,"longitude":-97.9411}},{"id":"morden","name":"Morden","subdivision":"MB","isActive":false,"center":{"latitude":49.1919,"longitude":-98.102}},{"id":"altona","name":"Altona","subdivision":"MB","isActive":false,"center":{"latitude":49.1047,"longitude":-97.1655}},{"id":"carman","name":"Carman","subdivision":"MB","isActive":false,"center":{"latitude":49.4991,"longitude":-98.0016}}]}],"defaults":{"countryCode":"CA","cityId":"winkler"}}',
   1,
   LAST_INSERT_ID()
 );

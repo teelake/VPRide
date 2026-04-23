@@ -3,7 +3,7 @@
 // {
 //   "version": 1,
 //   "updatedAt": "2026-04-13T12:00:00Z",
-//   "branding": { "serviceAreaLabel": "Modern Canada" },
+//   "branding": { "serviceAreaLabel": "Winkler, MB" },
 //   "localization": {
 //     "defaultLocale": "en_CA",
 //     "supportedLocales": ["en_CA", "fr_CA"]
@@ -16,8 +16,8 @@
 //       "distanceUnit": "km",
 //       "cities": [
 //         {
-//           "id": "yyz",
-//           "name": "Toronto",
+//           "id": "winkler",
+//           "name": "Winkler",
 //           "subdivision": "ON",
 //           "isActive": true,
 //           "center": { "latitude": 43.6532, "longitude": -79.3832 }
@@ -25,7 +25,7 @@
 //       ]
 //     }
 //   ],
-//   "defaults": { "countryCode": "CA", "cityId": "yyz" }
+//   "defaults": { "countryCode": "CA", "cityId": "winkler" }
 // }
 
 class RegionConfigDto {

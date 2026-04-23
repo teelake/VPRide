@@ -29,7 +29,7 @@ Only **`system_admin`** may create/edit configs or activate. Other roles (`dispa
 
    Set `DB_*` and, for production, `APP_BASE_PATH=backend` and `PUBLIC_BASE_URL=https://vpride.ca/backend` (admin and API at **`/backend/`** on the site; see [Production](#production--shared-hosting) below). For local `php -S` from `public/`, use empty `APP_BASE_PATH` and `http://localhost:8080`.
 
-4. **Seed** the first system admin + default “Modern Canada” active config:
+4. **Seed** the first system admin + default **Pembina Valley (Winkler, MB lead)** active config:
 
    - **CLI:** `php scripts/seed.php`
    - **phpMyAdmin / no SSH:** import **`sql/seed_data.sql`** after the schema (run once).
@@ -108,5 +108,5 @@ Release builds and CI should use that same `API_BASE_URL` base, with commands ru
 
 ## Testing from Nigeria (or anywhere)
 
-- Point **defaults** in the active JSON to a Nigerian city (e.g. `countryCode` `NG`, `cityId` `los`) so map center and copy match your QA scenario, or keep Canada for production and use an **Android emulator** with GPS set to Toronto/Vancouver.
+- Point **defaults** in the active JSON to a Nigerian city (e.g. `countryCode` `NG`, `cityId` `los`) so map center and copy match your QA scenario, or keep Canada for production and use an **Android emulator** with GPS set to **Winkler, MB** (or another active `cityId` in your config).
 - For **closed beta in Canada**, use Play internal testing / TestFlight and ask testers to install the build; they validate real addresses and networks.

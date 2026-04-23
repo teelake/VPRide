@@ -67,7 +67,8 @@ class _MapTabScreenState extends State<MapTabScreen>
   final FocusNode _pickupSearchFocusNode = FocusNode();
   RidePickupController? _pickupListenTarget;
 
-  static const LatLng _fallbackToronto = LatLng(43.6532, -79.3832);
+  /// When region config is missing; matches default seed (Winkler, MB).
+  static const LatLng _fallbackMapCenter = LatLng(49.1817, -97.9411);
 
   void _onPickupControllerTick() {
     if (mounted) setState(() {});
@@ -461,8 +462,8 @@ class _MapTabScreenState extends State<MapTabScreen>
 
     setState(() => _sosBusy = true);
     try {
-      double lat = _cameraTarget?.latitude ?? _fallbackToronto.latitude;
-      double lng = _cameraTarget?.longitude ?? _fallbackToronto.longitude;
+      double lat = _cameraTarget?.latitude ?? _fallbackMapCenter.latitude;
+      double lng = _cameraTarget?.longitude ?? _fallbackMapCenter.longitude;
       try {
         final pos = await Geolocator.getCurrentPosition(
           locationSettings: const LocationSettings(
@@ -499,7 +500,7 @@ class _MapTabScreenState extends State<MapTabScreen>
   LatLng _initialTarget(BuildContext context) {
     final c = RegionConfigScope.resolvedOf(context).defaultMapCenter;
     if (c != null) return LatLng(c.latitude, c.longitude);
-    return _fallbackToronto;
+    return _fallbackMapCenter;
   }
 
   Future<void> _centerOnUser() async {

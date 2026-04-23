@@ -48,7 +48,7 @@ try {
     $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     $pdo->prepare(
         'INSERT INTO region_configs (label, payload, is_active, updated_by_admin_id) VALUES (?, ?, 1, ?)',
-    )->execute(['Default — Modern Canada', $json, $adminId]);
+    )->execute(['Default — Winkler, MB', $json, $adminId]);
 
     $pdo->commit();
     echo "Seeded admin: {$email}\n";
@@ -69,7 +69,7 @@ function defaultRegionPayload(): array
         'version' => 1,
         'updatedAt' => gmdate('Y-m-d\TH:i:s\Z'),
         'branding' => [
-            'serviceAreaLabel' => 'Modern Canada',
+            'serviceAreaLabel' => 'Winkler, MB',
         ],
         'localization' => [
             'defaultLocale' => 'en_CA',
@@ -82,26 +82,41 @@ function defaultRegionPayload(): array
                 'currencyCode' => 'CAD',
                 'distanceUnit' => 'km',
                 'cities' => [
+                    // Pembina Valley — Winkler licensed first; others for future expansion (inactive until licensed).
                     [
-                        'id' => 'yyz',
-                        'name' => 'Toronto',
-                        'subdivision' => 'ON',
+                        'id' => 'winkler',
+                        'name' => 'Winkler',
+                        'subdivision' => 'MB',
                         'isActive' => true,
-                        'center' => ['latitude' => 43.6532, 'longitude' => -79.3832],
+                        'center' => ['latitude' => 49.1817, 'longitude' => -97.9411],
                     ],
                     [
-                        'id' => 'yvr',
-                        'name' => 'Vancouver',
-                        'subdivision' => 'BC',
-                        'isActive' => true,
-                        'center' => ['latitude' => 49.2827, 'longitude' => -123.1207],
+                        'id' => 'morden',
+                        'name' => 'Morden',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.1919, 'longitude' => -98.102],
+                    ],
+                    [
+                        'id' => 'altona',
+                        'name' => 'Altona',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.1047, 'longitude' => -97.1655],
+                    ],
+                    [
+                        'id' => 'carman',
+                        'name' => 'Carman',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.4991, 'longitude' => -98.0016],
                     ],
                 ],
             ],
         ],
         'defaults' => [
             'countryCode' => 'CA',
-            'cityId' => 'yyz',
+            'cityId' => 'winkler',
         ],
     ];
 }

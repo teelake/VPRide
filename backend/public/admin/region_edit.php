@@ -171,7 +171,7 @@ function defaultWorldwideTemplate(): array
         'version' => 1,
         'updatedAt' => gmdate('Y-m-d\TH:i:s\Z'),
         'branding' => [
-            'serviceAreaLabel' => 'Modern Canada',
+            'serviceAreaLabel' => 'Winkler, MB',
         ],
         'localization' => [
             'defaultLocale' => 'en_CA',
@@ -185,11 +185,32 @@ function defaultWorldwideTemplate(): array
                 'distanceUnit' => 'km',
                 'cities' => [
                     [
-                        'id' => 'yyz',
-                        'name' => 'Toronto',
-                        'subdivision' => 'ON',
+                        'id' => 'winkler',
+                        'name' => 'Winkler',
+                        'subdivision' => 'MB',
                         'isActive' => true,
-                        'center' => ['latitude' => 43.6532, 'longitude' => -79.3832],
+                        'center' => ['latitude' => 49.1817, 'longitude' => -97.9411],
+                    ],
+                    [
+                        'id' => 'morden',
+                        'name' => 'Morden',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.1919, 'longitude' => -98.102],
+                    ],
+                    [
+                        'id' => 'altona',
+                        'name' => 'Altona',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.1047, 'longitude' => -97.1655],
+                    ],
+                    [
+                        'id' => 'carman',
+                        'name' => 'Carman',
+                        'subdivision' => 'MB',
+                        'isActive' => false,
+                        'center' => ['latitude' => 49.4991, 'longitude' => -98.0016],
                     ],
                 ],
             ],
@@ -211,7 +232,7 @@ function defaultWorldwideTemplate(): array
         ],
         'defaults' => [
             'countryCode' => 'CA',
-            'cityId' => 'yyz',
+            'cityId' => 'winkler',
         ],
     ];
 }
@@ -279,7 +300,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <div class="vp-field">
         <label class="vp-label" for="serviceAreaLabel">Service area label (shown in apps)</label>
-        <input class="vp-input" id="serviceAreaLabel" type="text" name="branding[serviceAreaLabel]" value="<?= vp_h($brandVal) ?>" required placeholder="e.g. Modern Canada">
+        <input class="vp-input" id="serviceAreaLabel" type="text" name="branding[serviceAreaLabel]" value="<?= vp_h($brandVal) ?>" required placeholder="e.g. Winkler, MB">
       </div>
     </div>
   </section>
@@ -379,7 +400,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <div class="vp-card__pad vp-city-grid">
                   <div class="vp-field">
                     <label class="vp-label">City ID</label>
-                    <input class="vp-input" type="text" name="countries[<?= (int) $ci ?>][cities][<?= (int) $ki ?>][id]" value="<?= vp_h((string) ($ct['id'] ?? '')) ?>" required placeholder="yyz">
+                    <input class="vp-input" type="text" name="countries[<?= (int) $ci ?>][cities][<?= (int) $ki ?>][id]" value="<?= vp_h((string) ($ct['id'] ?? '')) ?>" required placeholder="winkler">
                   </div>
                   <div class="vp-field">
                     <label class="vp-label">Name</label>
