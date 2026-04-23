@@ -4,7 +4,7 @@ Monorepo for **VP Ride**.
 
 | Path | What it is |
 |------|------------|
-| **`index.html`**, `favicon.png`, `assets/` | Static “coming soon” / marketing shell for the main domain. Replace or extend with your public landing when you launch. |
+| **`index.html`**, `assets/` (e.g. `app-icon.png` for the logo + favicon) | Static “coming soon” / marketing shell for the main domain. Replace or extend with your public landing when you launch. |
 | **`mobile/`** | Flutter app (iOS, Android, web, desktop). Run Flutter commands from this folder. |
 | **`backend/`** | PHP admin API, MySQL, public config JSON. See `backend/README.md`. |
 
@@ -26,7 +26,7 @@ flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
 
 ## Public site (vpride.ca)
 
-Upload the repository **root** static files: `index.html`, `favicon.png`, `assets/`, and optionally root `.htaccess` (Apache `DirectoryIndex`).
+Upload the repository **root** static files: `index.html`, `assets/` (include `app-icon.png`), and optionally root `.htaccess` (Apache `DirectoryIndex`).
 
 Upload the **`backend/`** folder so the admin and API are available at **`/backend/`** on the host. See `backend/README.md` for `APP_BASE_PATH` and `PUBLIC_BASE_URL`.
 
