@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-CA">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#000000">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="color-scheme" content="dark">
-  <meta name="description" content="VP Ride is coming soon. Watch this space.">
+  <meta name="description" content="VP Ride is coming soon. Rides, reimagined. vpride.ca">
   <title>VP Ride — Coming soon | vpride.ca</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,146 +13,284 @@
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --primary: #ffc300;
-      --ink: #000000;
-      --line: rgba(255, 195, 0, 0.14);
-      --text-dim: #9ca3af;
-      --glow: rgba(255, 195, 0, 0.1);
+      /* Brand (aligned with app) */
+      --color-primary: #ffc300;
+      --color-bg: #000000;
+      --color-elevated: #0a0a0a;
+      --color-text: #f4f4f5;
+      --color-text-secondary: #b4b8c0;
+      --color-text-tertiary: #6b7280;
+      --color-line: rgba(255, 195, 0, 0.12);
+      --color-line-soft: rgba(255, 255, 255, 0.06);
+      /* 8pt rhythm */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --content-max: 24rem;
+      --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --duration-enter: 0.65s;
+      --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
     }
 
-    * {
+    *,
+    *::before,
+    *::after {
       box-sizing: border-box;
+    }
+
+    html {
+      -webkit-text-size-adjust: 100%;
     }
 
     body {
       margin: 0;
       min-height: 100dvh;
+      min-height: 100svh;
+      font-family: var(--font-sans);
+      color: var(--color-text);
+      background-color: var(--color-bg);
+      background-image:
+        radial-gradient(ellipse 100% 65% at 50% 115%, rgba(255, 195, 0, 0.08) 0%, transparent 48%),
+        radial-gradient(ellipse 55% 40% at 100% 0%, rgba(255, 195, 0, 0.03) 0%, transparent 42%),
+        radial-gradient(ellipse 55% 40% at 0% 0%, rgba(255, 195, 0, 0.03) 0%, transparent 42%);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Skip link: keyboard + assistive tech */
+    .skip-link {
+      position: absolute;
+      top: var(--space-3);
+      left: var(--space-3);
+      z-index: 100;
+      padding: var(--space-2) var(--space-4);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--color-bg);
+      background: var(--color-primary);
+      border-radius: 0.375rem;
+      text-decoration: none;
+      transform: translateY(-200%);
+      transition: transform 0.2s var(--ease-out);
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
+      outline: 2px solid #fff;
+      outline-offset: 2px;
+    }
+
+    .page {
+      min-height: 100dvh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      /* Safe area: notched phones, home indicator */
+      padding-left: max(var(--space-5), env(safe-area-inset-left));
+      padding-right: max(var(--space-5), env(safe-area-inset-right));
+      padding-top: max(var(--space-8), env(safe-area-inset-top));
+    }
+
+    .page__main {
+      flex: 1;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: clamp(1.5rem, 4vw, 2.5rem) 1.25rem;
-      padding-bottom: 4.5rem;
-      font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-      color: #fff;
-      /* Same true black as logo_horizontal_yellow_on_black artboard — no visible edge */
-      background-color: var(--ink);
-      background-image:
-        /* Ambient light below content so it never tints the logo mark */
-        radial-gradient(ellipse 100% 70% at 50% 108%, var(--glow) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 40% at 100% 0%, rgba(255, 195, 0, 0.04) 0%, transparent 45%),
-        radial-gradient(ellipse 50% 40% at 0% 0%, rgba(255, 195, 0, 0.04) 0%, transparent 45%);
+      padding: var(--space-6) 0 var(--space-10);
     }
 
-    .wrap {
+    .panel {
       width: 100%;
-      max-width: 26rem;
+      max-width: var(--content-max);
       text-align: center;
     }
 
-    .logo-glow {
+    @media (min-width: 28rem) {
+      .panel {
+        max-width: 26.5rem;
+      }
+    }
+
+    .eyebrow {
+      margin: 0 0 var(--space-5);
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--color-text-tertiary);
+    }
+
+    .logo-wrap {
       display: flex;
       justify-content: center;
-      margin: 0 auto 1.75rem;
+      margin: 0 auto var(--space-5);
     }
 
     .logo {
       display: block;
-      width: min(100%, 300px);
+      width: min(100%, 17.5rem);
       height: auto;
-      vertical-align: top;
-      /* Subtle lift off pure black; reads “premium” without a grey box */
-      filter: drop-shadow(0 12px 40px rgba(255, 195, 0, 0.15));
+      max-height: 5rem;
+      object-fit: contain;
+      filter: drop-shadow(0 0.5rem 2rem rgba(255, 195, 0, 0.12));
+    }
+
+    @media (min-width: 24rem) {
+      .logo {
+        width: min(100%, 18.75rem);
+        max-height: 5.5rem;
+      }
     }
 
     .rule {
-      width: 3rem;
+      width: 2.5rem;
       height: 1px;
-      margin: 0 auto 1.5rem;
-      background: linear-gradient(90deg, transparent, var(--line), transparent);
+      margin: 0 auto var(--space-5);
+      background: linear-gradient(90deg, transparent, var(--color-line), transparent);
     }
 
-    p.lead {
-      margin: 0 0 1.25rem;
-      font-size: clamp(0.9375rem, 2.8vw, 1.0625rem);
-      line-height: 1.65;
+    .lead {
+      margin: 0 0 var(--space-5);
+      font-size: clamp(0.9375rem, 0.9rem + 0.35vw, 1.0625rem);
+      line-height: 1.6;
       font-weight: 500;
-      color: var(--text-dim);
-      letter-spacing: 0.01em;
+      color: var(--color-text-secondary);
+      max-width: 38ch;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    h1 {
-      font-size: clamp(1.75rem, 5.5vw, 2.125rem);
+    .title {
+      margin: 0 0 var(--space-2);
+      font-size: clamp(1.875rem, 1.4rem + 2.4vw, 2.25rem);
       font-weight: 600;
-      letter-spacing: -0.03em;
-      line-height: 1.2;
-      margin: 0 0 0.3rem;
-      color: #fafafa;
+      letter-spacing: -0.035em;
+      line-height: 1.12;
+      color: var(--color-text);
     }
 
     .sub {
-      margin: 0 0 1.75rem;
-      font-size: 0.875rem;
+      margin: 0 0 var(--space-8);
+      font-size: clamp(0.875rem, 0.85rem + 0.2vw, 0.9375rem);
       font-weight: 500;
-      color: #6b7280;
+      line-height: 1.5;
+      color: var(--color-text-tertiary);
+      max-width: 32ch;
+      margin-left: auto;
+      margin-right: auto;
     }
 
-    .badge {
+    .status {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1.125rem;
-      border-radius: 999px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--primary);
-      background: linear-gradient(180deg, rgba(30, 30, 30, 0.9) 0%, rgba(10, 10, 10, 0.95) 100%);
-      border: 1px solid rgba(255, 195, 0, 0.2);
-      box-shadow:
-        0 1px 0 rgba(255, 255, 255, 0.04) inset,
-        0 8px 32px rgba(0, 0, 0, 0.4);
-    }
-
-    .badge::before {
-      content: "";
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--primary);
-      box-shadow: 0 0 0 0 rgba(255, 195, 0, 0.5);
-      animation: pulse 2.4s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 195, 0, 0.4); }
-      50% { box-shadow: 0 0 0 7px rgba(255, 195, 0, 0); }
-    }
-
-    .footer {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      padding: 1rem 1.25rem 1.5rem;
+      justify-content: center;
+      min-height: 2.75rem;
+      min-width: 10rem;
+      padding: 0.625rem 1.25rem;
+      border-radius: 6.25rem;
       font-size: 0.6875rem;
-      font-weight: 500;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      color: #4b5563;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-    }
-
-    .footer-inner {
-      max-width: 26rem;
-      margin: 0 auto;
-    }
-
-    .domain {
-      color: #6b7280;
       font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-primary);
+      background: linear-gradient(165deg, rgba(32, 32, 32, 0.95) 0%, rgba(8, 8, 8, 0.98) 100%);
+      border: 1px solid rgba(255, 195, 0, 0.18);
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.05) inset,
+        0 0.5rem 2.5rem rgba(0, 0, 0, 0.5);
+    }
+
+    .status__dot {
+      display: block;
+      width: 0.4rem;
+      height: 0.4rem;
+      margin-right: 0.5rem;
+      border-radius: 50%;
+      background: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .status__dot {
+        animation: status-pulse 2.4s ease-in-out infinite;
+      }
+    }
+
+    @keyframes status-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 195, 0, 0.45); }
+      50% { box-shadow: 0 0 0 0.4rem rgba(255, 195, 0, 0); }
+    }
+
+    .page__footer {
+      flex-shrink: 0;
+      padding: var(--space-5) var(--space-1)
+        max(var(--space-6), env(safe-area-inset-bottom));
+      text-align: center;
+      font-size: 0.625rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #52525b;
+      border-top: 1px solid var(--color-line-soft);
+      background: linear-gradient(0deg, rgba(0, 0, 0, 0.6) 0%, transparent 100%);
+    }
+
+    .page__footer-inner {
+      max-width: 36rem;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    .page__footer .domain {
+      color: #71717a;
+      font-weight: 600;
+    }
+
+    /* Subtle, resilient entrance */
+    @media (prefers-reduced-motion: no-preference) {
+      .enter {
+        animation: enter-up var(--duration-enter) var(--ease-out) both;
+      }
+
+      .enter--delay-1 { animation-delay: 0.08s; }
+      .enter--delay-2 { animation-delay: 0.16s; }
+      .enter--delay-3 { animation-delay: 0.24s; }
+    }
+
+    @keyframes enter-up {
+      from {
+        opacity: 0;
+        transform: translate3d(0, 0.5rem, 0);
+      }
+      to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .enter,
+      .enter--delay-1,
+      .enter--delay-2,
+      .enter--delay-3 {
+        animation: none;
+      }
+    }
+
+    .visually-sep { white-space: nowrap; }
+    @media (min-width: 24rem) {
+      .footer-break { display: none; }
+    }
+    @media (max-width: 23.99rem) {
+      .visually-sep { display: none; }
+      .copy-line { display: block; margin-top: 0.25rem; }
     }
   </style>
   <!--
@@ -160,29 +298,43 @@
   -->
 </head>
 <body>
-  <div class="wrap" role="main">
-    <div class="logo-glow">
-      <img
-        class="logo"
-        src="assets/logo-horizontal.png"
-        width="300"
-        height="auto"
-        alt="VP Ride"
-        decoding="async"
-        fetchpriority="high"
-      />
-    </div>
-    <div class="rule" aria-hidden="true"></div>
-    <p class="lead">We&rsquo;re getting ready. New rides, same pride &mdash; the app and site are on the way.</p>
-    <h1>Coming soon</h1>
-    <p class="sub">A calmer, smarter way to move.</p>
-    <div class="badge" aria-label="Status">Watch this space</div>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="page">
+    <main id="main" class="page__main" tabindex="-1">
+      <article class="panel" aria-labelledby="headline">
+        <p class="eyebrow enter">Rides, reimagined</p>
+        <div class="logo-wrap enter enter--delay-1">
+          <img
+            class="logo"
+            src="assets/logo-horizontal.png"
+            width="300"
+            height="80"
+            alt="VP Ride"
+            decoding="async"
+            fetchpriority="high"
+          />
+        </div>
+        <div class="rule enter enter--delay-1" aria-hidden="true"></div>
+        <p class="lead enter enter--delay-2">
+          We&rsquo;re getting ready. New rides, same pride &mdash; the app and site are on the way.
+        </p>
+        <h1 class="title enter enter--delay-2" id="headline">Coming soon</h1>
+        <p class="sub enter enter--delay-2">A calmer, smarter way to move.</p>
+        <p class="status enter enter--delay-3" aria-label="In development">
+          <span class="status__dot" aria-hidden="true"></span>
+          <span>Watch this space</span>
+        </p>
+      </article>
+    </main>
+    <footer class="page__footer">
+      <div class="page__footer-inner">
+        <span class="domain">vpride.ca</span>
+        <span class="visually-sep" aria-hidden="true"> &middot; </span>
+        <br class="footer-break" />
+        <span class="copy-line">&copy; <span id="y"></span> VP Ride. All rights reserved.</span>
+      </div>
+    </footer>
   </div>
-  <footer class="footer">
-    <div class="footer-inner">
-      <span class="domain">vpride.ca</span> &nbsp;&middot;&nbsp; &copy; <span id="y"></span> VP Ride. All rights reserved.
-    </div>
-  </footer>
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
   </script>
