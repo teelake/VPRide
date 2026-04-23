@@ -26,7 +26,7 @@ flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
 
 ## Public site (vpride.ca)
 
-Upload the repository **root** static files: `index.html`, `assets/` (include `app-icon.png`), and optionally root `.htaccess` (Apache `DirectoryIndex`).
+Upload the repository **root** static files: `index.html`, `robots.txt` (disallows `/backend/` and `/mobile/` for crawlers), `assets/` (include `app-icon.png`), and optionally root `.htaccess` (Apache `DirectoryIndex`).
 
 Upload the **`backend/`** folder so the admin and API are available at **`/backend/`** on the host. See `backend/README.md` for `APP_BASE_PATH` and `PUBLIC_BASE_URL`.
 
