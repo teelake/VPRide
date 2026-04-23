@@ -85,7 +85,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <?php vp_breadcrumbs([
-    ['label' => 'Bookings', 'href' => vp_url('/admin/rides')],
+    ['label' => 'Bookings', 'href' => vp_url('/rides')],
     ['label' => 'Ride #' . $rideId, 'href' => null],
 ]); ?>
 
@@ -129,7 +129,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <button type="submit" class="vp-btn vp-btn--primary">Assign driver</button>
       </form>
     <?php } ?>
-    <p style="margin-top:1.5rem;"><a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/rides') ?>">← Back to bookings</a></p>
+    <p style="margin-top:1.5rem;"><a class="vp-btn vp-btn--ghost" href="<?= vp_url('/rides') ?>">← Back to bookings</a></p>
   </div>
 </section>
 

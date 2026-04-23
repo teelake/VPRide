@@ -19,5 +19,5 @@ if (! Auth::validateCsrf($_POST['_csrf'] ?? null)) {
 }
 
 Auth::logout();
-header('Location: ' . Config::url('/admin/login'));
+header('Location: ' . Config::url('/login'));
 exit;

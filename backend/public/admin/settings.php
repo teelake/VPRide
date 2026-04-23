@@ -140,7 +140,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'Dashboard', 'href' => vp_url('/dashboard')],
         ['label' => 'Settings', 'href' => null],
     ]);
 ?>
@@ -155,7 +155,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
 <?php } ?>
 
-<form method="post" action="<?= vp_url('/admin/settings') ?>" class="vp-settings-form" enctype="multipart/form-data">
+<form method="post" action="<?= vp_url('/settings') ?>" class="vp-settings-form" enctype="multipart/form-data">
   <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
 
   <div class="vp-settings-tabs" role="region" aria-label="Settings categories">

@@ -385,8 +385,8 @@ function vp_reports_tabs(string $active): void
     $ridesClass = $active === 'rides' ? ' vp-tabs__link--active' : '';
     $ridersClass = $active === 'riders' ? ' vp-tabs__link--active' : '';
     echo '<nav class="vp-tabs" aria-label="Report type">';
-    echo '<a class="vp-tabs__link' . $ridesClass . '" href="' . vp_h(vp_url('/admin/reports/rides')) . '">Rides</a>';
-    echo '<a class="vp-tabs__link' . $ridersClass . '" href="' . vp_h(vp_url('/admin/reports/riders')) . '">Riders</a>';
+    echo '<a class="vp-tabs__link' . $ridesClass . '" href="' . vp_h(vp_url('/reports/rides')) . '">Rides</a>';
+    echo '<a class="vp-tabs__link' . $ridersClass . '" href="' . vp_h(vp_url('/reports/riders')) . '">Riders</a>';
     echo '</nav>';
 }
 

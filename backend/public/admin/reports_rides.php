@@ -82,7 +82,7 @@ $buildUrl = static function (int $p) use ($qBase): string {
     $q = array_merge($qBase, ['page' => (string) $p]);
     $q = array_filter($q, static fn ($v) => $v !== '' && $v !== null);
 
-    return \VprideBackend\Config::url('/admin/reports/rides?' . http_build_query($q));
+    return \VprideBackend\Config::url('/reports/rides?' . http_build_query($q));
 };
 
 header('Content-Type: text/html; charset=utf-8');
@@ -97,7 +97,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Reports', 'href' => vp_url('/admin/reports/rides')],
+        ['label' => 'Reports', 'href' => vp_url('/reports/rides')],
         ['label' => 'Rides', 'href' => null],
     ]);
 ?>
@@ -112,7 +112,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card vp-card--flush-top" aria-labelledby="ride-filters">
   <div class="vp-card__pad">
     <h2 id="ride-filters" class="vp-section-title">Filters</h2>
-    <form method="get" action="<?= vp_h(vp_url('/admin/reports/rides')) ?>" class="vp-filter-form">
+    <form method="get" action="<?= vp_h(vp_url('/reports/rides')) ?>" class="vp-filter-form">
       <div class="vp-filter-grid">
         <div class="vp-field">
           <label class="vp-label" for="status">Status</label>
@@ -145,7 +145,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <div class="vp-filter-actions">
         <button type="submit" class="vp-btn vp-btn--primary">Apply filters</button>
         <?php if (Auth::can('reports.export')) { ?>
-          <a class="vp-btn vp-btn--ghost" href="<?= vp_h(vp_url('/admin/reports/rides?' . http_build_query(array_merge($qBase, ['page' => '1', 'export' => 'csv'])))) ?>">Export CSV</a>
+          <a class="vp-btn vp-btn--ghost" href="<?= vp_h(vp_url('/reports/rides?' . http_build_query(array_merge($qBase, ['page' => '1', 'export' => 'csv'])))) ?>">Export CSV</a>
         <?php } ?>
       </div>
     </form>
@@ -164,7 +164,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No rides match these filters',
               'Widen the date range, clear status, or export an empty template from CSV if you need headers only.',
-              [['label' => 'Reset filters', 'href' => vp_url('/admin/reports/rides'), 'variant' => 'primary']],
+              [['label' => 'Reset filters', 'href' => vp_url('/reports/rides'), 'variant' => 'primary']],
           );
         ?>
       <?php } else { ?>
@@ -172,7 +172,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'Rides table missing',
               'Import backend/sql/migration_rides.sql, then return to this report.',
-              [['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+              [['label' => 'Dashboard', 'href' => vp_url('/dashboard'), 'variant' => 'ghost']],
           );
         ?>
       <?php } ?>

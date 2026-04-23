@@ -103,7 +103,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                     <?php
                     vp_action_icons_open();
                     vp_action_post_icon_form(
-                        vp_url('/admin/sos'),
+                        vp_url('/sos'),
                         $csrf,
                         ['acknowledge_id' => (int) $r['id']],
                         vp_icon_svg_acknowledge(),

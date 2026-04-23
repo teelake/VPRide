@@ -71,7 +71,7 @@ require $backendRoot . '/public/admin/includes/head.php';
       <div class="vp-login__brand">
         <img
           class="vp-login__brand-icon"
-          src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+          src="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>"
           width="72"
           height="72"
           alt=""
@@ -79,7 +79,7 @@ require $backendRoot . '/public/admin/includes/head.php';
         >
         <img
           class="vp-login__brand-wordmark"
-          src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+          src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
           width="200"
           height="48"
           alt="VP Ride"

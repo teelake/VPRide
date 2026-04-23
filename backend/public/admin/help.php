@@ -46,7 +46,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <section class="vp-card" aria-labelledby="help-account-h">
     <div class="vp-card__pad">
       <h2 id="help-account-h" class="vp-section-title">Your account</h2>
-      <p class="vp-page-desc" style="margin:0 0 1rem;">Update email preferences and password from <a href="<?= vp_h(vp_url('/admin/account')) ?>">Account settings</a> (profile menu, top right).</p>
+      <p class="vp-page-desc" style="margin:0 0 1rem;">Update email preferences and password from <a href="<?= vp_h(vp_url('/account')) ?>">Account settings</a> (profile menu, top right).</p>
       <p class="vp-page-desc" style="margin:0;">Sign out from the same menu to end your session on this device.</p>
     </div>
   </section>

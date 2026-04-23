@@ -7,6 +7,6 @@ declare(strict_types=1);
     </main>
   </div>
 </div>
-<script src="<?= vp_url('/admin/assets/admin_shell.js') ?>" defer></script>
+<script src="<?= vp_url('/assets/admin_shell.js') ?>" defer></script>
 </body>
 </html>

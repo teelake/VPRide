@@ -159,7 +159,7 @@ final class Auth
     public static function requireLogin(): void
     {
         if (self::currentAdmin() === null) {
-            header('Location: ' . Config::url('/admin/login'));
+            header('Location: ' . Config::url('/login'));
             exit;
         }
     }
@@ -184,7 +184,7 @@ final class Auth
     public static function requirePermission(string $permission): void
     {
         if (self::currentAdmin() === null) {
-            header('Location: ' . Config::url('/admin/login'));
+            header('Location: ' . Config::url('/login'));
             exit;
         }
         if (! self::can($permission)) {

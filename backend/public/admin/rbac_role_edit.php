@@ -39,10 +39,10 @@ if (! $isNew && $roleRow === null) {
     require __DIR__ . '/includes/head.php';
     require __DIR__ . '/includes/app_shell_start.php';
     vp_breadcrumbs([
-        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => 'Access control', 'href' => vp_url('/rbac')],
         ['label' => 'Not found', 'href' => null],
     ]);
-    echo '<p class="vp-page-desc"><a class="vp-back" href="' . vp_h(vp_url('/admin/rbac')) . '"><span class="vp-back__arrow">←</span> Roles</a></p>';
+    echo '<p class="vp-page-desc"><a class="vp-back" href="' . vp_h(vp_url('/rbac')) . '"><span class="vp-back__arrow">←</span> Roles</a></p>';
     echo '<p>Role not found.</p>';
     require __DIR__ . '/includes/app_shell_end.php';
     exit;
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $newId = $rbac->createRole($slug, $label);
                 $ids = isset($_POST['perm']) && is_array($_POST['perm']) ? array_map('intval', $_POST['perm']) : [];
                 $rbac->setRolePermissions($newId, $ids);
-                header('Location: ' . Config::url('/admin/rbac/role/' . $newId));
+                header('Location: ' . Config::url('/rbac/role/' . $newId));
                 exit;
             } catch (Throwable $e) {
                 $error = $e->getMessage();
@@ -107,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$action = $isNew ? vp_url('/admin/rbac/role/new') : vp_url('/admin/rbac/role/' . $roleId);
+$action = $isNew ? vp_url('/rbac/role/new') : vp_url('/rbac/role/' . $roleId);
 
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = ($isNew ? 'New role' : 'Edit role') . ' · VP Ride Console';
@@ -121,11 +121,11 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero vp-page-hero--editor">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => 'Access control', 'href' => vp_url('/rbac')],
         ['label' => $isNew ? 'New role' : 'Edit role', 'href' => null],
     ]);
 ?>
-  <a class="vp-back" href="<?= vp_url('/admin/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
+  <a class="vp-back" href="<?= vp_url('/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
   <h1 class="vp-page-title"><?= $isNew ? 'New role' : 'Edit role' ?></h1>
   <p class="vp-page-desc"><?= $isSuper ? 'This role has full console access. Permission checkboxes are not used.' : 'Toggle capabilities for this role. Users must sign out and back in for session changes to apply everywhere.' ?></p>
 </header>
@@ -191,7 +191,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
   <div class="vp-form-actions">
     <button type="submit" class="vp-btn vp-btn--primary"><?= $isNew ? 'Create role' : 'Save changes' ?></button>
-    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/rbac') ?>">Cancel</a>
+    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/rbac') ?>">Cancel</a>
   </div>
 </form>
 

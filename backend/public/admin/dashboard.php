@@ -213,7 +213,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                               : '—'))) ?></dd>
                     </div>
                   </dl>
-                  <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
+                  <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/rides') ?>">All bookings</a>
                 </div>
                 <div class="vp-dash-featured__visual">
                   <div class="vp-dash-featured__map">
@@ -370,7 +370,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           <div class="vp-card__pad">
             <div class="vp-dash-feed__head">
               <h2 class="vp-dash-feed__title">Recent activity</h2>
-              <a class="vp-dash-feed__all" href="<?= vp_url('/admin/rides') ?>">View all</a>
+              <a class="vp-dash-feed__all" href="<?= vp_url('/rides') ?>">View all</a>
             </div>
             <?php if ($activityRides !== []) { ?>
               <p class="vp-dash-feed__preview-note">Latest <?= (int) $dashActivityPreviewLimit ?> rides · full queue in Bookings.</p>
@@ -405,8 +405,8 @@ require __DIR__ . '/includes/app_shell_start.php';
         </div>
         <div class="vp-bi-section__actions">
           <?php if (Auth::can('reports.view')) { ?>
-            <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/reports/rides') ?>">Ride reports</a>
-            <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/reports/riders') ?>">Rider reports</a>
+            <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/reports/rides') ?>">Ride reports</a>
+            <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/reports/riders') ?>">Rider reports</a>
           <?php } ?>
         </div>
       </div>
@@ -546,9 +546,9 @@ require __DIR__ . '/includes/app_shell_start.php';
             <h2 id="recent-rides-heading" class="vp-dash-table-title">Recent bookings</h2>
             <div class="vp-card__head-actions">
               <?php if (Auth::can('reports.view')) { ?>
-                <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/reports/rides') ?>">Reports</a>
+                <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/reports/rides') ?>">Reports</a>
               <?php } ?>
-              <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/admin/rides') ?>">All bookings</a>
+              <a class="vp-btn vp-btn--soft vp-btn--sm" href="<?= vp_url('/rides') ?>">All bookings</a>
             </div>
           </div>
           <?php if ($tableRides !== []) { ?>
@@ -588,7 +588,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               vp_empty_state(
                   'No bookings yet',
                   'Latest requests from the app will appear here once riders start booking.',
-                  [['label' => 'View all bookings', 'href' => vp_url('/admin/rides'), 'variant' => 'primary']],
+                  [['label' => 'View all bookings', 'href' => vp_url('/rides'), 'variant' => 'primary']],
               );
             ?>
           <?php } else { ?>

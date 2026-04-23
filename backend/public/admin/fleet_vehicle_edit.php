@@ -55,12 +55,12 @@ if (! $isNew) {
         <div class="vp-card"><div class="vp-card__pad">
           <?php
             vp_breadcrumbs([
-                ['label' => 'Car management', 'href' => vp_url('/admin/fleet')],
+                ['label' => 'Car management', 'href' => vp_url('/fleet')],
                 ['label' => 'Not found', 'href' => null],
             ]);
         ?>
           <h1 class="vp-page-title">Vehicle not found</h1>
-          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/fleet') ?>"><span class="vp-back__arrow">←</span> Back to fleet</a></p>
+          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/fleet') ?>"><span class="vp-back__arrow">←</span> Back to fleet</a></p>
         </div></div>
         <?php
         require __DIR__ . '/includes/app_shell_end.php';
@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         try {
             if ($isNew) {
                 $newId = $repo->insert($payload);
-                header('Location: ' . Config::url('/admin/fleet/' . $newId));
+                header('Location: ' . Config::url('/fleet/' . $newId));
                 exit;
             }
             $repo->update($id, $payload);
@@ -134,7 +134,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Car management', 'href' => vp_url('/admin/fleet')],
+        ['label' => 'Car management', 'href' => vp_url('/fleet')],
         ['label' => $titleBit, 'href' => null],
     ]);
 ?>
@@ -151,7 +151,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/fleet/new' : '/admin/fleet/' . $id)) ?>" class="vp-stack-form vp-stack-form--wide">
+    <form method="post" action="<?= vp_h(vp_url($isNew ? '/fleet/new' : '/fleet/' . $id)) ?>" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="ownership">Vehicle ownership</label>
@@ -211,7 +211,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <div class="vp-toolbar">
         <button type="submit" class="vp-btn vp-btn--primary">Save</button>
-        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/fleet') ?>">Cancel</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/fleet') ?>">Cancel</a>
       </div>
     </form>
   </div>

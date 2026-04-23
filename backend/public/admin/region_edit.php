@@ -49,12 +49,12 @@ if ($isNew) {
         <div class="vp-card"><div class="vp-card__pad">
           <?php
             vp_breadcrumbs([
-                ['label' => 'Regions', 'href' => vp_url('/admin/regions')],
+                ['label' => 'Regions', 'href' => vp_url('/regions')],
                 ['label' => 'Not found', 'href' => null],
             ]);
         ?>
           <h1 class="vp-page-title">Configuration not found</h1>
-          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
+          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/regions') ?>"><span class="vp-back__arrow">←</span> Back to regions</a></p>
         </div></div>
         <?php
         require __DIR__ . '/includes/app_shell_end.php';
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
                 if ($isNew) {
                     $newId = $repo->createDraft($label, $json, $admin[0]);
-                    header('Location: ' . Config::url('/admin/region/' . $newId));
+                    header('Location: ' . Config::url('/region/' . $newId));
                     exit;
                 }
                 $repo->updateConfig($id, $label, $json, $admin[0]);
@@ -240,11 +240,11 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero vp-page-hero--editor">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Regions', 'href' => vp_url('/admin/regions')],
+        ['label' => 'Regions', 'href' => vp_url('/regions')],
         ['label' => $isNew ? 'New draft' : ('Edit · ' . $label), 'href' => null],
     ]);
 ?>
-  <a class="vp-back" href="<?= vp_url('/admin/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
+  <a class="vp-back" href="<?= vp_url('/regions') ?>"><span class="vp-back__arrow">←</span> Regions</a>
   <h1 class="vp-page-title"><?= $isNew ? 'New configuration' : 'Edit configuration' ?></h1>
   <p class="vp-page-desc">
     Structured editor — no raw JSON required. Changes go live only after you <strong>Go live</strong> on the regions list.
@@ -261,7 +261,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-alert vp-alert--success" role="status"><?= vp_h($message) ?></div>
 <?php } ?>
 
-<form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/region/new' : '/admin/region/' . $id)) ?>" class="vp-region-form">
+<form method="post" action="<?= vp_h(vp_url($isNew ? '/region/new' : '/region/' . $id)) ?>" class="vp-region-form">
   <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
 
   <section class="vp-card vp-card--region">
@@ -468,7 +468,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
   <div class="vp-form-actions vp-form-actions--flush">
     <button type="submit" class="vp-btn vp-btn--primary"><?= $isNew ? 'Create draft' : 'Save changes' ?></button>
-    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/regions') ?>">Cancel</a>
+    <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/regions') ?>">Cancel</a>
   </div>
 </form>
 
@@ -577,5 +577,5 @@ require __DIR__ . '/includes/app_shell_start.php';
 </div>
 </div>
 
-<script defer src="<?= vp_url('/admin/assets/region_form.js') ?>"></script>
+<script defer src="<?= vp_url('/assets/region_form.js') ?>"></script>
 <?php require __DIR__ . '/includes/app_shell_end.php'; ?>

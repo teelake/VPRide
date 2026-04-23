@@ -194,7 +194,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card" aria-labelledby="plat-heading">
   <div class="vp-card__pad">
     <h2 id="plat-heading" class="vp-section-title">Pricing &amp; loyalty defaults</h2>
-    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/admin/promotions') ?>">
+    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="promotions_ui_tab" value="pricing">
       <input type="hidden" name="save_platform" value="1">
@@ -256,7 +256,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:1rem;">
       <h2 id="promo-list-heading" class="vp-section-title" style="margin:0;">All promotions</h2>
-      <a class="vp-btn vp-btn--primary vp-btn--sm" href="<?= vp_url('/admin/promotions?tab=editor') ?>">New promotion</a>
+      <a class="vp-btn vp-btn--primary vp-btn--sm" href="<?= vp_url('/promotions?tab=editor') ?>">New promotion</a>
     </div>
     <?php if ($list === []) { ?>
       <p class="vp-field-hint">None yet. Use <strong>New / edit</strong> to create one.</p>
@@ -286,7 +286,7 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__actions-col">
                   <?php
                   vp_action_icons_open();
-                  vp_action_edit(vp_url('/admin/promotions?edit=' . (int) $p['id']));
+                  vp_action_edit(vp_url('/promotions?edit=' . (int) $p['id']));
                   vp_action_icons_close();
                   ?>
                 </td>
@@ -305,7 +305,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 id="promo-form-heading" class="vp-section-title"><?= $editRow !== null ? 'Edit promotion' : 'New promotion' ?></h2>
     <p class="vp-field-hint" style="margin:-0.35rem 0 1rem;">Automatic promos can use a JSON schedule (happy hour). Coupon promos require a code riders enter when booking (if enabled in Settings).</p>
-    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/admin/promotions') ?>">
+    <form method="post" class="vp-stack-form vp-stack-form--wide" action="<?= vp_url('/promotions') ?>">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="promotions_ui_tab" value="editor">
       <input type="hidden" name="save_promotion" value="1">
@@ -383,7 +383,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <button type="submit" class="vp-btn vp-btn--primary"><?= $editRow !== null ? 'Update promotion' : 'Create promotion' ?></button>
       <?php if ($editRow !== null) { ?>
-        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/promotions?tab=catalog') ?>">Cancel edit</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/promotions?tab=catalog') ?>">Cancel edit</a>
       <?php } ?>
     </form>
   </div>

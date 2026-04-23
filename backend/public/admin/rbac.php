@@ -62,8 +62,8 @@ require __DIR__ . '/includes/app_shell_start.php';
 <?php } ?>
 
 <div class="vp-toolbar">
-  <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/rbac/role/new') ?>">New role</a>
-  <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/rbac/permissions') ?>">Permission catalog</a>
+  <a class="vp-btn vp-btn--primary" href="<?= vp_url('/rbac/role/new') ?>">New role</a>
+  <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/rbac/permissions') ?>">Permission catalog</a>
 </div>
 
 <section class="vp-card" aria-labelledby="roles-heading">
@@ -93,10 +93,10 @@ require __DIR__ . '/includes/app_shell_start.php';
               <td class="vp-table__actions-col">
                 <?php
                 vp_action_icons_open();
-                vp_action_edit(vp_url('/admin/rbac/role/' . (int) $r['id']));
+                vp_action_edit(vp_url('/rbac/role/' . (int) $r['id']));
                 if ((int) $r['is_system'] !== 1 && (int) $r['admin_count'] === 0) {
                     vp_action_delete_form(
-                        vp_url('/admin/rbac'),
+                        vp_url('/rbac'),
                         $csrf,
                         ['delete_role_id' => (int) $r['id']],
                         'Permanently delete role “' . (string) $r['label'] . '” (' . (string) $r['slug'] . ')? Reassign any admins first.',
@@ -116,7 +116,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card vp-card--note" id="catalog" aria-labelledby="perm-preview">
   <div class="vp-card__pad">
     <h2 id="perm-preview" class="vp-section-title">Permission catalog (read-only)</h2>
-    <p class="vp-page-desc" style="margin-top:-0.5rem;">Add new capability keys on the <a href="<?= vp_h(vp_url('/admin/rbac/permissions')) ?>">permission catalog</a> page. Assign them to roles when editing a role.</p>
+    <p class="vp-page-desc" style="margin-top:-0.5rem;">Add new capability keys on the <a href="<?= vp_h(vp_url('/rbac/permissions')) ?>">permission catalog</a> page. Assign them to roles when editing a role.</p>
     <div class="vp-table-wrap">
       <table class="vp-table vp-table--compact">
         <thead>

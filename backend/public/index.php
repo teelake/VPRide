@@ -35,7 +35,7 @@ if (is_readable($vendorAutoload)) {
 }
 
 /**
- * Build the logical path for routing (/admin/login, /api/v1/...).
+ * Build the logical path for routing (/login, /api/v1/...).
  * Handles subfolders, RewriteBase, and some hosts that put /index.php in REQUEST_URI.
  */
 $rawPath = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
@@ -79,20 +79,38 @@ if ($path === '') {
 }
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
+// Legacy public URLs used /admin/...; redirect to console paths without /admin (301).
+if ($path === '/admin' || $path === '/admin/') {
+    $legacyTarget = '/dashboard';
+} elseif (str_starts_with($path, '/admin/')) {
+    $rest = substr($path, strlen('/admin')) ?: '/';
+    $legacyTarget = $rest === '' ? '/dashboard' : $rest;
+} else {
+    $legacyTarget = null;
+}
+if ($legacyTarget !== null) {
+    $qs = (string) ($_SERVER['QUERY_STRING'] ?? '');
+    $loc = Config::url($legacyTarget) . ($qs !== '' ? '?' . $qs : '');
+    header('Location: ' . $loc, true, 301);
+    exit;
+}
+
 // Preload RBAC so Auth::can() always resolves (guards against partial deploys / opcache oddities).
-if (str_starts_with($path, '/admin')) {
+if (! str_starts_with($path, '/api/')
+    && ! str_starts_with($path, '/rider/')
+    && ! str_starts_with($path, '/assets/')) {
     require_once $backendRoot . '/src/RbacRepository.php';
     require_once $backendRoot . '/src/RbacRuntime.php';
 }
 
 if ($path === '/' && $method === 'GET') {
-    header('Location: ' . Config::url('/admin/login'));
+    header('Location: ' . Config::url('/login'));
     exit;
 }
 
-// Serve anything under /admin/assets/ from public/admin/assets/ (fixes favicon, PNG, JS when all traffic goes through this front controller).
-if ($method === 'GET' && str_starts_with($path, '/admin/assets/')) {
-    $rel = substr($path, strlen('/admin/assets/'));
+// Console static files: /assets/* → public/admin/assets/ (CSS, JS, brand images, favicon).
+if ($method === 'GET' && str_starts_with($path, '/assets/')) {
+    $rel = substr($path, strlen('/assets/'));
     if ($rel === '' || str_contains($rel, '..') || str_contains($rel, "\0")) {
         http_response_code(404);
         exit;
@@ -305,185 +323,185 @@ if ($path === '/api/v1/rides' && in_array($method, ['POST', 'OPTIONS'], true)) {
     exit;
 }
 
-if ($path === '/admin/login' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/login' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/login.php';
     exit;
 }
 
-if ($path === '/admin/forgot-password' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/forgot-password' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/forgot_password.php';
     exit;
 }
 
-if ($path === '/admin/reset-password' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/reset-password' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/reset_password.php';
     exit;
 }
 
-if ($path === '/admin/account' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/account' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/account.php';
     exit;
 }
 
-if ($path === '/admin/logout' && $method === 'POST') {
+if ($path === '/logout' && $method === 'POST') {
     require $backendRoot . '/public/admin/logout.php';
     exit;
 }
 
-if ($path === '/admin' || $path === '/admin/dashboard') {
+if ($path === '/dashboard') {
     require $backendRoot . '/public/admin/dashboard.php';
     exit;
 }
 
-if ($path === '/admin/search' && $method === 'GET') {
+if ($path === '/search' && $method === 'GET') {
     require $backendRoot . '/public/admin/search.php';
     exit;
 }
 
-if ($path === '/admin/regions' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/regions' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/regions.php';
     exit;
 }
 
-if (preg_match('#^/admin/rides/(\\d+)/dispatch$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+if (preg_match('#^/rides/(\\d+)/dispatch$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_RIDE_DISPATCH_ID = (int) $m[1];
     require $backendRoot . '/public/admin/ride_dispatch.php';
     exit;
 }
 
-if ($path === '/admin/rides/create' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/rides/create' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/ride_create.php';
     exit;
 }
 
-if ($path === '/admin/rides' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/rides' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/rides.php';
     exit;
 }
 
-if ($path === '/admin/sos' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/sos' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/sos.php';
     exit;
 }
 
-if ($path === '/admin/promotions' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/promotions' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/promotions.php';
     exit;
 }
 
-if ($path === '/admin/riders' && $method === 'GET') {
+if ($path === '/riders' && $method === 'GET') {
     require $backendRoot . '/public/admin/riders.php';
     exit;
 }
 
-if ($path === '/admin/drivers/new' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/drivers/new' && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_DRIVER_NEW = true;
     require $backendRoot . '/public/admin/driver_edit.php';
     exit;
 }
 
-if (preg_match('#^/admin/drivers/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+if (preg_match('#^/drivers/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_DRIVER_ID = (int) $m[1];
     require $backendRoot . '/public/admin/driver_edit.php';
     exit;
 }
 
-if ($path === '/admin/drivers' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/drivers' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/drivers.php';
     exit;
 }
 
-if ($path === '/admin/users' && $method === 'GET') {
+if ($path === '/users' && $method === 'GET') {
     require $backendRoot . '/public/admin/users.php';
     exit;
 }
 
-if ($path === '/admin/schedule' && $method === 'GET') {
+if ($path === '/schedule' && $method === 'GET') {
     require $backendRoot . '/public/admin/schedule.php';
     exit;
 }
 
-if ($path === '/admin/fleet/new' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/fleet/new' && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_FLEET_VEHICLE_NEW = true;
     require $backendRoot . '/public/admin/fleet_vehicle_edit.php';
     exit;
 }
 
-if (preg_match('#^/admin/fleet/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+if (preg_match('#^/fleet/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_FLEET_VEHICLE_ID = (int) $m[1];
     require $backendRoot . '/public/admin/fleet_vehicle_edit.php';
     exit;
 }
 
-if ($path === '/admin/fleet' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/fleet' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/fleet.php';
     exit;
 }
 
-if ($path === '/admin/help' && $method === 'GET') {
+if ($path === '/help' && $method === 'GET') {
     require $backendRoot . '/public/admin/help.php';
     exit;
 }
 
-if ($path === '/admin/team' && $method === 'GET') {
+if ($path === '/team' && $method === 'GET') {
     require $backendRoot . '/public/admin/team.php';
     exit;
 }
 
-if ($path === '/admin/team/new' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/team/new' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/team_admin_new.php';
     exit;
 }
 
-if ($path === '/admin/settings' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/settings' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/settings.php';
     exit;
 }
 
-if ($path === '/admin/reports' && $method === 'GET') {
-    header('Location: ' . Config::url('/admin/reports/rides'));
+if ($path === '/reports' && $method === 'GET') {
+    header('Location: ' . Config::url('/reports/rides'));
     exit;
 }
 
-if ($path === '/admin/reports/rides' && $method === 'GET') {
+if ($path === '/reports/rides' && $method === 'GET') {
     require $backendRoot . '/public/admin/reports_rides.php';
     exit;
 }
 
-if ($path === '/admin/reports/riders' && $method === 'GET') {
+if ($path === '/reports/riders' && $method === 'GET') {
     require $backendRoot . '/public/admin/reports_riders.php';
     exit;
 }
 
-if ($path === '/admin/rbac' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/rbac' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/rbac.php';
     exit;
 }
 
-if ($path === '/admin/rbac/permissions' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/rbac/permissions' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/rbac_permissions.php';
     exit;
 }
 
-if ($path === '/admin/rbac/role/new' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/rbac/role/new' && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_RBAC_NEW = true;
     require $backendRoot . '/public/admin/rbac_role_edit.php';
     exit;
 }
 
-if (preg_match('#^/admin/rbac/role/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+if (preg_match('#^/rbac/role/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_RBAC_ROLE_ID = (int) $m[1];
     require $backendRoot . '/public/admin/rbac_role_edit.php';
     exit;
 }
 
-if (preg_match('#^/admin/region/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
+if (preg_match('#^/region/(\\d+)$#', $path, $m) && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_REGION_ID = (int) $m[1];
     require $backendRoot . '/public/admin/region_edit.php';
     exit;
 }
 
-if ($path === '/admin/region/new' && in_array($method, ['GET', 'POST'], true)) {
+if ($path === '/region/new' && in_array($method, ['GET', 'POST'], true)) {
     $_ROUTE_REGION_NEW = true;
     require $backendRoot . '/public/admin/region_edit.php';
     exit;

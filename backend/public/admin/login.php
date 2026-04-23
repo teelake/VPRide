@@ -21,7 +21,7 @@ if (isset($_GET['reset']) && (string) $_GET['reset'] === '1') {
 }
 
 if (Auth::currentAdmin() !== null) {
-    header('Location: ' . Config::url('/admin/dashboard'));
+    header('Location: ' . Config::url('/dashboard'));
     exit;
 }
 
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($email === '' || $password === '') {
             $error = 'Email and password required.';
         } elseif (Auth::login(Database::pdo(), $email, $password)) {
-            header('Location: ' . Config::url('/admin/dashboard'));
+            header('Location: ' . Config::url('/dashboard'));
             exit;
         } else {
             $error = 'Invalid credentials.';
@@ -59,7 +59,7 @@ require __DIR__ . '/includes/head.php';
           <div class="vp-login__brand" aria-hidden="true">
             <img
               class="vp-login__brand-icon"
-              src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+              src="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>"
               width="72"
               height="72"
               alt=""
@@ -67,7 +67,7 @@ require __DIR__ . '/includes/head.php';
             >
             <img
               class="vp-login__brand-wordmark"
-              src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+              src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
               width="200"
               height="48"
               alt="VP Ride"
@@ -85,7 +85,7 @@ require __DIR__ . '/includes/head.php';
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
       <?php } ?>
 
-      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form">
+      <form method="post" action="<?= vp_h(Config::url('/login')) ?>" class="vp-login__form">
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <div class="vp-field">
           <label class="vp-label" for="email">Work email</label>
@@ -97,7 +97,7 @@ require __DIR__ . '/includes/head.php';
         </div>
         <button type="submit" class="vp-btn vp-btn--primary vp-login__submit">Sign in</button>
       </form>
-      <p class="vp-login__forgot"><a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>">Forgot password?</a></p>
+      <p class="vp-login__forgot"><a href="<?= vp_h(Config::url('/forgot-password')) ?>">Forgot password?</a></p>
       </div>
     </div>
   </div>

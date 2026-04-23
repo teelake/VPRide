@@ -38,7 +38,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <?php if (Auth::can('rbac.manage')) { ?>
   <div class="vp-toolbar">
-    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/team/new') ?>">New administrator</a>
+    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/team/new') ?>">New administrator</a>
   </div>
 <?php } ?>
 
@@ -50,9 +50,9 @@ require __DIR__ . '/includes/app_shell_start.php';
       <?php
         $teamActions = [];
         if (Auth::can('rbac.manage')) {
-            $teamActions[] = ['label' => 'New administrator', 'href' => vp_url('/admin/team/new'), 'variant' => 'primary'];
+            $teamActions[] = ['label' => 'New administrator', 'href' => vp_url('/team/new'), 'variant' => 'primary'];
         }
-        $teamActions[] = ['label' => 'Roles & access', 'href' => vp_url('/admin/rbac'), 'variant' => 'ghost'];
+        $teamActions[] = ['label' => 'Roles & access', 'href' => vp_url('/rbac'), 'variant' => 'ghost'];
         vp_empty_state(
             'No administrators listed',
             'This database has no rows in the admins table yet, or the query failed. Seed an owner account or create one here.',

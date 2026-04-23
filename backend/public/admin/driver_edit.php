@@ -68,12 +68,12 @@ if (! $isNew) {
         <div class="vp-card"><div class="vp-card__pad">
           <?php
             vp_breadcrumbs([
-                ['label' => 'Drivers', 'href' => vp_url('/admin/drivers')],
+                ['label' => 'Drivers', 'href' => vp_url('/drivers')],
                 ['label' => 'Not found', 'href' => null],
             ]);
         ?>
           <h1 class="vp-page-title">Driver not found</h1>
-          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/admin/drivers') ?>"><span class="vp-back__arrow">←</span> Back to drivers</a></p>
+          <p class="vp-page-desc"><a class="vp-back" href="<?= vp_url('/drivers') ?>"><span class="vp-back__arrow">←</span> Back to drivers</a></p>
         </div></div>
         <?php
         require __DIR__ . '/includes/app_shell_end.php';
@@ -191,7 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($isNew) {
-                    $loc = Config::url('/admin/drivers/' . $newId);
+                    $loc = Config::url('/drivers/' . $newId);
                     if ($generatedPassword !== null) {
                         $loc .= (str_contains($loc, '?') ? '&' : '?') . ($driverMailOk ? 'welcome=1' : 'driver_mail=0');
                     }
@@ -230,12 +230,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Drivers', 'href' => vp_url('/admin/drivers')],
+        ['label' => 'Drivers', 'href' => vp_url('/drivers')],
         ['label' => $titleBit, 'href' => null],
     ]);
 ?>
   <h1 class="vp-page-title"><?= vp_h($titleBit) ?></h1>
-  <p class="vp-page-desc">Assign an <strong>active</strong> vehicle: owner-operators need a <strong>personal</strong> car row; company drivers need a <strong>company</strong> car row from <a href="<?= vp_h(vp_url('/admin/fleet')) ?>">Car management</a>.</p>
+  <p class="vp-page-desc">Assign an <strong>active</strong> vehicle: owner-operators need a <strong>personal</strong> car row; company drivers need a <strong>company</strong> car row from <a href="<?= vp_h(vp_url('/fleet')) ?>">Car management</a>.</p>
 </header>
 
 <?php if ($message !== '') { ?>
@@ -247,7 +247,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_h(vp_url($isNew ? '/admin/drivers/new' : '/admin/drivers/' . $id)) ?>" class="vp-stack-form vp-stack-form--wide">
+    <form method="post" action="<?= vp_h(vp_url($isNew ? '/drivers/new' : '/drivers/' . $id)) ?>" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="full_name">Full name</label>
@@ -310,7 +310,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </div>
       <div class="vp-toolbar">
         <button type="submit" class="vp-btn vp-btn--primary">Save</button>
-        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/drivers') ?>">Cancel</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/drivers') ?>">Cancel</a>
       </div>
     </form>
   </div>

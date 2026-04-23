@@ -61,7 +61,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <div class="vp-toolbar">
   <?php if ($canManageRegions) { ?>
-    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/region/new') ?>">New draft</a>
+    <a class="vp-btn vp-btn--primary" href="<?= vp_url('/region/new') ?>">New draft</a>
   <?php } ?>
 </div>
 
@@ -81,8 +81,8 @@ require __DIR__ . '/includes/app_shell_start.php';
             'No region profiles yet',
             'Seed the database or create your first draft. Only one profile can be live at a time; riders pick it up on the next app sync.',
             $canManageRegions
-                ? [['label' => 'New draft', 'href' => vp_url('/admin/region/new'), 'variant' => 'primary']]
-                : [['label' => 'Back to overview', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+                ? [['label' => 'New draft', 'href' => vp_url('/region/new'), 'variant' => 'primary']]
+                : [['label' => 'Back to overview', 'href' => vp_url('/dashboard'), 'variant' => 'ghost']],
         );
 ?>
       <?php if ($canManageRegions) { ?>
@@ -119,10 +119,10 @@ require __DIR__ . '/includes/app_shell_start.php';
                   <?php if ($canManageRegions) { ?>
                     <?php
                     vp_action_icons_open();
-                    vp_action_edit(vp_url('/admin/region/' . (int) $r['id']));
+                    vp_action_edit(vp_url('/region/' . (int) $r['id']));
                     if ((int) $r['is_active'] !== 1) {
                         vp_action_publish_form(
-                            vp_url('/admin/regions'),
+                            vp_url('/regions'),
                             $csrf,
                             ['activate_id' => (int) $r['id']],
                             'Make "' . (string) $r['label'] . '" the live region for all rider apps? They will pick this up on the next config sync.',

@@ -58,11 +58,11 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero vp-page-hero--editor">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Access control', 'href' => vp_url('/admin/rbac')],
+        ['label' => 'Access control', 'href' => vp_url('/rbac')],
         ['label' => 'Permission catalog', 'href' => null],
     ]);
 ?>
-  <a class="vp-back" href="<?= vp_url('/admin/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
+  <a class="vp-back" href="<?= vp_url('/rbac') ?>"><span class="vp-back__arrow">←</span> Roles</a>
   <h1 class="vp-page-title">Permission catalog</h1>
   <p class="vp-page-desc">New keys appear in role editors immediately. The mobile app and public APIs do not use these — they only gate the console.</p>
 </header>
@@ -77,7 +77,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card">
   <div class="vp-card__pad">
     <h2 class="vp-section-title">Add permission</h2>
-    <form method="post" action="<?= vp_url('/admin/rbac/permissions') ?>" class="vp-stack-form vp-stack-form--wide">
+    <form method="post" action="<?= vp_url('/rbac/permissions') ?>" class="vp-stack-form vp-stack-form--wide">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <div class="vp-field">
         <label class="vp-label" for="slug">Key</label>

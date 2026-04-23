@@ -10,7 +10,7 @@ require_once __DIR__ . '/helpers.php';
   <div class="vp-login__aside-content">
     <img
       class="vp-login__aside-logo"
-      src="<?= vp_url('/admin/assets/brand/logo_horizontal_yellow_on_black.png') ?>"
+      src="<?= vp_url('/assets/brand/logo_horizontal_yellow_on_black.png') ?>"
       width="220"
       height="52"
       alt=""

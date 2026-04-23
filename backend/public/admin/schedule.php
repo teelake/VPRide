@@ -28,7 +28,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Schedule</h1>
-  <p class="vp-page-desc">Plan shifts, recurring availability, and dispatch windows. This area is not wired to live data yet—use <a href="<?= vp_h(vp_url('/admin/rides')) ?>">Bookings</a> for current ride requests.</p>
+  <p class="vp-page-desc">Plan shifts, recurring availability, and dispatch windows. This area is not wired to live data yet—use <a href="<?= vp_h(vp_url('/rides')) ?>">Bookings</a> for current ride requests.</p>
 </header>
 
 <section class="vp-card vp-card--note" aria-labelledby="schedule-note-h">

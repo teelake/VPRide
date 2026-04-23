@@ -88,7 +88,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'Dashboard', 'href' => vp_url('/dashboard')],
         ['label' => 'Account', 'href' => null],
     ]);
 ?>
@@ -107,7 +107,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <h2 class="vp-section-title">Profile</h2>
     <p class="vp-page-desc" style="margin-top:-0.25rem;">Role: <strong><?= vp_h($profile['role_label']) ?></strong> <span class="vp-table__muted">(<?= vp_h($profile['role_slug']) ?>)</span></p>
-    <form method="post" action="<?= vp_url('/admin/account') ?>" class="vp-stack-form vp-stack-form--narrow">
+    <form method="post" action="<?= vp_url('/account') ?>" class="vp-stack-form vp-stack-form--narrow">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="_action" value="profile">
       <div class="vp-field">
@@ -128,7 +128,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card">
   <div class="vp-card__pad">
     <h2 class="vp-section-title">Change password</h2>
-    <form method="post" action="<?= vp_url('/admin/account') ?>" class="vp-stack-form vp-stack-form--narrow">
+    <form method="post" action="<?= vp_url('/account') ?>" class="vp-stack-form vp-stack-form--narrow">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
       <input type="hidden" name="_action" value="password">
       <div class="vp-field">

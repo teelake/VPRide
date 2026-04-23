@@ -14,7 +14,7 @@ Auth::startSession();
 Auth::requireLogin();
 
 if (! Auth::can('riders.view') && ! Auth::can('team.view') && ! Auth::can('rides.view')) {
-    header('Location: ' . Config::url('/admin/dashboard'));
+    header('Location: ' . Config::url('/dashboard'));
     exit;
 }
 
@@ -37,7 +37,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <div class="vp-hub-grid" role="list">
   <?php if (Auth::can('riders.view')) { ?>
-    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/riders')) ?>" role="listitem">
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/riders')) ?>" role="listitem">
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_riders() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Rider directory</span>
@@ -47,7 +47,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     </a>
   <?php } ?>
   <?php if (Auth::can('rides.view')) { ?>
-    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/drivers')) ?>" role="listitem">
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/drivers')) ?>" role="listitem">
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_drivers() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Driver directory</span>
@@ -55,7 +55,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       </span>
       <span class="vp-hub-card__chev" aria-hidden="true"><?= vp_nav_icon_chevron_right() ?></span>
     </a>
-    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/fleet')) ?>" role="listitem">
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/fleet')) ?>" role="listitem">
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_fleet() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Car management</span>
@@ -65,7 +65,7 @@ require __DIR__ . '/includes/app_shell_start.php';
     </a>
   <?php } ?>
   <?php if (Auth::can('team.view')) { ?>
-    <a class="vp-hub-card" href="<?= vp_h(vp_url('/admin/team')) ?>" role="listitem">
+    <a class="vp-hub-card" href="<?= vp_h(vp_url('/team')) ?>" role="listitem">
       <span class="vp-hub-card__icon" aria-hidden="true"><?= vp_nav_icon_team() ?></span>
       <span class="vp-hub-card__body">
         <span class="vp-hub-card__title">Team &amp; admins</span>

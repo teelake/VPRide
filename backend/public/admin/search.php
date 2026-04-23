@@ -17,13 +17,13 @@ $q = trim((string) ($_GET['q'] ?? ''));
 $qs = $q !== '' ? ('?q=' . rawurlencode($q)) : '';
 
 if (Auth::can('riders.view')) {
-    header('Location: ' . Config::url('/admin/riders' . $qs));
+    header('Location: ' . Config::url('/riders' . $qs));
     exit;
 }
 if (Auth::can('rides.view')) {
-    header('Location: ' . Config::url('/admin/rides'));
+    header('Location: ' . Config::url('/rides'));
     exit;
 }
 
-header('Location: ' . Config::url('/admin/dashboard'));
+header('Location: ' . Config::url('/dashboard'));
 exit;

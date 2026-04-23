@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             try {
                 $userRepo->create($emailVal, $displayNameVal, $pass, $roleIdVal);
-                header('Location: ' . Config::url('/admin/team'));
+                header('Location: ' . Config::url('/team'));
                 exit;
             } catch (Throwable $e) {
                 $error = $e->getMessage();
@@ -67,11 +67,11 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero vp-page-hero--editor">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Team', 'href' => vp_url('/admin/team')],
+        ['label' => 'Team', 'href' => vp_url('/team')],
         ['label' => 'New administrator', 'href' => null],
     ]);
 ?>
-  <a class="vp-back" href="<?= vp_url('/admin/team') ?>"><span class="vp-back__arrow">←</span> Team</a>
+  <a class="vp-back" href="<?= vp_url('/team') ?>"><span class="vp-back__arrow">←</span> Team</a>
   <h1 class="vp-page-title">New administrator</h1>
   <p class="vp-page-desc">Create a console login. The person should sign in with this email and password.</p>
 </header>
@@ -82,7 +82,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <section class="vp-card">
   <div class="vp-card__pad">
-    <form method="post" action="<?= vp_url('/admin/team/new') ?>" class="vp-stack-form vp-stack-form--narrow">
+    <form method="post" action="<?= vp_url('/team/new') ?>" class="vp-stack-form vp-stack-form--narrow">
       <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
 
       <div class="vp-field">
@@ -125,7 +125,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
       <div class="vp-form-actions" style="border:none; padding-top:0; margin-top:0;">
         <button type="submit" class="vp-btn vp-btn--primary">Create administrator</button>
-        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/team') ?>">Cancel</a>
+        <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/team') ?>">Cancel</a>
       </div>
     </form>
   </div>

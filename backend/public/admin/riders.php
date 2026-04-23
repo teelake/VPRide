@@ -40,7 +40,7 @@ $buildPageUrl = static function (int $p) use ($qBase): string {
     $qq = array_merge($qBase, ['page' => (string) $p]);
     $qq = array_filter($qq, static fn ($v) => $v !== '' && $v !== null);
 
-    return \VprideBackend\Config::url('/admin/riders?' . http_build_query($qq));
+    return \VprideBackend\Config::url('/riders?' . http_build_query($qq));
 };
 
 header('Content-Type: text/html; charset=utf-8');
@@ -63,10 +63,10 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-toolbar__left"></div>
   <div class="vp-toolbar__actions">
     <?php if (Auth::can('reports.view')) { ?>
-      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/riders') ?>">Reports &amp; export</a>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/reports/riders') ?>">Reports &amp; export</a>
     <?php } ?>
     <?php if (Auth::can('settings.manage')) { ?>
-      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/settings') ?>">Mobile features</a>
+      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/settings') ?>">Mobile features</a>
     <?php } ?>
   </div>
 </div>
@@ -75,7 +75,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-card__pad">
     <div class="vp-card__head-row">
       <h2 id="riders-heading" class="vp-section-title" style="margin:0;">Directory</h2>
-      <form method="get" action="<?= vp_h(vp_url('/admin/riders')) ?>" class="vp-inline-search">
+      <form method="get" action="<?= vp_h(vp_url('/riders')) ?>" class="vp-inline-search">
         <input type="hidden" name="per_page" value="<?= (int) $perPage ?>">
         <label class="vp-sr-only" for="rider-q">Search riders</label>
         <input class="vp-input vp-input--search" id="rider-q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Search email, name, ID…" autocomplete="off">
@@ -93,9 +93,9 @@ require __DIR__ . '/includes/app_shell_start.php';
         ?>
       <?php } elseif ($q !== '') { ?>
         <?php
-          $searchActions = [['label' => 'Clear search', 'href' => vp_url('/admin/riders'), 'variant' => 'ghost']];
+          $searchActions = [['label' => 'Clear search', 'href' => vp_url('/riders'), 'variant' => 'ghost']];
           if (Auth::can('reports.view')) {
-              array_unshift($searchActions, ['label' => 'Rider reports', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']);
+              array_unshift($searchActions, ['label' => 'Rider reports', 'href' => vp_url('/reports/riders'), 'variant' => 'primary']);
           }
           vp_empty_state(
               'No results for this search',
@@ -108,7 +108,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No riders yet',
               'Profiles are created when someone signs in with Google on the VP Ride app.',
-              Auth::can('reports.view') ? [['label' => 'Reports & export', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']] : [],
+              Auth::can('reports.view') ? [['label' => 'Reports & export', 'href' => vp_url('/reports/riders'), 'variant' => 'primary']] : [],
           );
         ?>
       <?php } ?>

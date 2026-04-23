@@ -19,7 +19,7 @@ Config::load($backendRoot . '/.env');
 Auth::startSession();
 
 if (Auth::currentAdmin() !== null) {
-    header('Location: ' . Config::url('/admin/dashboard'));
+    header('Location: ' . Config::url('/dashboard'));
     exit;
 }
 
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $error === '') {
                 $users = new AdminUserRepository(Database::pdo());
                 $users->setPasswordFromReset($validRow['admin_id'], $p1);
                 $resets->markUsed($validRow['id']);
-                header('Location: ' . Config::url('/admin/login?reset=1'));
+                header('Location: ' . Config::url('/login?reset=1'));
                 exit;
             } catch (Throwable $e) {
                 $error = $e->getMessage();
@@ -76,7 +76,7 @@ require __DIR__ . '/includes/head.php';
           <div class="vp-login__brand" aria-hidden="true">
             <img
               class="vp-login__brand-icon"
-              src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+              src="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>"
               width="72"
               height="72"
               alt=""
@@ -84,7 +84,7 @@ require __DIR__ . '/includes/head.php';
             >
             <img
               class="vp-login__brand-wordmark"
-              src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+              src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
               width="200"
               height="48"
               alt="VP Ride"
@@ -102,7 +102,7 @@ require __DIR__ . '/includes/head.php';
         <p class="vp-login__lead vp-login__lead--tight">This reset link is invalid or has expired.</p>
       <?php } elseif ($validRow !== null) { ?>
         <p class="vp-login__lead vp-login__lead--tight">At least 8 characters. Mix letters and numbers for a stronger password.</p>
-        <form method="post" action="<?= vp_h(Config::url('/admin/reset-password')) ?>" class="vp-login__form">
+        <form method="post" action="<?= vp_h(Config::url('/reset-password')) ?>" class="vp-login__form">
           <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
           <input type="hidden" name="token" value="<?= vp_h($tokenIn) ?>">
           <div class="vp-field">
@@ -118,9 +118,9 @@ require __DIR__ . '/includes/head.php';
       <?php } ?>
 
       <p class="vp-login__back">
-        <a href="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__back-link">Back to sign in</a>
+        <a href="<?= vp_h(Config::url('/login')) ?>" class="vp-login__back-link">Back to sign in</a>
         <?php if ($validRow === null) { ?>
-          <span class="vp-login__back-sep" aria-hidden="true">·</span> <a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>" class="vp-login__back-link">Request new link</a>
+          <span class="vp-login__back-sep" aria-hidden="true">·</span> <a href="<?= vp_h(Config::url('/forgot-password')) ?>" class="vp-login__back-link">Request new link</a>
         <?php } ?>
       </p>
       </div>

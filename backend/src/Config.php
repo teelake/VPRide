@@ -65,7 +65,7 @@ final class Config
         return '/' . $raw;
     }
 
-    /** Absolute path for redirects and links, e.g. /admin/login or /backend/public/admin/login */
+    /** Absolute path for redirects and links, e.g. /login (APP_BASE_PATH is prepended for subfolder deploys). */
     public static function url(string $path): string
     {
         $base = self::basePath();

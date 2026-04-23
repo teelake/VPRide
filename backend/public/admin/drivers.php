@@ -65,7 +65,7 @@ $buildPageUrl = static function (int $p) use ($qBase): string {
     $qq = array_merge($qBase, ['page' => (string) $p]);
     $qq = array_filter($qq, static fn ($v) => $v !== '' && $v !== null);
 
-    return Config::url('/admin/drivers?' . http_build_query($qq));
+    return Config::url('/drivers?' . http_build_query($qq));
 };
 
 header('Content-Type: text/html; charset=utf-8');
@@ -82,12 +82,12 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard')],
+        ['label' => 'Dashboard', 'href' => vp_url('/dashboard')],
         ['label' => 'Drivers', 'href' => null],
     ]);
 ?>
   <h1 class="vp-page-title">Driver directory</h1>
-  <p class="vp-page-desc">Onboard drivers here (console-only — not the rider app). <strong>Owner-operators</strong> use their <strong>personal</strong> vehicle record. <strong>Company drivers</strong> use a <strong>company / brand</strong> vehicle from <a href="<?= vp_h(vp_url('/admin/fleet')) ?>">Car management</a>.</p>
+  <p class="vp-page-desc">Onboard drivers here (console-only — not the rider app). <strong>Owner-operators</strong> use their <strong>personal</strong> vehicle record. <strong>Company drivers</strong> use a <strong>company / brand</strong> vehicle from <a href="<?= vp_h(vp_url('/fleet')) ?>">Car management</a>.</p>
 </header>
 
 <?php if ($message !== '') { ?>
@@ -99,7 +99,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <div class="vp-toolbar vp-toolbar--split">
   <div class="vp-toolbar__left">
-    <form method="get" action="<?= vp_h(vp_url('/admin/drivers')) ?>" class="vp-inline-search">
+    <form method="get" action="<?= vp_h(vp_url('/drivers')) ?>" class="vp-inline-search">
       <input type="hidden" name="per_page" value="<?= (int) $perPage ?>">
       <label class="vp-sr-only" for="driver-q">Search drivers</label>
       <input class="vp-input vp-input--search" id="driver-q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Name, email, phone, plate…" autocomplete="off">
@@ -108,7 +108,7 @@ require __DIR__ . '/includes/app_shell_start.php';
   </div>
   <div class="vp-toolbar__actions">
     <?php if (Auth::can('fleet.manage')) { ?>
-      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/drivers/new') ?>">Add driver</a>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/drivers/new') ?>">Add driver</a>
     <?php } ?>
   </div>
 </div>
@@ -130,15 +130,15 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No drivers match this search',
               'Try another keyword or clear the filter.',
-              [['label' => 'Clear search', 'href' => vp_url('/admin/drivers'), 'variant' => 'ghost']],
+              [['label' => 'Clear search', 'href' => vp_url('/drivers'), 'variant' => 'ghost']],
           );
         ?>
       <?php } else { ?>
         <?php
           $actions = [];
           if (Auth::can('fleet.manage')) {
-              $actions[] = ['label' => 'Add driver', 'href' => vp_url('/admin/drivers/new'), 'variant' => 'primary'];
-              $actions[] = ['label' => 'Car management', 'href' => vp_url('/admin/fleet'), 'variant' => 'ghost'];
+              $actions[] = ['label' => 'Add driver', 'href' => vp_url('/drivers/new'), 'variant' => 'primary'];
+              $actions[] = ['label' => 'Car management', 'href' => vp_url('/fleet'), 'variant' => 'ghost'];
           }
           vp_empty_state(
               'No drivers yet',
@@ -197,9 +197,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                   <td class="vp-table__actions-col">
                     <?php
                     vp_action_icons_open();
-                    vp_action_edit(vp_url('/admin/drivers/' . (int) $r['id']));
+                    vp_action_edit(vp_url('/drivers/' . (int) $r['id']));
                     vp_action_delete_form(
-                        vp_url('/admin/drivers'),
+                        vp_url('/drivers'),
                         $csrf,
                         ['action' => 'delete_driver', 'delete_id' => (int) $r['id']],
                         'Delete this driver record?',

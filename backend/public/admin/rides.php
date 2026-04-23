@@ -76,13 +76,13 @@ require __DIR__ . '/includes/app_shell_start.php';
   <div class="vp-toolbar__left"></div>
   <div class="vp-toolbar__actions">
     <?php if (Auth::can('rides.create_manual')) { ?>
-      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/rides/create') ?>">Create booking</a>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/rides/create') ?>">Create booking</a>
     <?php } ?>
     <?php if (Auth::can('reports.view')) { ?>
-      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/admin/reports/rides') ?>">Filtered reports</a>
+      <a class="vp-btn vp-btn--primary" href="<?= vp_url('/reports/rides') ?>">Filtered reports</a>
     <?php } ?>
     <?php if (Auth::can('settings.manage')) { ?>
-      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/admin/settings') ?>">Ride booking flags</a>
+      <a class="vp-btn vp-btn--ghost" href="<?= vp_url('/settings') ?>">Ride booking flags</a>
     <?php } ?>
   </div>
 </div>
@@ -95,10 +95,10 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           $rideEmptyActions = [];
           if (Auth::can('reports.view')) {
-              $rideEmptyActions[] = ['label' => 'Open ride reports', 'href' => vp_url('/admin/reports/rides'), 'variant' => 'primary'];
+              $rideEmptyActions[] = ['label' => 'Open ride reports', 'href' => vp_url('/reports/rides'), 'variant' => 'primary'];
           }
           if (Auth::can('settings.manage')) {
-              $rideEmptyActions[] = ['label' => 'Check booking flags', 'href' => vp_url('/admin/settings'), 'variant' => 'ghost'];
+              $rideEmptyActions[] = ['label' => 'Check booking flags', 'href' => vp_url('/settings'), 'variant' => 'ghost'];
           }
           vp_empty_state(
               'No rides in the system yet',
@@ -196,11 +196,11 @@ require __DIR__ . '/includes/app_shell_start.php';
                     if ($showSomething) {
                         vp_action_icons_open();
                         if ($showDispatch) {
-                            vp_action_link_dispatch(vp_url('/admin/rides/' . (int) $r['id'] . '/dispatch'));
+                            vp_action_link_dispatch(vp_url('/rides/' . (int) $r['id'] . '/dispatch'));
                         }
                         if ($canMark) {
                             vp_action_mark_paid_form(
-                                vp_url('/admin/rides'),
+                                vp_url('/rides'),
                                 $csrf,
                                 ['mark_paid_ride_id' => (int) $r['id']],
                             );

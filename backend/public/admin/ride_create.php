@@ -135,7 +135,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                                 error_log('[vpride] admin ride create dispatch: ' . $e->getMessage());
                             }
                         }
-                        header('Location: ' . Config::url('/admin/rides/' . $newId . '/dispatch'));
+                        header('Location: ' . Config::url('/rides/' . $newId . '/dispatch'));
                         exit;
                     } catch (Throwable $e) {
                         $error = 'Could not create ride: ' . $e->getMessage();
@@ -156,7 +156,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 ?>
 
 <?php vp_breadcrumbs([
-    ['label' => 'Bookings', 'href' => vp_url('/admin/rides')],
+    ['label' => 'Bookings', 'href' => vp_url('/rides')],
     ['label' => 'Create booking', 'href' => null],
 ]); ?>
 

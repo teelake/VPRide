@@ -66,7 +66,7 @@ $buildUrl = static function (int $p) use ($qBase): string {
     $qq = array_merge($qBase, ['page' => (string) $p]);
     $qq = array_filter($qq, static fn ($v) => $v !== '' && $v !== null);
 
-    return \VprideBackend\Config::url('/admin/reports/riders?' . http_build_query($qq));
+    return \VprideBackend\Config::url('/reports/riders?' . http_build_query($qq));
 };
 
 header('Content-Type: text/html; charset=utf-8');
@@ -81,7 +81,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <header class="vp-page-hero">
   <?php
     vp_breadcrumbs([
-        ['label' => 'Reports', 'href' => vp_url('/admin/reports/rides')],
+        ['label' => 'Reports', 'href' => vp_url('/reports/rides')],
         ['label' => 'Riders', 'href' => null],
     ]);
 ?>
@@ -96,7 +96,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 <section class="vp-card vp-card--flush-top" aria-labelledby="rider-filters">
   <div class="vp-card__pad">
     <h2 id="rider-filters" class="vp-section-title">Search</h2>
-    <form method="get" action="<?= vp_h(vp_url('/admin/reports/riders')) ?>" class="vp-filter-form">
+    <form method="get" action="<?= vp_h(vp_url('/reports/riders')) ?>" class="vp-filter-form">
       <div class="vp-filter-grid">
         <div class="vp-field vp-field--grow">
           <label class="vp-label" for="q">Keyword</label>
@@ -114,7 +114,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <div class="vp-filter-actions">
         <button type="submit" class="vp-btn vp-btn--primary">Search</button>
         <?php if (Auth::can('reports.export')) { ?>
-          <a class="vp-btn vp-btn--ghost" href="<?= vp_h(vp_url('/admin/reports/riders?' . http_build_query(array_merge($qBase, ['page' => '1', 'export' => 'csv'])))) ?>">Export CSV</a>
+          <a class="vp-btn vp-btn--ghost" href="<?= vp_h(vp_url('/reports/riders?' . http_build_query(array_merge($qBase, ['page' => '1', 'export' => 'csv'])))) ?>">Export CSV</a>
         <?php } ?>
       </div>
     </form>
@@ -133,7 +133,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'Rider directory unavailable',
               'Import backend/sql/migration_rider_auth.sql (or full schema), then try again.',
-              [['label' => 'Dashboard', 'href' => vp_url('/admin/dashboard'), 'variant' => 'ghost']],
+              [['label' => 'Dashboard', 'href' => vp_url('/dashboard'), 'variant' => 'ghost']],
           );
         ?>
       <?php } elseif ($q !== '') { ?>
@@ -141,7 +141,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No riders match this search',
               'Try a shorter keyword or search by email prefix.',
-              [['label' => 'Clear search', 'href' => vp_url('/admin/reports/riders'), 'variant' => 'primary']],
+              [['label' => 'Clear search', 'href' => vp_url('/reports/riders'), 'variant' => 'primary']],
           );
         ?>
       <?php } else { ?>
@@ -149,7 +149,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           vp_empty_state(
               'No riders in the database',
               'Accounts appear after Google sign-in from the mobile app.',
-              [['label' => 'Rider directory', 'href' => vp_url('/admin/riders'), 'variant' => 'ghost']],
+              [['label' => 'Rider directory', 'href' => vp_url('/riders'), 'variant' => 'ghost']],
           );
         ?>
       <?php } ?>

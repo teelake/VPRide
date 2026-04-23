@@ -25,7 +25,7 @@ final class SosNotifier
         $emails = array_values(array_filter(array_map('trim', preg_split('/[,;\s]+/', $raw) ?: [])));
         $from = $eff['mailFrom'] !== '' ? $eff['mailFrom'] : null;
         $subject = 'VP Ride SOS · Ride #' . (int) ($ride['id'] ?? 0);
-        $adminSosUrl = Config::absoluteUrl('/admin/sos');
+        $adminSosUrl = Config::absoluteUrl('/sos');
         $map = 'https://www.google.com/maps?q=' . urlencode(
             (string) ($incident['latitude'] ?? '') . ',' . (string) ($incident['longitude'] ?? ''),
         );

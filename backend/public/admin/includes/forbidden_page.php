@@ -21,9 +21,9 @@ $bodyClass = 'vp-body vp-body--login';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/png" href="<?= vp_url('/admin/assets/brand/favicon.png') ?>">
-  <link rel="apple-touch-icon" href="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>">
-  <link rel="stylesheet" href="<?= vp_url('/admin/assets/admin.css') ?>">
+  <link rel="icon" type="image/png" href="<?= vp_url('/assets/brand/favicon.png') ?>">
+  <link rel="apple-touch-icon" href="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>">
+  <link rel="stylesheet" href="<?= vp_url('/assets/admin.css') ?>">
   <title><?= vp_h($pageTitle) ?></title>
 </head>
 <body class="<?= vp_h($bodyClass) ?>">
@@ -37,8 +37,8 @@ $bodyClass = 'vp-body vp-body--login';
             <h1 class="vp-login__title" id="forbidden-h"><?= vp_h($forbiddenTitle) ?></h1>
             <p class="vp-login__lead"><?= vp_h($forbiddenMessage) ?></p>
             <p class="vp-field-hint" style="margin-bottom:1.25rem; color: var(--vp-muted, #6e6e7a);">Try signing in again, or ask an owner to grant access.</p>
-            <a class="vp-btn vp-btn--primary vp-login__submit" href="<?= vp_h(vp_url('/admin/dashboard')) ?>">Back to overview</a>
-            <a class="vp-btn vp-btn--ghost vp-login__submit vp-login__submit--stack" href="<?= vp_h(vp_url('/admin/login')) ?>">Sign in again</a>
+            <a class="vp-btn vp-btn--primary vp-login__submit" href="<?= vp_h(vp_url('/dashboard')) ?>">Back to overview</a>
+            <a class="vp-btn vp-btn--ghost vp-login__submit vp-login__submit--stack" href="<?= vp_h(vp_url('/login')) ?>">Sign in again</a>
         </div>
       </div>
     </div>

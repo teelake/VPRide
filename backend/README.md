@@ -47,7 +47,7 @@ Only **`system_admin`** may create/edit configs or activate. Other roles (`dispa
    ```
 
    - API: `http://localhost:8080/api/v1/config/regions`
-   - Admin: `http://localhost:8080/admin/login`
+   - Admin: `http://localhost:8080/login`
 
 ## Flutter app
 
@@ -73,7 +73,7 @@ All apps that call the API on next refresh (or after pull-to-refresh / `RegionCo
 
 **Standard layout:** the **marketing or static** site is at the domain **root** (`/`), and the **PHP backend** (admin + public API) lives at **`/backend/`**:
 
-- **Admin (login, dashboard, settings):** `https://vpride.ca/backend/admin/…`
+- **Admin (login, dashboard, settings):** `https://vpride.ca/backend/…` (e.g. `/login`, `/dashboard` — no `/admin` segment)
 - **Public API (mobile app, config):** `https://vpride.ca/backend/api/…` (e.g. `…/api/v1/config/regions`)
 
 Use **`backend/index.php`** + **`backend/.htaccess`** so the URL does **not** need `/public` in the path.
@@ -87,7 +87,7 @@ Use **`backend/index.php`** + **`backend/.htaccess`** so the URL does **not** ne
 
 - `https://vpride.ca/backend/` — should reach the app (e.g. redirect to admin login)
 - `https://vpride.ca/backend/api/v1/config/regions` — JSON (when the region API is up)
-- `https://vpride.ca/backend/admin/login` — admin sign-in
+- `https://vpride.ca/backend/login` — admin sign-in
 
 **If you do not** use a subfolder and instead run the PHP app at the **host root** (no `/backend`), set **`APP_BASE_PATH=`** (empty) and **`PUBLIC_BASE_URL=https://vpride.ca`**, and adjust **`.htaccess`** `RewriteBase` to `/` or what your host requires.
 
@@ -104,7 +104,7 @@ Release builds and CI should use that same `API_BASE_URL` base, with commands ru
 
 - Use HTTPS, strong passwords, and restrict admin by IP or VPN if needed.
 - Set secure session cookies (`session.cookie_secure`, `HttpOnly`, `SameSite`).
-- Add rate limiting and logging on `/admin/*`.
+- Add rate limiting and logging on console routes (e.g. `/login`, `/dashboard`, `/api/*`).
 
 ## Testing from Nigeria (or anywhere)
 

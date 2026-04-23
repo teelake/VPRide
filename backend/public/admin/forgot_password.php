@@ -23,7 +23,7 @@ Config::load($backendRoot . '/.env');
 Auth::startSession();
 
 if (Auth::currentAdmin() !== null) {
-    header('Location: ' . Config::url('/admin/dashboard'));
+    header('Location: ' . Config::url('/dashboard'));
     exit;
 }
 
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $adminId = $users->findIdByEmail($email);
                 if ($adminId !== null) {
                     $raw = $resets->createTokenForAdmin($adminId);
-                    $link = Config::absoluteUrl('/admin/reset-password?token=' . rawurlencode($raw));
+                    $link = Config::absoluteUrl('/reset-password?token=' . rawurlencode($raw));
                     $body = "Reset your VP Ride console password using this link (valid for one hour):\r\n\r\n"
                         . $link
                         . "\r\n\r\nIf you did not request this, you can ignore this email.\r\n";
@@ -84,7 +84,7 @@ require __DIR__ . '/includes/head.php';
           <div class="vp-login__brand" aria-hidden="true">
             <img
               class="vp-login__brand-icon"
-              src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+              src="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>"
               width="72"
               height="72"
               alt=""
@@ -92,7 +92,7 @@ require __DIR__ . '/includes/head.php';
             >
             <img
               class="vp-login__brand-wordmark"
-              src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+              src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
               width="200"
               height="48"
               alt="VP Ride"
@@ -110,7 +110,7 @@ require __DIR__ . '/includes/head.php';
       <?php } ?>
 
       <?php if (! $sent) { ?>
-        <form method="post" action="<?= vp_h(Config::url('/admin/forgot-password')) ?>" class="vp-login__form">
+        <form method="post" action="<?= vp_h(Config::url('/forgot-password')) ?>" class="vp-login__form">
           <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
           <div class="vp-field">
             <label class="vp-label" for="email">Work email</label>
@@ -121,7 +121,7 @@ require __DIR__ . '/includes/head.php';
       <?php } ?>
 
       <p class="vp-login__back">
-        <a href="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__back-link">Back to sign in</a>
+        <a href="<?= vp_h(Config::url('/login')) ?>" class="vp-login__back-link">Back to sign in</a>
       </p>
       </div>
     </div>
