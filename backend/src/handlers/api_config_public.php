@@ -45,7 +45,8 @@ try {
         ],
         JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
     );
-    HttpCacheJson::emit($json, 120, 300);
+    // Welcome + feature flags change from admin; avoid long public caching so apps pick up CMS updates quickly.
+    HttpCacheJson::emit($json, 0, 0);
 } catch (Throwable $e) {
     error_log('[vpride] GET /api/v1/config/public failed: ' . $e->getMessage());
     http_response_code(500);

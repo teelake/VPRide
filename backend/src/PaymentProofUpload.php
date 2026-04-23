@@ -69,6 +69,6 @@ final class PaymentProofUpload
             throw new RuntimeException('Could not store file.');
         }
 
-        return Config::absoluteUrl(Config::url('/uploads/ride_payments/' . $rideId . '/' . $name));
+        return Config::absoluteUrl('/uploads/ride_payments/' . $rideId . '/' . $name);
     }
 }

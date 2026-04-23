@@ -3594,7 +3594,8 @@ select.vp-input {
 #settings_tab_keys:focus-visible ~ .vp-tablist label[for="settings_tab_keys"],
 #settings_tab_welcome:focus-visible ~ .vp-tablist label[for="settings_tab_welcome"],
 #settings_tab_features:focus-visible ~ .vp-tablist label[for="settings_tab_features"],
-#settings_tab_email:focus-visible ~ .vp-tablist label[for="settings_tab_email"] {
+#settings_tab_email:focus-visible ~ .vp-tablist label[for="settings_tab_email"],
+#settings_tab_operations:focus-visible ~ .vp-tablist label[for="settings_tab_operations"] {
   outline: 2px solid var(--vp-gold);
   outline-offset: 2px;
 }
@@ -3602,7 +3603,8 @@ select.vp-input {
 #settings_tab_keys:checked ~ .vp-tablist label[for="settings_tab_keys"],
 #settings_tab_welcome:checked ~ .vp-tablist label[for="settings_tab_welcome"],
 #settings_tab_features:checked ~ .vp-tablist label[for="settings_tab_features"],
-#settings_tab_email:checked ~ .vp-tablist label[for="settings_tab_email"] {
+#settings_tab_email:checked ~ .vp-tablist label[for="settings_tab_email"],
+#settings_tab_operations:checked ~ .vp-tablist label[for="settings_tab_operations"] {
   color: var(--vp-text);
   background: var(--vp-surface);
   border-bottom-color: var(--vp-surface);
@@ -3617,7 +3619,8 @@ select.vp-input {
 #settings_tab_keys:checked ~ .vp-tab-panels .vp-tab-panel--keys,
 #settings_tab_welcome:checked ~ .vp-tab-panels .vp-tab-panel--welcome,
 #settings_tab_features:checked ~ .vp-tab-panels .vp-tab-panel--features,
-#settings_tab_email:checked ~ .vp-tab-panels .vp-tab-panel--email {
+#settings_tab_email:checked ~ .vp-tab-panels .vp-tab-panel--email,
+#settings_tab_operations:checked ~ .vp-tab-panels .vp-tab-panel--operations {
   display: block;
 }
 

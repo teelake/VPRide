@@ -134,7 +134,7 @@ final class WelcomeImageUpload
             throw new RuntimeException('Could not save optimized image (check GD WebP/JPEG support).');
         }
 
-        return Config::absoluteUrl(Config::url('/uploads/welcome/' . $name));
+        return Config::absoluteUrl('/uploads/welcome/' . $name);
     }
 
     /**

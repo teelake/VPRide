@@ -48,17 +48,63 @@ final class AppSettingsRepository
     {
         $p = $this->loadFullPayload();
         $op = $p['operations'];
+        $welcome = $p['welcome'];
+        if (isset($welcome['backgroundImageUrl']) && is_string($welcome['backgroundImageUrl'])) {
+            $welcome['backgroundImageUrl'] = self::normalizeDoubledAppBaseInUrl(
+                $welcome['backgroundImageUrl'],
+            );
+        }
 
         return [
             'googleWebClientId' => $p['googleWebClientId'],
             'mapsApiKey' => $p['mapsApiKey'],
             'minimumAppVersion' => $p['minimumAppVersion'],
-            'welcome' => $p['welcome'],
+            'welcome' => $welcome,
             'features' => $p['features'],
             'operations' => [
                 'riderCancellationFeeAmount' => (float) $op['riderCancellationFeeAmount'],
             ],
         ];
+    }
+
+    /**
+     * Older admin saves passed Config::url() into Config::absoluteUrl(), duplicating APP_BASE_PATH in stored URLs.
+     */
+    private static function normalizeDoubledAppBaseInUrl(string $url): string
+    {
+        $url = trim($url);
+        if ($url === '') {
+            return '';
+        }
+        $base = rtrim(Config::basePath(), '/');
+        if ($base === '') {
+            return $url;
+        }
+        $dup = $base . $base;
+        $parts = parse_url($url);
+        if (is_array($parts) && isset($parts['path']) && str_contains((string) $parts['path'], $dup)) {
+            $repCount = 0;
+            $parts['path'] = str_replace($dup, $base, (string) $parts['path'], $repCount);
+            $scheme = isset($parts['scheme']) ? (string) $parts['scheme'] . '://' : '';
+            $auth = '';
+            if (isset($parts['user'])) {
+                $auth = (string) $parts['user'];
+                if (isset($parts['pass'])) {
+                    $auth .= ':' . (string) $parts['pass'];
+                }
+                $auth .= '@';
+            }
+            $host = isset($parts['host']) ? (string) $parts['host'] : '';
+            $port = isset($parts['port']) ? ':' . (int) $parts['port'] : '';
+            $path = (string) $parts['path'];
+            $query = isset($parts['query']) ? '?' . (string) $parts['query'] : '';
+            $frag = isset($parts['fragment']) ? '#' . (string) $parts['fragment'] : '';
+            if ($scheme !== '' && $host !== '') {
+                return $scheme . $auth . $host . $port . $path . $query . $frag;
+            }
+        }
+
+        return $url;
     }
 
     /**
