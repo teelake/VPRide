@@ -1,6 +1,6 @@
-# vpride
+# VP Ride
 
-A new Flutter project.
+Flutter rider and driver app (repo folder: `vpride`).
 
 ## Getting Started
 

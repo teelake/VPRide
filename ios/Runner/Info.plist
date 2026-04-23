@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Pride</string>
+	<string>VP Ride</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Pride</string>
+	<string>VP Ride</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -52,9 +52,9 @@
 	<key>GMSApiKey</key>
 	<string></string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Pride uses your location to set pickup points and show nearby drivers.</string>
+	<string>VP Ride uses your location to set pickup points and show nearby drivers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Pride needs photo library access so you can attach a bank transfer receipt after your trip.</string>
+	<string>VP Ride needs photo library access so you can attach a bank transfer receipt after your trip.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -1,4 +1,4 @@
-# VPRide API + admin — document root should be this /public folder.
+# VP Ride API + admin — document root should be this /public folder.
 # Live URL: https://www.webspace.ng/vpride/backend/public/
 #
 # If you change folder names, update RewriteBase to match (leading + trailing slash).

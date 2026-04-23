@@ -20,7 +20,7 @@ INSERT INTO app_public_settings (id, payload) VALUES (
       'backgroundImageUrl', '',
       'overlayColor', '#F0F0F0',
       'overlayOpacity', 0.78,
-      'brandWordmark', 'VP RIDE',
+      'brandWordmark', 'VP Ride',
       'headline', 'Move with intention',
       'subhead', 'Book a ride in a few taps, or open the map to choose your pickup. We are built for {{region}}.',
       'featureLeftTitle', 'Elite Safety',

@@ -1,11 +1,11 @@
 {
-    "name": "Pride",
-    "short_name": "Pride",
+    "name": "VP Ride",
+    "short_name": "VP Ride",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#000000",
     "theme_color": "#ffc300",
-    "description": "Pride rider app.",
+    "description": "VP Ride — rider and driver app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

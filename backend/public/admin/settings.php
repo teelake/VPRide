@@ -244,7 +244,7 @@ require __DIR__ . '/includes/app_shell_start.php';
               </div>
               <div class="vp-field">
                 <label class="vp-label" for="welcomeBrandWordmark">Brand line (small caps)</label>
-                <input class="vp-input" id="welcomeBrandWordmark" name="welcomeBrandWordmark" type="text" value="<?= vp_h($settings['welcome']['brandWordmark'] ?? 'VP RIDE') ?>" maxlength="48">
+                <input class="vp-input" id="welcomeBrandWordmark" name="welcomeBrandWordmark" type="text" value="<?= vp_h($settings['welcome']['brandWordmark'] ?? 'VP Ride') ?>" maxlength="48">
               </div>
               <div class="vp-field">
                 <label class="vp-label" for="welcomeHeadline">Headline</label>

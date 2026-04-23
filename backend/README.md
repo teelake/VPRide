@@ -1,4 +1,4 @@
-# VPRide PHP backend (admin + region API)
+# VP Ride PHP backend (admin + region API)
 
 ## What you get
 
