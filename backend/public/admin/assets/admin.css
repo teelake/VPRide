@@ -428,10 +428,6 @@ html {
   background: var(--vp-surface);
 }
 
-.vp-login__form .vp-field:last-of-type {
-  margin-bottom: 0.5rem;
-}
-
 .vp-login__foot {
   flex-shrink: 0;
   margin: 0;
