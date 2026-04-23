@@ -90,14 +90,39 @@ if ($path === '/' && $method === 'GET') {
     exit;
 }
 
-if ($path === '/admin/assets/admin.css') {
-    $cssFile = $backendRoot . '/public/admin/assets/admin.css';
-    if (is_readable($cssFile)) {
-        header('Content-Type: text/css; charset=utf-8');
-        header('Cache-Control: public, max-age=86400');
-        readfile($cssFile);
+// Serve anything under /admin/assets/ from public/admin/assets/ (fixes favicon, PNG, JS when all traffic goes through this front controller).
+if ($method === 'GET' && str_starts_with($path, '/admin/assets/')) {
+    $rel = substr($path, strlen('/admin/assets/'));
+    if ($rel === '' || str_contains($rel, '..') || str_contains($rel, "\0")) {
+        http_response_code(404);
         exit;
     }
+    $assetsRoot = $backendRoot . '/public/admin/assets';
+    $file = $assetsRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $rel);
+    $realFile = is_readable($file) ? realpath($file) : false;
+    $realRoot = realpath($assetsRoot);
+    if ($realFile && $realRoot && is_file($realFile) && str_starts_with($realFile, $realRoot)) {
+        $ext = strtolower((string) pathinfo($realFile, PATHINFO_EXTENSION));
+        $mimes = [
+            'css' => 'text/css; charset=utf-8',
+            'js' => 'application/javascript; charset=utf-8',
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'svg' => 'image/svg+xml; charset=utf-8',
+            'ico' => 'image/x-icon',
+            'woff2' => 'font/woff2',
+            'woff' => 'font/woff',
+            'ttf' => 'font/ttf',
+        ];
+        header('Content-Type: ' . ($mimes[$ext] ?? 'application/octet-stream'));
+        header('Cache-Control: public, max-age=2592000');
+        readfile($realFile);
+        exit;
+    }
+    http_response_code(404);
+    exit;
 }
 
 if ($path === '/api/v1/config/regions' && $method === 'GET') {

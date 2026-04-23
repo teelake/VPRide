@@ -32,15 +32,13 @@ $bodyClass = 'vp-body vp-body--login';
     <div class="vp-login__layout">
       <?php require __DIR__ . '/login_aside.php'; ?>
       <div class="vp-login__main" id="login-main" tabindex="-1">
-        <div class="vp-login__card" role="region" aria-labelledby="forbidden-h">
-          <div class="vp-login__inner">
+        <div class="vp-login__panel" role="region" aria-labelledby="forbidden-h">
             <p class="vp-login__kicker">Access</p>
             <h1 class="vp-login__title" id="forbidden-h"><?= vp_h($forbiddenTitle) ?></h1>
             <p class="vp-login__lead"><?= vp_h($forbiddenMessage) ?></p>
             <p class="vp-field-hint" style="margin-bottom:1.25rem; color: var(--vp-muted, #6e6e7a);">Try signing in again, or ask an owner to grant access.</p>
             <a class="vp-btn vp-btn--primary vp-login__submit" href="<?= vp_h(vp_url('/admin/dashboard')) ?>">Back to overview</a>
             <a class="vp-btn vp-btn--ghost vp-login__submit vp-login__submit--stack" href="<?= vp_h(vp_url('/admin/login')) ?>">Sign in again</a>
-          </div>
         </div>
       </div>
     </div>

@@ -157,6 +157,17 @@ html {
   min-height: 0;
 }
 
+/* Single-column auth (e.g. rider reset): no split aside */
+.vp-login--single {
+  min-height: min(100dvh, 100svh);
+}
+
+.vp-login--single .vp-login__main {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+}
+
 .vp-login__layout {
   flex: 1;
   display: flex;
@@ -228,7 +239,17 @@ html {
   margin-right: auto;
 }
 
-/* Form column */
+.vp-login__illustration {
+  margin-top: 1.5rem;
+  max-width: 15rem;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 0;
+  opacity: 0.95;
+  filter: drop-shadow(0 0.5rem 1.5rem rgba(0, 0, 0, 0.35));
+}
+
+/* Form column: full-bleed light surface; form is not a nested "card" */
 .vp-login__main {
   order: 1;
   flex: 1;
@@ -239,40 +260,41 @@ html {
   padding: 1.5rem max(1.25rem, env(safe-area-inset-left)) 2.25rem
     max(1.25rem, env(safe-area-inset-right));
   min-width: 0;
+  background: #fafbfc;
+  background-image: linear-gradient(180deg, #ffffff 0%, #f4f5f7 100%);
+  box-shadow: inset 0 3px 0 0 var(--vp-gold);
+}
+
+.vp-login__panel {
+  position: relative;
+  width: 100%;
+  max-width: 22.5rem;
+  padding: 0;
+  /* No box card: typography + form float on the light column */
+  border: none;
+  box-shadow: none;
   background: transparent;
 }
 
+/* Back-compat: older templates used __card + __inner */
 .vp-login__card {
+  /* Deprecated: map to panel look */
   position: relative;
   width: 100%;
-  max-width: 24rem;
-  background: var(--vp-surface);
-  border-radius: 1.25rem;
-  border: 1px solid rgba(228, 228, 234, 0.85);
-  box-shadow: var(--vp-shadow-card), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
-  overflow: hidden;
+  max-width: 22.5rem;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
 }
 
-/* Gold hairline (replaces old accent bar) */
 .vp-login__card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--vp-gold-dim), var(--vp-gold-bright) 50%, var(--vp-gold));
-  opacity: 0.95;
+  display: none;
 }
 
 .vp-login__inner {
-  padding: 2rem 1.75rem 2rem;
-}
-
-@media (min-width: 32rem) {
-  .vp-login__inner {
-    padding: 2.25rem 2.25rem 2.5rem;
-  }
+  padding: 0;
 }
 
 /* Mobile: show compact copy on aside */
@@ -326,6 +348,12 @@ html {
     order: 1;
     flex: 1;
     padding: 2.5rem 2rem;
+    box-shadow: inset 3px 0 0 0 var(--vp-gold);
+  }
+
+  .vp-login__illustration {
+    max-width: 18rem;
+    margin-left: 0;
   }
 }
 

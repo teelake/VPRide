@@ -72,8 +72,7 @@ require __DIR__ . '/includes/head.php';
   <div class="vp-login__layout">
     <?php require __DIR__ . '/includes/login_aside.php'; ?>
     <div class="vp-login__main" id="login-main" tabindex="-1">
-      <div class="vp-login__card" role="region" aria-labelledby="reset-heading">
-        <div class="vp-login__inner">
+      <div class="vp-login__panel" role="region" aria-labelledby="reset-heading">
           <div class="vp-login__brand" aria-hidden="true">
             <img
               class="vp-login__brand-icon"
@@ -124,7 +123,6 @@ require __DIR__ . '/includes/head.php';
           <span class="vp-login__back-sep" aria-hidden="true">·</span> <a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>" class="vp-login__back-link">Request new link</a>
         <?php } ?>
       </p>
-        </div>
       </div>
     </div>
   </div>

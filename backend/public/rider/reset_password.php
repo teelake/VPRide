@@ -65,10 +65,9 @@ $bodyClass = 'vp-body vp-body--login';
 require $backendRoot . '/public/admin/includes/head.php';
 ?>
 
-<div class="vp-login">
-  <div class="vp-login__card">
-    <div class="vp-login__accent" aria-hidden="true"></div>
-    <div class="vp-login__inner">
+<div class="vp-login vp-login--single">
+  <div class="vp-login__main" id="login-main" tabindex="-1">
+    <div class="vp-login__panel">
       <div class="vp-login__brand">
         <img
           class="vp-login__brand-icon"
