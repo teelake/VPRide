@@ -1,5 +1,6 @@
 # vpride
 
+<<<<<<< HEAD
 Monorepo for **VP Ride**.
 
 | Path | What it is |
@@ -21,3 +22,8 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8080
 Upload the repository **root** files used by the static page: `index.html`, `favicon.png`, `assets/`, and optionally root `.htaccess` (Apache `DirectoryIndex`).
 
 **Optional:** if you need the same repository layout on the host and want `/` to redirect into `backend/`, use `backend/docs/root-redirect-to-backend.example.php` (rename to `index.php` only if you are **not** serving `index.html` as the home page).
+=======
+Flutter rider and driver app 
+
+
+>>>>>>> 492ed256338a759b78f90739536643ec800a4975
