@@ -1,4 +1,11 @@
+import 'package:flutter/foundation.dart';
+
 /// Non-secret build-time configuration placeholders.
+///
+/// **Production layout on `vpride.ca`:** the marketing site is at the domain root; the PHP API is
+/// served under **`/backend/`** (e.g. `https://vpride.ca/backend` + `/api/v1/...`). That path is the
+/// same “directory” as `APP_BASE_PATH=backend` on the server — it is **not** part of the Dart
+/// defines; it is included in [apiBaseUrl] as the URL origin.
 ///
 /// **Google Sign-In (PHP/MySQL backend)**
 /// 1. Create an OAuth **Web application** client in Google Cloud Console.
@@ -10,12 +17,39 @@
 /// Never commit real client IDs to a public repo if this becomes sensitive; use `--dart-define`
 /// or a secrets file ignored by git.
 abstract final class AppConfig {
-  /// Base URL for the PHP API (no trailing slash), e.g. `https://api.example.com`.
-  /// If empty, [RegionConfigRepository] skips the network and uses [AppRegion] fallbacks only.
-  static const String apiBaseUrl = String.fromEnvironment(
+  /// Canonical production API origin (**no trailing slash**): static site at `/`, API under `/backend/`.
+  static const String defaultProductionApiBaseUrl = 'https://vpride.ca/backend';
+
+  static const String _apiBaseUrlFromEnv = String.fromEnvironment(
     'API_BASE_URL',
     defaultValue: '',
   );
+
+  /// Base URL for the PHP API (**scheme + host + `/backend` segment**, no trailing slash).
+  ///
+  /// - **Release** builds: if `API_BASE_URL` was not passed at compile time, this defaults to
+  ///   [defaultProductionApiBaseUrl] so App Store / Play builds target production without an easy-to-miss flag.
+  /// - **Debug / profile:** defaults to empty so local runs can use offline region fallbacks unless you
+  ///   pass `--dart-define=API_BASE_URL=...` (e.g. `http://localhost:8080` or [defaultProductionApiBaseUrl]).
+  /// - **Override:** `--dart-define=API_BASE_URL=https://staging.example.com/backend` always wins.
+  static String get apiBaseUrl {
+    final raw = _apiBaseUrlFromEnv.trim();
+    if (raw.isNotEmpty) {
+      return _trimTrailingSlashes(raw);
+    }
+    if (kReleaseMode) {
+      return defaultProductionApiBaseUrl;
+    }
+    return '';
+  }
+
+  static String _trimTrailingSlashes(String s) {
+    var t = s;
+    while (t.endsWith('/')) {
+      t = t.substring(0, t.length - 1);
+    }
+    return t;
+  }
 
   /// GET path appended to [apiBaseUrl] for region/city/country config JSON.
   static const String regionConfigPath = String.fromEnvironment(

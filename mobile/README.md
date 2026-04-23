@@ -1,17 +1,45 @@
 # VP Ride (Flutter)
 
-Flutter rider and driver app. This folder is the **mobile** app in the `vpride` monorepo (see repo root `README.md`).
+Rider and driver app for the `vpride` monorepo. The PHP API in production is at **`https://vpride.ca/backend`** (same path as the hosted backend directory; all JSON routes are under `/api/v1/...` on that origin).
 
-## Getting Started
+## API base URL (production sync)
 
-This project is a starting point for a Flutter application.
+- **Release builds** (`flutter build apk|ipa|appbundle` with default Flutter release mode) use **`https://vpride.ca/backend`** automatically when you do **not** pass `API_BASE_URL`, so the next store build matches `vpride.ca` and the `/backend` directory layout.
+- **Debug / profile** use an empty base until you set `--dart-define=API_BASE_URL=...` (see below), so you can work offline with region fallbacks.
+- **Override any time (staging, `www`, etc.):**  
+  `--dart-define=API_BASE_URL=https://vpride.ca/backend`  
+  (No trailing slash; a trailing slash is stripped if present.)
 
-A few resources to get you started if this is your first Flutter project:
+Config lives in `lib/core/config/app_config.dart` ([`defaultProductionApiBaseUrl`](lib/core/config/app_config.dart)).
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Local development
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+cd mobile
+flutter pub get
+flutter run --dart-define=API_BASE_URL=http://localhost:8080
+```
+
+Use the same host you use for `php -S` in `backend/public` (or your tunnel). For a device on the LAN, replace `localhost` with your machine’s IP.
+
+## Production on device (explicit define)
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
+```
+
+## Release build helpers (optional)
+
+- `build_release.sh` / `build_release.ps1` — run `flutter build apk --release`; you can append extra `--dart-define` for Maps or Google (see `app_config.dart`).
+
+## Other defines
+
+| Define | Purpose |
+|--------|--------|
+| `API_BASE_URL` | API origin, e.g. `https://vpride.ca/backend` (optional in **release**; required for **debug** to hit the network) |
+| `MAPS_API_KEY` | Google Maps / geocoding |
+| `GOOGLE_SERVER_CLIENT_ID` | Web client ID for Google Sign-In ID token |
+
+## Resources
+
+- [Flutter documentation](https://docs.flutter.dev/)

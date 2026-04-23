@@ -8,6 +8,13 @@ void main() {
     expect(AppConfig.publicConfigPath, isNotEmpty);
   });
 
+  test('production API default matches vpride.ca/backend', () {
+    expect(
+      AppConfig.defaultProductionApiBaseUrl,
+      'https://vpride.ca/backend',
+    );
+  });
+
   testWidgets('smoke: MaterialApp renders', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(home: Scaffold(body: Text('VP Ride'))),

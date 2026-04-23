@@ -18,11 +18,13 @@ flutter pub get
 flutter run --dart-define=API_BASE_URL=http://localhost:8080
 ```
 
-For a device hitting your production API base (same as admin URL path):
+For a device hitting your production API base (same origin as the hosted backend — **`/backend`** on the domain, not `/backend/admin/...` for API calls):
 
 ```bash
 flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
 ```
+
+**Store / release builds:** the Flutter app’s `AppConfig` uses **`https://vpride.ca/backend`** as the default API origin in **release** mode when `API_BASE_URL` is not passed, so the next `flutter build apk|ipa` stays aligned with production. Use `--dart-define=API_BASE_URL=...` to override (staging, etc.). See `mobile/README.md`.
 
 ## Public site (vpride.ca)
 
