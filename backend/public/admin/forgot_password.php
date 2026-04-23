@@ -75,31 +75,34 @@ $bodyClass = 'vp-body vp-body--login';
 require __DIR__ . '/includes/head.php';
 ?>
 
+<a class="vp-skip-link" href="#login-main">Skip to form</a>
 <div class="vp-login">
-  <div class="vp-login__card">
-    <div class="vp-login__accent" aria-hidden="true"></div>
-    <div class="vp-login__inner">
-      <div class="vp-login__brand">
-        <img
-          class="vp-login__brand-icon"
-          src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
-          width="72"
-          height="72"
-          alt=""
-          decoding="async"
-        >
-        <img
-          class="vp-login__brand-wordmark"
-          src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
-          width="200"
-          height="48"
-          alt="VP Ride"
-          decoding="async"
-        >
-      </div>
-      <p class="vp-login__kicker">VP Ride</p>
-      <h1 class="vp-login__title">Reset password</h1>
-      <p class="vp-login__lead">We will email you a one-time link if an account exists for that address.</p>
+  <div class="vp-login__layout">
+    <?php require __DIR__ . '/includes/login_aside.php'; ?>
+    <div class="vp-login__main" id="login-main" tabindex="-1">
+      <div class="vp-login__card" role="region" aria-labelledby="forgot-heading">
+        <div class="vp-login__inner">
+          <div class="vp-login__brand" aria-hidden="true">
+            <img
+              class="vp-login__brand-icon"
+              src="<?= vp_url('/admin/assets/brand/app_icon_squircle.png') ?>"
+              width="72"
+              height="72"
+              alt=""
+              decoding="async"
+            >
+            <img
+              class="vp-login__brand-wordmark"
+              src="<?= vp_url('/admin/assets/brand/logo_horizontal_light_bg.png') ?>"
+              width="200"
+              height="48"
+              alt="VP Ride"
+              decoding="async"
+            >
+          </div>
+          <p class="vp-login__kicker">Account</p>
+          <h1 class="vp-login__title" id="forgot-heading">Reset password</h1>
+          <p class="vp-login__lead">We&rsquo;ll email a one-time link if an account exists for that address.</p>
 
       <?php if ($error !== '') { ?>
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
@@ -111,16 +114,18 @@ require __DIR__ . '/includes/head.php';
         <form method="post" action="<?= vp_h(Config::url('/admin/forgot-password')) ?>" class="vp-login__form">
           <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
           <div class="vp-field">
-            <label class="vp-label" for="email">Email</label>
-            <input class="vp-input" id="email" type="email" name="email" required autocomplete="email" placeholder="you@company.com" value="<?= vp_h(trim((string) ($_POST['email'] ?? ''))) ?>">
+            <label class="vp-label" for="email">Work email</label>
+            <input class="vp-input" id="email" type="email" name="email" required autocomplete="email" inputmode="email" placeholder="you@company.com" value="<?= vp_h(trim((string) ($_POST['email'] ?? ''))) ?>" autocapitalize="off" autocorrect="off" spellcheck="false">
           </div>
-          <button type="submit" class="vp-btn vp-btn--primary" style="width:100%; margin-top:0.25rem;">Send reset link</button>
+          <button type="submit" class="vp-btn vp-btn--primary vp-login__submit">Send reset link</button>
         </form>
       <?php } ?>
 
-      <p class="vp-login__back" style="margin-top:1.25rem; text-align:center;">
+      <p class="vp-login__back">
         <a href="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__back-link">Back to sign in</a>
       </p>
+        </div>
+      </div>
     </div>
   </div>
   <p class="vp-login__foot">VP Ride operations console</p>

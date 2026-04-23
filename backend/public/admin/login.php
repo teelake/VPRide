@@ -86,7 +86,7 @@ require __DIR__ . '/includes/head.php';
         <div class="vp-alert vp-alert--error" role="alert"><?= vp_h($error) ?></div>
       <?php } ?>
 
-      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form" novalidate>
+      <form method="post" action="<?= vp_h(Config::url('/admin/login')) ?>" class="vp-login__form">
         <input type="hidden" name="_csrf" value="<?= vp_h($csrf) ?>">
         <div class="vp-field">
           <label class="vp-label" for="email">Work email</label>
@@ -99,9 +99,9 @@ require __DIR__ . '/includes/head.php';
         <button type="submit" class="vp-btn vp-btn--primary vp-login__submit">Sign in</button>
       </form>
       <p class="vp-login__forgot"><a href="<?= vp_h(Config::url('/admin/forgot-password')) ?>">Forgot password?</a></p>
+        </div>
+      </div>
     </div>
-  </div>
-  </div>
   </div>
   <p class="vp-login__foot">VP Ride operations console</p>
 </div>
