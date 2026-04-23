@@ -4,7 +4,7 @@ Monorepo for **VP Ride**.
 
 | Path | What it is |
 |------|------------|
-| **`index.html`**, `assets/` (e.g. `app-icon.png` for the logo + favicon) | Static “coming soon” / marketing shell for the main domain. Replace or extend with your public landing when you launch. |
+| **`index.html`**, `404.html`, `assets/` (e.g. `app-icon.png` for the logo + favicon) | Static “coming soon” / marketing shell for the main domain, plus a custom 404 page. Replace or extend with your public landing when you launch. |
 | **`mobile/`** | Flutter app (iOS, Android, web, desktop). Run Flutter commands from this folder. |
 | **`backend/`** | PHP admin API, MySQL, public config JSON. See `backend/README.md`. |
 
@@ -26,7 +26,11 @@ flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
 
 ## Public site (vpride.ca)
 
-Upload the repository **root** static files: `index.html`, `robots.txt` (disallows `/backend/` and `/mobile/` for crawlers), `assets/` (include `app-icon.png`), and optionally root `.htaccess` (Apache `DirectoryIndex`).
+Upload the repository **root** static files: `index.html`, `404.html` (custom not-found page; paired with `ErrorDocument` in root `.htaccess` on Apache), `robots.txt` (disallows `/backend/` and `/mobile/` for crawlers), `assets/` (include `app-icon.png`), and optionally root `.htaccess` (Apache `DirectoryIndex` + `404` mapping).
+
+**Nginx (example):** `error_page 404 /404.html;` and ensure `/404.html` is served with status 404.
+
+If the public site is **not** at the host root (e.g. it lives in a subfolder), update **leading** `/` paths inside `404.html` (e.g. `/assets/…`, `/`, `ErrorDocument` in `.htaccess`) to match that base path.
 
 Upload the **`backend/`** folder so the admin and API are available at **`/backend/`** on the host. See `backend/README.md` for `APP_BASE_PATH` and `PUBLIC_BASE_URL`.
 

@@ -1,2 +1,3 @@
-# Static coming-soon page — optional on Apache. Safe to delete on nginx / static CDNs.
+# Public site root (coming soon, 404) — optional on Apache. Safe to delete on nginx / static CDNs.
 DirectoryIndex index.html
+ErrorDocument 404 /404.html
