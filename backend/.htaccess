@@ -1,9 +1,10 @@
-# Optional: only used if someone opens …/vpride/backend/ (without /public).
-# Primary setup: point the site at /vpride/backend/public/ and use public/.htaccess.
+# Optional: only used if the public URL is …/backend/ (no /public in the path).
+# Primary setup: point the site document root at public/ and use public/.htaccess (RewriteBase /).
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /vpride/backend/
+  # Match your host URL: e.g. https://vpride.ca/backend/ → /backend/
+  RewriteBase /backend/
 
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

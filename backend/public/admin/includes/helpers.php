@@ -27,7 +27,7 @@ function vp_request_origin(): string
 }
 
 /**
- * Full URL to this deployment’s public entry (origin + APP_BASE_PATH), e.g. …/vpride/backend/public.
+ * Full URL to this deployment’s public entry (origin + APP_BASE_PATH), e.g. https://vpride.ca/ (root) or /backend/public.
  * Useful for bookmarks; matches what riders hit when the document root is the `public` folder.
  */
 function vp_console_public_url(): string

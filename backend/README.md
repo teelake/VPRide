@@ -27,7 +27,7 @@ Only **`system_admin`** may create/edit configs or activate. Other roles (`dispa
    copy .env.example .env
    ```
 
-   Set `DB_*` and optionally `PUBLIC_BASE_URL`.
+   Set `DB_*` and, for production, `PUBLIC_BASE_URL` (e.g. `https://vpride.ca` for a root deploy).
 
 4. **Seed** the first system admin + default “Modern Canada” active config:
 
@@ -68,24 +68,36 @@ flutter run --dart-define=API_BASE_URL=http://localhost:8080
 
 All apps that call the API on next refresh (or after pull-to-refresh / `RegionConfigRepository.refresh()`) get the new active payload.
 
-## Shared hosting (fix 404 on `/vpride/backend/`)
+## Production / shared hosting (`https://vpride.ca`)
 
 Use **`backend/index.php`** + **`backend/.htaccess`** so the URL does **not** need `/public` in the path.
 
+**Backend at the domain root** (e.g. document root points at `backend/` or you map the site to it):
+
 1. Upload the full **`backend/`** folder. You should have **`backend/index.php`** next to **`backend/public/`**.
-2. Edit **`backend/.htaccess`**: set **`RewriteBase`** to your URL path with trailing slash, e.g. **`/vpride/backend/`**.
-3. In **`backend/.env`**:
-   - **`APP_BASE_PATH=vpride/backend`** (same as URL path, **no** `/public`)
-   - **`PUBLIC_BASE_URL=https://webspace.ng/vpride/backend`**
-4. Ensure **Apache `mod_rewrite`** is on (most cPanel hosts allow `.htaccess`).
+2. In **`backend/.htaccess`**, set **`RewriteBase /`** (or the path your host documents).
+3. In **`backend/.env`**: **`APP_BASE_PATH=`** (empty), **`PUBLIC_BASE_URL=https://vpride.ca`**
 
-Open:
+**Backend in a subfolder** (e.g. `https://vpride.ca/backend/`):
 
-- `https://webspace.ng/vpride/backend/` → redirects to admin login  
-- `https://webspace.ng/vpride/backend/api/v1/config/regions` → JSON  
-- `https://webspace.ng/vpride/backend/admin/login` → login**Whole Flutter repo under `/vpride/`:** add the repo’s root **`index.php`** (redirects to `backend/`). If `/vpride/` still 404s, set the host’s **DirectoryIndex** to include `index.php` or remove a conflicting `index.html`.
+1. Set **`RewriteBase /backend/`** in **`backend/.htaccess`** to match the URL.
+2. **`APP_BASE_PATH=backend`**, **`PUBLIC_BASE_URL=https://vpride.ca/backend`**
 
-Flutter: `--dart-define=API_BASE_URL=https://webspace.ng/vpride/backend`
+3. Ensure **Apache `mod_rewrite`** is on (most cPanel hosts allow `.htaccess`).
+
+Open (adjust path if you use a subfolder):
+
+- `https://vpride.ca/` → redirects to admin login (root deploy)
+- `https://vpride.ca/api/v1/config/regions` → JSON
+- `https://vpride.ca/admin/login` → login
+
+**Optional:** whole Flutter **web** build under a folder on the same host: add the repo’s root **`index.php`** (redirects to `backend/`) if you split app vs admin paths. If a route 404s, set the host’s **DirectoryIndex** to include `index.php` or remove a conflicting `index.html`.
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://vpride.ca
+```
+
+Release builds and CI should use the same `API_BASE_URL` (or the subfolder URL, e.g. `https://vpride.ca/backend`, if that is how you deploy).
 
 ## Production notes
 

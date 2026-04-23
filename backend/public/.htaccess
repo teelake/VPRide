@@ -1,11 +1,11 @@
 # VP Ride API + admin — document root should be this /public folder.
-# Live URL: https://www.webspace.ng/vpride/backend/public/
+# Production: https://vpride.ca/  (or a subpath — then set RewriteBase to match, e.g. /backend/public/)
 #
 # If you change folder names, update RewriteBase to match (leading + trailing slash).
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
-  RewriteBase /vpride/backend/public/
+  RewriteBase /
 
   # Front controller: real files (CSS, etc.) pass through; everything else → index.php
   RewriteCond %{REQUEST_FILENAME} !-f

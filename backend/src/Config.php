@@ -51,7 +51,7 @@ final class Config
 
     /**
      * URL path prefix when the app is not at the domain root (shared hosting subfolder).
-     * Example: site is https://example.com/vpride/backend/public → set APP_BASE_PATH=vpride/backend/public
+     * Example (subfolder): https://vpride.ca/backend → APP_BASE_PATH=backend. Root (https://vpride.ca/): leave empty.
      * No leading/trailing slashes required; empty when the app is at domain root.
      */
     public static function basePath(): string
@@ -65,7 +65,7 @@ final class Config
         return '/' . $raw;
     }
 
-    /** Absolute path for redirects and links, e.g. /vpride/backend/public/admin/login */
+    /** Absolute path for redirects and links, e.g. /admin/login or /backend/public/admin/login */
     public static function url(string $path): string
     {
         $base = self::basePath();
@@ -78,8 +78,8 @@ final class Config
      * Full URL for password-reset emails, welcome hero images, and external links.
      *
      * [PUBLIC_BASE_URL] may be either:
-     * - origin only (e.g. https://example.com) — path is appended as APP_BASE_PATH + path; or
-     * - full public entry URL (e.g. https://example.com/vpride/backend/public) — must match the
+     * - origin only (e.g. https://vpride.ca) — path is appended as APP_BASE_PATH + path; or
+     * - full public entry URL if not at host root (e.g. https://vpride.ca/backend) — must match the
      *   start of the path-only URL so it is not duplicated.
      */
     public static function absoluteUrl(string $path): string
