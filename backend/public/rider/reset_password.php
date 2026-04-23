@@ -68,21 +68,13 @@ require $backendRoot . '/public/admin/includes/head.php';
 <div class="vp-login vp-login--single">
   <div class="vp-login__main" id="login-main" tabindex="-1">
     <div class="vp-login__panel">
-      <div class="vp-login__brand">
+      <div class="vp-login__brand" aria-hidden="true">
         <img
           class="vp-login__brand-icon"
           src="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>"
           width="72"
           height="72"
           alt=""
-          decoding="async"
-        >
-        <img
-          class="vp-login__brand-wordmark"
-          src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
-          width="200"
-          height="48"
-          alt="VP Ride"
           decoding="async"
         >
       </div>

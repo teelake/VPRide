@@ -65,14 +65,6 @@ require __DIR__ . '/includes/head.php';
               alt=""
               decoding="async"
             >
-            <img
-              class="vp-login__brand-wordmark"
-              src="<?= vp_url('/assets/brand/logo_horizontal_light_bg.png') ?>"
-              width="200"
-              height="48"
-              alt="VP Ride"
-              decoding="async"
-            >
           </div>
           <p class="vp-login__kicker">Sign in</p>
           <h1 class="vp-login__title" id="login-heading">Console access</h1>
