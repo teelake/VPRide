@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../core/api/api_exception.dart';
 import '../core/api/api_scope.dart';
+import '../core/api/rider_facing_api_message.dart';
 import '../core/auth/auth_scope.dart';
 import '../core/brand/brand_assets.dart';
 import '../core/client/client_config_scope.dart';
@@ -440,7 +441,9 @@ class _MapTabScreenState extends State<MapTabScreen>
       }
     } on ApiException catch (e) {
       if (context.mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+        messenger.showSnackBar(
+          SnackBar(content: Text(riderFacingApiMessage(e))),
+        );
       }
     } catch (e) {
       if (context.mounted) {
@@ -498,7 +501,9 @@ class _MapTabScreenState extends State<MapTabScreen>
       await _refreshActiveRide();
     } on ApiException catch (e) {
       if (mounted) {
-        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+        messenger.showSnackBar(
+          SnackBar(content: Text(riderFacingApiMessage(e))),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -564,7 +569,9 @@ class _MapTabScreenState extends State<MapTabScreen>
       );
     } on ApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(riderFacingApiMessage(e))),
+      );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(e.toString())));
@@ -752,6 +759,7 @@ class _MapTabScreenState extends State<MapTabScreen>
         destLng: _destPoint?.longitude,
         destAddress: _destLabel,
         roundTrip: _roundTrip,
+        scheduledPickupAtIso: _scheduledPickupUtc?.toIso8601String(),
         promoCode: promo.isNotEmpty ? promo : null,
       );
       if (!mounted) return;
@@ -763,7 +771,11 @@ class _MapTabScreenState extends State<MapTabScreen>
       if (total != null) msg += ' · total $total';
       messenger.showSnackBar(SnackBar(content: Text(msg)));
     } on ApiException catch (e) {
-      if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      if (mounted) {
+        messenger.showSnackBar(
+          SnackBar(content: Text(riderFacingApiMessage(e))),
+        );
+      }
     } catch (e) {
       if (mounted) messenger.showSnackBar(SnackBar(content: Text(e.toString())));
     } finally {
@@ -886,7 +898,9 @@ class _MapTabScreenState extends State<MapTabScreen>
       await _refreshActiveRide();
     } on ApiException catch (e) {
       if (!mounted) return;
-      messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      messenger.showSnackBar(
+        SnackBar(content: Text(riderFacingApiMessage(e))),
+      );
     } catch (e) {
       if (!mounted) return;
       messenger.showSnackBar(SnackBar(content: Text(e.toString())));

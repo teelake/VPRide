@@ -11,8 +11,10 @@ require_once $backendRoot . '/src/ConsoleDriverRepository.php';
 require_once $backendRoot . '/src/RiderAuthService.php';
 require_once $backendRoot . '/src/Mailer.php';
 require_once $backendRoot . '/src/AppSettingsRepository.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\AppSettingsRepository;
+use VprideBackend\SchemaInspector;
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\ConsoleDriverRepository;
@@ -44,6 +46,7 @@ $licenseNumber = '';
 $status = 'pending';
 $notes = '';
 $earningsPercentOverride = '';
+$vehicleAssignmentMode = 'fixed';
 
 $error = '';
 $message = '';
@@ -92,6 +95,12 @@ if (! $isNew) {
     if (isset($row['earnings_percent_override']) && $row['earnings_percent_override'] !== null && $row['earnings_percent_override'] !== '') {
         $earningsPercentOverride = (string) (float) $row['earnings_percent_override'];
     }
+    if (isset($row['vehicle_assignment_mode']) && is_string($row['vehicle_assignment_mode']) && $row['vehicle_assignment_mode'] !== '') {
+        $m = strtolower(trim($row['vehicle_assignment_mode']));
+        if (in_array($m, ['fixed', 'flexible'], true)) {
+            $vehicleAssignmentMode = $m;
+        }
+    }
 }
 
 $vehicles = $vehicleRepo->listActiveForSelect();
@@ -109,6 +118,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = trim((string) ($_POST['status'] ?? 'pending'));
         $notes = trim((string) ($_POST['notes'] ?? ''));
         $earningsPercentOverride = trim((string) ($_POST['earnings_percent_override'] ?? ''));
+        $vam = strtolower(trim((string) ($_POST['vehicle_assignment_mode'] ?? 'fixed')));
+        $vehicleAssignmentMode = in_array($vam, ['fixed', 'flexible'], true) ? $vam : 'fixed';
 
         $existingRiderUserId = null;
         if (! $isNew && $id > 0) {
@@ -135,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'notes' => $notes,
                 'rider_user_id' => $needsProvision ? null : $existingRiderUserId,
                 'earnings_percent_override' => $earningsPercentOverride === '' ? null : $earningsPercentOverride,
+                'vehicle_assignment_mode' => $vehicleAssignmentMode,
             ];
             $generatedPassword = null;
             $provisionEmail = $email;
@@ -259,7 +271,18 @@ require __DIR__ . '/includes/app_shell_start.php';
           <option value="owner_operator"<?= $driverKind === 'owner_operator' ? ' selected' : '' ?>>Owner-operator (uses own car)</option>
           <option value="company_driver"<?= $driverKind === 'company_driver' ? ' selected' : '' ?>>Company driver (brand / fleet vehicle)</option>
         </select>
+        <p class="vp-field-hint">This is the <strong>business role</strong> (who owns the car relationship). It is separate from <strong>vehicle assignment mode</strong> below (fixed vs pool / &ldquo;flexible&rdquo;).</p>
       </div>
+      <?php if (SchemaInspector::columnExists($pdo, 'fleet_drivers', 'vehicle_assignment_mode')) { ?>
+      <div class="vp-field">
+        <label class="vp-label" for="vehicle_assignment_mode">Vehicle assignment (VFH)</label>
+        <select class="vp-input" id="vehicle_assignment_mode" name="vehicle_assignment_mode" required>
+          <option value="fixed"<?= $vehicleAssignmentMode === 'fixed' ? ' selected' : '' ?>>Fixed — one primary vehicle for this driver</option>
+          <option value="flexible"<?= $vehicleAssignmentMode === 'flexible' ? ' selected' : '' ?>>Flexible — pool / multi-vehicle (any vehicle you assign per shift; &ldquo;super&rdquo; / non-dedicated in bylaws)</option>
+        </select>
+        <p class="vp-field-hint">Database values: <code class="vp-inline-code">fixed</code> and <code class="vp-inline-code">flexible</code>. Each completed ride should still be tied to a vehicle when the trip runs; <strong>flexible</strong> allows changing which car is on duty.</p>
+      </div>
+      <?php } ?>
       <div class="vp-field" style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
         <div>
           <label class="vp-label" for="phone">Phone</label>

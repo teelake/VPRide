@@ -136,6 +136,39 @@ $settings = PlatformPromoSettingsRepository::tableExists($pdo)
     ? (new PlatformPromoSettingsRepository($pdo))->getSettings()
     : null;
 
+$scheduledForFareUtc = null;
+if (isset($data['scheduledPickupAt']) && is_string($data['scheduledPickupAt'])) {
+    $rawS = trim($data['scheduledPickupAt']);
+    if ($rawS !== '') {
+        if ($settings === null) {
+            http_response_code(503);
+            echo json_encode(['error' => 'platform_settings_missing'], JSON_THROW_ON_ERROR);
+            exit;
+        }
+        try {
+            $dt = new DateTimeImmutable($rawS);
+        } catch (Throwable) {
+            http_response_code(400);
+            echo json_encode(['error' => 'invalid_scheduled_pickup'], JSON_THROW_ON_ERROR);
+            exit;
+        }
+        $nowUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        if ($dt < $nowUtc->modify('+5 minutes')) {
+            http_response_code(400);
+            echo json_encode(['error' => 'scheduling_in_past'], JSON_THROW_ON_ERROR);
+            exit;
+        }
+        $maxDays = (int) ($settings['advance_booking_max_days'] ?? 30);
+        $maxUtc = $nowUtc->modify('+' . max(1, min(365, $maxDays)) . ' days');
+        if ($dt > $maxUtc) {
+            http_response_code(400);
+            echo json_encode(['error' => 'scheduling_too_far'], JSON_THROW_ON_ERROR);
+            exit;
+        }
+        $scheduledForFareUtc = $dt->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s');
+    }
+}
+
 $sa = ServiceAreaValidator::loadSettings($pdo);
 if ($sa['enforce'] && $settings !== null) {
     if (! SchemaInspector::tableExists($pdo, 'region_configs')) {
@@ -162,10 +195,11 @@ if ($sa['enforce'] && $settings !== null) {
         $buf,
     );
     if ($outErr !== null) {
-        $code = $outErr === 'region_config_unavailable' ? 503 : 403;
+        $code = in_array($outErr, ['region_config_unavailable', 'no_service_area_cities'], true) ? 503 : 403;
         http_response_code($code);
         $msg = match ($outErr) {
-            'region_config_unavailable' => 'Service area is not configured (region).',
+            'region_config_unavailable' => 'Service area is not configured (no active region).',
+            'no_service_area_cities' => 'Service area is incomplete: the active region has no city centers with valid coordinates. Update Region in admin.',
             'dropoff_outside_service_area' => 'Drop-off is outside the licensed service area.',
             'pickup_outside_service_area' => 'Pickup is outside the licensed service area.',
             default => 'This trip is not within the service area.',
@@ -176,6 +210,12 @@ if ($sa['enforce'] && $settings !== null) {
 }
 
 $fareAtUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+if ($scheduledForFareUtc !== null) {
+    try {
+        $fareAtUtc = new DateTimeImmutable($scheduledForFareUtc, new DateTimeZone('UTC'));
+    } catch (Throwable) {
+    }
+}
 $baseFare = null;
 if ($settings !== null) {
     if ($distanceKm !== null) {

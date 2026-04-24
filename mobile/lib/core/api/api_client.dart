@@ -271,6 +271,7 @@ final class ApiClient {
     double? destLng,
     String? destAddress,
     bool roundTrip = false,
+    String? scheduledPickupAtIso,
     String? promoCode,
   }) async {
     final body = <String, dynamic>{
@@ -290,6 +291,8 @@ final class ApiClient {
             'address': destAddress.trim(),
         },
       'roundTrip': roundTrip,
+      if (scheduledPickupAtIso != null && scheduledPickupAtIso.trim().isNotEmpty)
+        'scheduledPickupAt': scheduledPickupAtIso.trim(),
       if (promoCode != null && promoCode.trim().isNotEmpty)
         'promoCode': promoCode.trim(),
     };
@@ -716,7 +719,11 @@ final class ApiClient {
     if (res.statusCode >= 400) {
       final err = decoded['error']?.toString() ?? 'request_failed';
       final msg = decoded['message']?.toString();
-      throw ApiException(res.statusCode, msg ?? err);
+      throw ApiException(
+        res.statusCode,
+        msg ?? err,
+        errorCode: err,
+      );
     }
     return decoded;
   }

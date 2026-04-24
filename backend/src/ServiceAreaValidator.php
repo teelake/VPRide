@@ -26,6 +26,9 @@ final class ServiceAreaValidator
         if ($regionPayload === null) {
             return 'region_config_unavailable';
         }
+        if (self::iterCityCenters($regionPayload) === []) {
+            return 'no_service_area_cities';
+        }
         if (! self::isPointCovered($regionPayload, $lat, $lng, $defaultLicensedRadiusKm, $bufferKm)) {
             return 'pickup_outside_service_area';
         }
@@ -34,7 +37,7 @@ final class ServiceAreaValidator
     }
 
     /**
-     * @return string|null `pickup_outside_service_area` or `dropoff_outside_service_area`
+     * @return string|null e.g. `region_config_unavailable`, `no_service_area_cities`, `pickup_outside_service_area`, `dropoff_outside_service_area`
      */
     public static function checkTrip(
         ?array $regionPayload,
@@ -83,7 +86,7 @@ final class ServiceAreaValidator
     ): bool {
         $cities = self::iterCityCenters($regionPayload);
         if ($cities === []) {
-            return true;
+            return false;
         }
         $bufferKm = max(0.0, $bufferKm);
         foreach ($cities as $c) {

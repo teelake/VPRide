@@ -100,7 +100,8 @@ final class ConsoleDriverRepository
      *   fleet_vehicle_id?: int|null,
      *   license_number?: string,
      *   status: string,
-     *   notes?: string
+     *   notes?: string,
+     *   vehicle_assignment_mode?: 'fixed'|'flexible' (if column exists)
      * } $data
      */
     public function insert(array $data): int
@@ -177,7 +178,10 @@ final class ConsoleDriverRepository
             ]);
         }
 
-        return (int) $this->pdo->lastInsertId();
+        $newId = (int) $this->pdo->lastInsertId();
+        $this->applyVehicleAssignmentMode($newId, (string) $row['vehicle_assignment_mode']);
+
+        return $newId;
     }
 
     /**
@@ -263,6 +267,7 @@ final class ConsoleDriverRepository
                 $id,
             ]);
         }
+        $this->applyVehicleAssignmentMode($id, (string) $row['vehicle_assignment_mode']);
         if ($stmt->rowCount() < 1) {
             if ($this->findById($id) === null) {
                 throw new RuntimeException('Driver not found');
@@ -412,6 +417,12 @@ final class ConsoleDriverRepository
             }
         }
 
+        $assignmentMode = 'fixed';
+        if (SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'vehicle_assignment_mode')) {
+            $am = strtolower(trim((string) ($data['vehicle_assignment_mode'] ?? 'fixed')));
+            $assignmentMode = in_array($am, ['fixed', 'flexible'], true) ? $am : 'fixed';
+        }
+
         return [
             'full_name' => $name,
             'phone' => $phone,
@@ -423,7 +434,18 @@ final class ConsoleDriverRepository
             'notes' => $notes,
             'rider_user_id' => $riderUserId,
             'earnings_percent_override' => $earnOverride,
+            'vehicle_assignment_mode' => $assignmentMode,
         ];
+    }
+
+    private function applyVehicleAssignmentMode(int $fleetDriverId, string $mode): void
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'fleet_drivers', 'vehicle_assignment_mode')) {
+            return;
+        }
+        $m = in_array($mode, ['fixed', 'flexible'], true) ? $mode : 'fixed';
+        $stmt = $this->pdo->prepare('UPDATE fleet_drivers SET vehicle_assignment_mode = ? WHERE id = ?');
+        $stmt->execute([$m, $fleetDriverId]);
     }
 
     /**

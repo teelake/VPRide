@@ -171,6 +171,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                         if ($outErr !== null) {
                             $error = match ($outErr) {
                                 'region_config_unavailable' => 'Service area is not configured (no active region).',
+                                'no_service_area_cities' => 'Service area is incomplete: the active region has no city centers with valid coordinates. Update Region in admin.',
                                 'dropoff_outside_service_area' => 'Drop-off is outside the licensed service area.',
                                 'pickup_outside_service_area' => 'Pickup is outside the licensed service area.',
                                 default => 'This trip is not within the service area.',
