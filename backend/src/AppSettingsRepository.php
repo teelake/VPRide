@@ -34,6 +34,7 @@ final class AppSettingsRepository
 
     /**
      * Mobile app and admin "public" fields only — never includes server-only `email` block.
+     * `googleWebClientId` is the ID-token audience / `serverClientId` (not a website OAuth app).
      *
      * @return array{
      *   googleWebClientId: string,
@@ -302,7 +303,7 @@ final class AppSettingsRepository
     }
 
     /**
-     * OAuth Web client ID for verifying Google ID tokens: .env wins when non-empty.
+     * Google Sign-In server client ID (ID token `aud`) for verifying tokens; .env wins when non-empty.
      */
     public static function effectiveGoogleOAuthClientId(PDO $pdo): string
     {
@@ -769,11 +770,11 @@ final class AppSettingsRepository
             return;
         }
         if (strlen($id) > 512) {
-            throw new RuntimeException('Google Web client ID is too long');
+            throw new RuntimeException('Google Sign-In server client ID is too long');
         }
         if (! preg_match('/^[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com$/', $id)) {
             throw new RuntimeException(
-                'Google Web client ID should be the OAuth client ending in .apps.googleusercontent.com',
+                'Google Sign-In server client ID should end in .apps.googleusercontent.com',
             );
         }
     }

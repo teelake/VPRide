@@ -256,8 +256,8 @@ final class AuthRepository extends ChangeNotifier {
       final result = await _googleAuth.signIn();
       if (result == null) return null;
       if (result.idToken == null || result.idToken!.isEmpty) {
-        return 'No ID token — set the Web client ID in admin (App settings) or '
-            'GOOGLE_SERVER_CLIENT_ID when building.';
+        return 'No ID token — set the Google Sign-In server client ID in admin '
+            '(App settings) or GOOGLE_SERVER_CLIENT_ID when building.';
       }
       final out = await _api.postAuthGoogle(result.idToken!);
       final token = out['sessionToken'] as String?;

@@ -8,11 +8,11 @@ import 'package:flutter/foundation.dart';
 /// defines; it is included in [apiBaseUrl] as the URL origin.
 ///
 /// **Google Sign-In (PHP/MySQL backend)**
-/// 1. Create an OAuth **Web application** client in Google Cloud Console.
-/// 2. Set [googleOAuthServerClientId] to that client’s ID so the plugin can return an
-///    **ID token** your PHP API verifies (JWT signature + `aud`/`iss`/`exp`).
-/// 3. Add Android/iOS OAuth clients for the same project and complete platform setup
-///    (SHA-1 for Android, `REVERSED_CLIENT_ID` / URL scheme for iOS).
+/// 1. In Google Cloud Console, create an OAuth client of type **Web application** — that
+///    name only describes the credential type; the mobile app is still Android/iOS only.
+/// 2. Set [googleOAuthServerClientId] to that client’s ID (`serverClientId`) so the plugin
+///    returns an **ID token** your PHP API verifies (JWT signature + `aud`/`iss`/`exp`).
+/// 3. Add **Android** and **iOS** OAuth clients in the same project (SHA-1, bundle ID, etc.).
 ///
 /// Never commit real client IDs to a public repo if this becomes sensitive; use `--dart-define`
 /// or a secrets file ignored by git.
@@ -57,13 +57,14 @@ abstract final class AppConfig {
     defaultValue: '/api/v1/config/regions',
   );
 
-  /// Public client keys (Google Web client ID, Maps key, min version).
+  /// Public client keys (Google server client ID, Maps key, min version).
   static const String publicConfigPath = String.fromEnvironment(
     'PUBLIC_CONFIG_PATH',
     defaultValue: '/api/v1/config/public',
   );
 
-  /// Web client ID (ends with `.apps.googleusercontent.com`).
+  /// Server / ID-token audience client ID (ends with `.apps.googleusercontent.com`;
+  /// OAuth type "Web application" in Cloud Console; not a website app).
   /// Required on Android for a non-null [GoogleSignInAuthentication.idToken] in many setups.
   static const String googleOAuthServerClientId = String.fromEnvironment(
     'GOOGLE_SERVER_CLIENT_ID',

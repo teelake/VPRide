@@ -17,7 +17,7 @@ class ClientConfigRepository extends ChangeNotifier {
 
   final http.Client _client;
 
-  String _remoteGoogleWebClientId = '';
+  String _remoteGoogleServerClientId = '';
   String _remoteMapsApiKey = '';
   String _remoteMinimumAppVersion = '';
   AppPublicFeatures _features = AppPublicFeatures.fallback;
@@ -35,17 +35,23 @@ class ClientConfigRepository extends ChangeNotifier {
   WelcomeUiConfig get welcomeUi => _welcomeUi;
 
   /// Non-empty when the last [loadInitial] returned values from the server.
-  String get remoteGoogleWebClientId => _remoteGoogleWebClientId;
+  String get remoteGoogleServerClientId => _remoteGoogleServerClientId;
+
+  @Deprecated('Use remoteGoogleServerClientId')
+  String get remoteGoogleWebClientId => remoteGoogleServerClientId;
 
   String get remoteMapsApiKey => _remoteMapsApiKey;
 
   String get remoteMinimumAppVersion => _remoteMinimumAppVersion;
 
-  String get effectiveGoogleWebClientId {
-    final r = _remoteGoogleWebClientId.trim();
+  String get effectiveGoogleServerClientId {
+    final r = _remoteGoogleServerClientId.trim();
     if (r.isNotEmpty) return r;
     return AppConfig.googleOAuthServerClientId.trim();
   }
+
+  @Deprecated('Use effectiveGoogleServerClientId')
+  String get effectiveGoogleWebClientId => effectiveGoogleServerClientId;
 
   String get effectiveMapsApiKey {
     final r = _remoteMapsApiKey.trim();
@@ -84,8 +90,10 @@ class ClientConfigRepository extends ChangeNotifier {
           return;
         }
         if (data is Map<String, dynamic>) {
-          _remoteGoogleWebClientId =
-              '${data['googleWebClientId'] ?? ''}'.trim();
+          final g =
+              '${data['googleServerClientId'] ?? data['googleWebClientId'] ?? ''}'
+                  .trim();
+          _remoteGoogleServerClientId = g;
           _remoteMapsApiKey = '${data['mapsApiKey'] ?? ''}'.trim();
           _remoteMinimumAppVersion =
               '${data['minimumAppVersion'] ?? ''}'.trim();

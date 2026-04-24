@@ -38,7 +38,7 @@ flutter run --dart-define=API_BASE_URL=https://vpride.ca/backend
 |--------|--------|
 | `API_BASE_URL` | API origin, e.g. `https://vpride.ca/backend` (optional in **release**; required for **debug** to hit the network) |
 | `MAPS_API_KEY` | Google Maps / geocoding |
-| `GOOGLE_SERVER_CLIENT_ID` | Web client ID for Google Sign-In ID token |
+| `GOOGLE_SERVER_CLIENT_ID` | Google Sign-In server client ID (ID token audience; same as admin / `GET /api/v1/config/public`) |
 
 ## Resources
 

@@ -195,9 +195,9 @@ require __DIR__ . '/includes/app_shell_start.php';
             <h2 id="settings-form-heading" class="vp-section-title">Client-visible keys</h2>
             <div class="vp-stack-form">
               <div class="vp-field">
-                <label class="vp-label" for="googleWebClientId">Google OAuth Web client ID</label>
-                <input class="vp-input vp-input--mono" id="googleWebClientId" name="googleWebClientId" type="text" value="<?= vp_h($settings['googleWebClientId']) ?>" placeholder="123….apps.googleusercontent.com" maxlength="512" pattern="[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com" title="OAuth Web client ID ending in .apps.googleusercontent.com" autocomplete="off">
-                <p class="vp-field-hint">Used by the app for Google Sign-In and must match the audience your backend verifies. <?php if ($envOverridesClient) { ?><strong class="vp-hint-warn">Overridden for JWT verification by <code>GOOGLE_OAUTH_CLIENT_ID</code> in <code>.env</code>.</strong><?php } else { ?>If <code>.env</code> is empty, the backend uses this value to verify ID tokens.<?php } ?></p>
+                <label class="vp-label" for="googleWebClientId">Google Sign-In server client ID</label>
+                <input class="vp-input vp-input--mono" id="googleWebClientId" name="googleWebClientId" type="text" value="<?= vp_h($settings['googleWebClientId']) ?>" placeholder="123….apps.googleusercontent.com" maxlength="512" pattern="[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com" title="Server client ID ending in .apps.googleusercontent.com" autocomplete="off">
+                <p class="vp-field-hint">Android and iOS use their own OAuth clients; this value is the <strong>server</strong> client ID passed to the app as <code class="vp-inline-code">serverClientId</code> so Google returns an ID token your API can verify. It must match the JWT audience. <?php if ($envOverridesClient) { ?><strong class="vp-hint-warn">Overridden for verification by <code>GOOGLE_OAUTH_CLIENT_ID</code> in <code>.env</code>.</strong><?php } else { ?>If <code>.env</code> is empty, the backend uses this value to verify ID tokens.<?php } ?></p>
               </div>
 
               <div class="vp-field">
@@ -219,7 +219,7 @@ require __DIR__ . '/includes/app_shell_start.php';
           <div class="vp-card__pad">
             <h2 id="doc-heading" class="vp-section-title">Google Cloud setup</h2>
             <ul class="vp-doc-list">
-              <li><strong>Web client ID:</strong> Google Cloud Console → APIs &amp; Services → Credentials → Create credentials → OAuth client ID → Application type <em>Web application</em>. Use the same Google Cloud project as your Android/iOS OAuth clients.</li>
+              <li><strong>Server client ID (mobile + API):</strong> In Google Cloud Console → APIs &amp; Services → Credentials → Create credentials → OAuth client ID, create an application of type <em>Web application</em> — that is only Google’s label for this credential; you are not building a website. Use this client’s ID here and for <code class="vp-inline-code">GOOGLE_SERVER_CLIENT_ID</code> in app builds. Keep separate Android and iOS OAuth clients in the same project for the native Google Sign-In button.</li>
               <li><strong>Maps API key:</strong> Credentials → Create credentials → API key. Enable Maps SDK for Android, Maps SDK for iOS, and Geocoding API. Restrict the key (Android package + SHA-1, iOS bundle ID, or IP for backend-only keys).</li>
             </ul>
           </div>

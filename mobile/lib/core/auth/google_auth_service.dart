@@ -21,7 +21,7 @@ class GoogleAuthService {
   GoogleSignIn _signIn() {
     final inject = _inject;
     if (inject != null) return inject;
-    final id = (_clientConfig?.effectiveGoogleWebClientId ??
+    final id = (_clientConfig?.effectiveGoogleServerClientId ??
             AppConfig.googleOAuthServerClientId)
         .trim();
     final key = id.isEmpty ? '_empty_' : id;

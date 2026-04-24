@@ -12,7 +12,8 @@ use UnexpectedValueException;
 
 /**
  * Verifies Google Sign-In ID tokens (RS256 + Google JWKS).
- * Requires firebase/php-jwt (composer) and env GOOGLE_OAUTH_CLIENT_ID (Web client ID).
+ * Requires firebase/php-jwt (composer) and the Google Sign-In *server* client ID (same value as
+ * Flutter `serverClientId`; in Cloud Console it is often created as OAuth type "Web application").
  */
 final class GoogleIdTokenVerifier
 {
@@ -25,7 +26,7 @@ final class GoogleIdTokenVerifier
     {
         $clientId = trim($expectedAudience);
         if ($clientId === '') {
-            throw new RuntimeException('Google OAuth Web client ID is not configured (set GOOGLE_OAUTH_CLIENT_ID or app_public_settings.googleWebClientId)');
+            throw new RuntimeException('Google Sign-In server client ID is not configured (set GOOGLE_OAUTH_CLIENT_ID or app_public_settings.googleWebClientId)');
         }
 
         $ctx = stream_context_create([

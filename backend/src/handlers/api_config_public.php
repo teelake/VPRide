@@ -34,9 +34,13 @@ try {
     if ($mapsForApp === '') {
         error_log('[vpride] GET /api/v1/config/public: mapsApiKey empty (admin Settings and MAPS_API_KEY / GOOGLE_MAPS_API_KEY in .env); app will show maps placeholder until set.');
     }
+    $gServer = (string) $settings['googleWebClientId'];
     $json = json_encode(
         [
-            'googleWebClientId' => $settings['googleWebClientId'],
+            // Server / ID-token audience (Flutter google_sign_in serverClientId). Not a "website" app;
+            // Google Cloud still calls this client type "Web application".
+            'googleServerClientId' => $gServer,
+            'googleWebClientId' => $gServer,
             'mapsApiKey' => $mapsForApp,
             'minimumAppVersion' => $settings['minimumAppVersion'],
             'welcome' => $settings['welcome'],

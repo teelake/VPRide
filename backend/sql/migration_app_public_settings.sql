@@ -1,5 +1,7 @@
 -- Single-row public app settings (mobile reads via GET /api/v1/config/public).
 -- Server-side JWT verification still prefers GOOGLE_OAUTH_CLIENT_ID in .env when set.
+-- Payload key googleWebClientId stores the Google Sign-In *server* client ID (ID token audience),
+-- not a "website" app; API also exposes it as googleServerClientId.
 
 CREATE TABLE IF NOT EXISTS app_public_settings (
   id TINYINT UNSIGNED PRIMARY KEY DEFAULT 1,
