@@ -6,7 +6,6 @@ $backendRoot = dirname(__DIR__, 2);
 require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
-require_once $backendRoot . '/src/LegalPageRepository.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Database;
@@ -16,6 +15,16 @@ Config::load($backendRoot . '/.env');
 Auth::startSession();
 Auth::requireLogin();
 Auth::requirePermission('settings.manage');
+
+$legalRepoFile = $backendRoot . '/src/LegalPageRepository.php';
+if (! is_readable($legalRepoFile)) {
+    http_response_code(500);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Deployment incomplete: src/LegalPageRepository.php is missing. Deploy the full backend or sync from the repo.';
+    exit;
+}
+require_once $legalRepoFile;
+require_once __DIR__ . '/includes/helpers.php';
 
 $admin = Auth::currentAdmin();
 $pdo = Database::pdo();
@@ -71,18 +80,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-$termsHtmlJson = json_encode($terms['body_html'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-$privacyHtmlJson = json_encode($privacy['body_html'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
-
 header('Content-Type: text/html; charset=utf-8');
 $pageTitle = 'Legal pages · VP Ride Console';
 $bodyClass = 'vp-body vp-body--app';
 $vpNavActive = 'legal_pages';
 $vpTopbarTitle = 'Legal pages';
+$vpHeadExtra = '  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">';
+$termsHtmlJson = vp_json_for_js_string((string) ($terms['body_html'] ?? ''));
+$privacyHtmlJson = vp_json_for_js_string((string) ($privacy['body_html'] ?? ''));
 require __DIR__ . '/includes/head.php';
-?>
-<link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
-<?php
 require __DIR__ . '/includes/app_shell_start.php';
 ?>
 

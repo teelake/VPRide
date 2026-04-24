@@ -23,5 +23,10 @@ $bodyClass = $bodyClass ?? 'vp-body';
   <link rel="apple-touch-icon" href="<?= vp_url('/assets/brand/app_icon_squircle.png') ?>" sizes="180x180">
   <link rel="stylesheet" href="<?= vp_url('/assets/admin.css') ?>">
   <title><?= vp_h($pageTitle) ?></title>
+  <?php
+  if (! empty($vpHeadExtra) && is_string($vpHeadExtra)) {
+      echo $vpHeadExtra . "\n";
+  }
+  ?>
 </head>
 <body class="<?= vp_h($bodyClass) ?>">

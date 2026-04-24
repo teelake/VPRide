@@ -7,6 +7,23 @@ function vp_h(?string $s): string
     return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * JSON literal for embedding a PHP string inside a &lt;script&gt; block (UTF-8 safe; hex-escapes &lt; to avoid closing the script).
+ */
+function vp_json_for_js_string(string $value): string
+{
+    $flags = JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT;
+    if (defined('JSON_INVALID_UTF8_SUBSTITUTE')) {
+        $flags |= JSON_INVALID_UTF8_SUBSTITUTE;
+    }
+    $j = json_encode($value, $flags);
+    if ($j === false) {
+        $j = json_encode('', $flags);
+    }
+
+    return $j !== false ? $j : '""';
+}
+
 /** Prefix with APP_BASE_PATH when the app lives in a subfolder (shared hosting). */
 function vp_url(string $path): string
 {

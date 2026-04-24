@@ -5,8 +5,7 @@ CREATE TABLE IF NOT EXISTS rider_legal_pages (
   title VARCHAR(255) NOT NULL,
   body_html MEDIUMTEXT NOT NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  updated_by_admin_id INT UNSIGNED NULL,
-  CONSTRAINT fk_rider_legal_pages_admin FOREIGN KEY (updated_by_admin_id) REFERENCES admins (id) ON DELETE SET NULL
+  updated_by_admin_id INT UNSIGNED NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 INSERT INTO rider_legal_pages (slug, title, body_html, updated_by_admin_id)
