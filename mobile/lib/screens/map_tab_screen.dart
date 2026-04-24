@@ -15,6 +15,7 @@ import '../core/brand/brand_assets.dart';
 import '../core/client/client_config_scope.dart';
 import '../core/config/app_config.dart';
 import '../core/maps/geocode_service.dart';
+import '../core/maps/saved_places.dart';
 import '../core/region/region_config_scope.dart';
 import '../core/region/resolved_region_config.dart';
 import '../core/ride/ride_pickup_controller.dart';
@@ -67,9 +68,27 @@ class _MapTabScreenState extends State<MapTabScreen>
   final TextEditingController _pickupSearchCtrl = TextEditingController();
   final FocusNode _pickupSearchFocusNode = FocusNode();
   RidePickupController? _pickupListenTarget;
+  final DraggableScrollableController _sheetController =
+      DraggableScrollableController();
+  SavedPlacesData _savedPlaces = SavedPlacesData.empty;
+  var _savedPlacesHydrateRequested = false;
 
   /// When region config is missing; matches default seed (Winkler, MB).
   static const LatLng _fallbackMapCenter = LatLng(49.1817, -97.9411);
+
+  static const List<double> _sheetSnapSizes = [0.28, 0.46, 0.78, 0.93];
+
+  @override
+  void initState() {
+    super.initState();
+    _sheetController.addListener(_onSheetExtentChanged);
+  }
+
+  void _onSheetExtentChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   void _onPickupControllerTick() {
     if (mounted) setState(() {});
@@ -106,10 +125,238 @@ class _MapTabScreenState extends State<MapTabScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _refreshActiveRide();
     });
+    if (!_savedPlacesHydrateRequested) {
+      _savedPlacesHydrateRequested = true;
+      unawaited(_loadSavedPlaces());
+    }
+  }
+
+  Future<void> _loadSavedPlaces() async {
+    final d = await SavedPlacesPersistence.load();
+    if (mounted) {
+      setState(() => _savedPlaces = d);
+    }
+  }
+
+  double _mapBottomPadding(BuildContext context) {
+    final h = MediaQuery.sizeOf(context).height;
+    final safe = MediaQuery.paddingOf(context).bottom;
+    final extent = _sheetController.isAttached
+        ? _sheetController.size
+        : _sheetSnapSizes[1];
+    return (h * extent).clamp(120.0, h * 0.96) + safe * 0.5;
+  }
+
+  double _tripBannerBottom(BuildContext context) {
+    return _mapBottomPadding(context) + 8;
+  }
+
+  SavedPlace? _pinnedPlaceOrNull(RidePickupController pickupCtrl) {
+    if (_pinPickup) {
+      final p = pickupCtrl.pickup;
+      if (p == null) {
+        return null;
+      }
+      final addr = pickupCtrl.addressLabel?.trim();
+      return SavedPlace(
+        lat: p.latitude,
+        lng: p.longitude,
+        address: (addr != null && addr.isNotEmpty) ? addr : 'Saved location',
+      );
+    }
+    final d = _destPoint;
+    if (d == null) {
+      return null;
+    }
+    final addr = _destLabel?.trim();
+    return SavedPlace(
+      lat: d.latitude,
+      lng: d.longitude,
+      address: (addr != null && addr.isNotEmpty) ? addr : 'Saved location',
+    );
+  }
+
+  Future<void> _applySavedPlace(
+    SavedPlace place,
+    RidePickupController pickupCtrl,
+  ) async {
+    if (_pinPickup) {
+      pickupCtrl.setFromCamera(place.latLng);
+      pickupCtrl.setAddressLabel(place.address);
+      _pickupSearchCtrl.value = TextEditingValue(
+        text: place.address,
+        selection: TextSelection.collapsed(offset: place.address.length),
+      );
+    } else {
+      setState(() {
+        _destPoint = place.latLng;
+        _destLabel = place.address;
+      });
+      _destSearchCtrl.value = TextEditingValue(
+        text: place.address,
+        selection: TextSelection.collapsed(offset: place.address.length),
+      );
+    }
+    try {
+      final c = await _mapController.future;
+      await c.animateCamera(
+        CameraUpdate.newLatLngZoom(place.latLng, 15),
+      );
+    } catch (_) {}
+    if (mounted) {
+      setState(() => _lastEstimate = null);
+    }
+  }
+
+  Future<void> _persistHomeOrWork({required bool home}) async {
+    final pickupCtrl = RidePickupScope.of(context);
+    final place = _pinnedPlaceOrNull(pickupCtrl);
+    final messenger = ScaffoldMessenger.of(context);
+    if (place == null) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+            home
+                ? 'Set the pickup or drop-off pin first, then save as Home.'
+                : 'Set the pickup or drop-off pin first, then save as Work.',
+          ),
+        ),
+      );
+      return;
+    }
+    final next = home
+        ? SavedPlacesData(
+            home: place,
+            work: _savedPlaces.work,
+            extras: _savedPlaces.extras,
+          )
+        : SavedPlacesData(
+            home: _savedPlaces.home,
+            work: place,
+            extras: _savedPlaces.extras,
+          );
+    await SavedPlacesPersistence.save(next);
+    if (mounted) {
+      setState(() => _savedPlaces = next);
+      messenger.showSnackBar(
+        SnackBar(content: Text(home ? 'Home saved.' : 'Work saved.')),
+      );
+    }
+  }
+
+  Future<void> _persistFavoriteNamed(String title) async {
+    final t = title.trim();
+    if (t.isEmpty) {
+      return;
+    }
+    final pickupCtrl = RidePickupScope.of(context);
+    final place = _pinnedPlaceOrNull(pickupCtrl);
+    final messenger = ScaffoldMessenger.of(context);
+    if (place == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Set the map pin first, then save a favorite.'),
+        ),
+      );
+      return;
+    }
+    final id = _uuidV4();
+    var extras = List<SavedNamedPlace>.from(_savedPlaces.extras);
+    if (extras.length >= SavedPlacesData.maxExtras) {
+      extras = extras.sublist(0, SavedPlacesData.maxExtras - 1);
+    }
+    extras.insert(
+      0,
+      SavedNamedPlace(
+        id: id,
+        title: t,
+        lat: place.lat,
+        lng: place.lng,
+        address: place.address,
+      ),
+    );
+    final next = SavedPlacesData(
+      home: _savedPlaces.home,
+      work: _savedPlaces.work,
+      extras: extras,
+    );
+    await SavedPlacesPersistence.save(next);
+    if (mounted) {
+      setState(() => _savedPlaces = next);
+      messenger.showSnackBar(SnackBar(content: Text('Saved “$t”.')));
+    }
+  }
+
+  Future<void> _clearHomeOrWork({required bool home}) async {
+    final next = home
+        ? SavedPlacesData(
+            home: null,
+            work: _savedPlaces.work,
+            extras: _savedPlaces.extras,
+          )
+        : SavedPlacesData(
+            home: _savedPlaces.home,
+            work: null,
+            extras: _savedPlaces.extras,
+          );
+    await SavedPlacesPersistence.save(next);
+    if (mounted) {
+      setState(() => _savedPlaces = next);
+    }
+  }
+
+  Future<void> _removeFavorite(String id) async {
+    final extras =
+        _savedPlaces.extras.where((e) => e.id != id).toList(growable: false);
+    final next = SavedPlacesData(
+      home: _savedPlaces.home,
+      work: _savedPlaces.work,
+      extras: extras,
+    );
+    await SavedPlacesPersistence.save(next);
+    if (mounted) {
+      setState(() => _savedPlaces = next);
+    }
+  }
+
+  Future<void> _promptFavoriteTitle() async {
+    final ctrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Save favorite'),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            labelText: 'Name',
+            hintText: 'e.g. Gym, Mom’s',
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, ctrl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    if (name != null && name.isNotEmpty && mounted) {
+      await _persistFavoriteNamed(name);
+    }
   }
 
   @override
   void dispose() {
+    _sheetController.removeListener(_onSheetExtentChanged);
+    _sheetController.dispose();
     _currentRidePoll?.cancel();
     _pickupListenTarget?.removeListener(_onPickupControllerTick);
     _geoDebounce?.cancel();
@@ -1000,7 +1247,7 @@ class _MapTabScreenState extends State<MapTabScreen>
             compassEnabled: true,
             mapToolbarEnabled: false,
             polylines: polys,
-            padding: const EdgeInsets.only(bottom: 240),
+            padding: EdgeInsets.only(bottom: _mapBottomPadding(context)),
             onMapCreated: (c) {
               if (!_mapController.isCompleted) {
                 _mapController.complete(c);
@@ -1089,56 +1336,185 @@ class _MapTabScreenState extends State<MapTabScreen>
             Positioned(
               left: 14,
               right: 14,
-              bottom: 268,
+              bottom: _tripBannerBottom(context),
               child: activeTripBanner,
             ),
-          Positioned(
-            left: 12,
-            right: 12,
-            bottom: 12,
-            child: Material(
-              elevation: 18,
-              shadowColor: Colors.black.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(28),
-              color: AppColors.surface,
-              clipBehavior: Clip.antiAlias,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 420),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 36,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 14),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(99),
+          DraggableScrollableSheet(
+            controller: _sheetController,
+            initialChildSize: _sheetSnapSizes[1],
+            minChildSize: _sheetSnapSizes[0],
+            maxChildSize: _sheetSnapSizes[3],
+            snap: true,
+            snapSizes: _sheetSnapSizes,
+            builder: (sheetContext, scrollController) {
+              final bottomInset = MediaQuery.paddingOf(sheetContext).bottom;
+              return Material(
+                elevation: 18,
+                shadowColor: Colors.black.withValues(alpha: 0.14),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+                color: AppColors.surface,
+                clipBehavior: Clip.antiAlias,
+                child: ListView(
+                  controller: scrollController,
+                  physics: const ClampingScrollPhysics(),
+                  padding: EdgeInsets.fromLTRB(20, 10, 20, 16 + bottomInset),
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 5,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      'Where are you going?',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Set pickup and drop-off, then confirm your ride.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.secondary.withValues(alpha: 0.52),
+                        height: 1.35,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Saved places',
+                      style: textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.06,
+                        color: AppColors.secondary.withValues(alpha: 0.45),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          InputChip(
+                            avatar: Icon(
+                              Icons.home_outlined,
+                              size: 18,
+                              color: AppColors.secondary.withValues(alpha: 0.75),
+                            ),
+                            label: Text(
+                              _savedPlaces.home != null ? 'Home' : 'Add Home',
+                            ),
+                            selected: _savedPlaces.home != null,
+                            onPressed: () {
+                              final h = _savedPlaces.home;
+                              if (h != null) {
+                                unawaited(_applySavedPlace(h, pickupCtrl));
+                              } else {
+                                unawaited(_persistHomeOrWork(home: true));
+                              }
+                            },
+                            onDeleted: _savedPlaces.home != null
+                                ? () => unawaited(_clearHomeOrWork(home: true))
+                                : null,
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          InputChip(
+                            avatar: Icon(
+                              Icons.work_outline_rounded,
+                              size: 18,
+                              color: AppColors.secondary.withValues(alpha: 0.75),
+                            ),
+                            label: Text(
+                              _savedPlaces.work != null ? 'Work' : 'Add Work',
+                            ),
+                            selected: _savedPlaces.work != null,
+                            onPressed: () {
+                              final w = _savedPlaces.work;
+                              if (w != null) {
+                                unawaited(_applySavedPlace(w, pickupCtrl));
+                              } else {
+                                unawaited(_persistHomeOrWork(home: false));
+                              }
+                            },
+                            onDeleted: _savedPlaces.work != null
+                                ? () => unawaited(_clearHomeOrWork(home: false))
+                                : null,
+                          ),
+                          ..._savedPlaces.extras.map(
+                            (e) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: InputChip(
+                                label: Text(e.title),
+                                onPressed: () =>
+                                    unawaited(_applySavedPlace(e, pickupCtrl)),
+                                onDeleted: () =>
+                                    unawaited(_removeFavorite(e.id)),
+                              ),
+                            ),
+                          ),
+                          ActionChip(
+                            avatar: Icon(
+                              Icons.add_location_alt_outlined,
+                              size: 18,
+                              color: AppColors.secondary.withValues(alpha: 0.75),
+                            ),
+                            label: const Text('Save pin'),
+                            onPressed: () {
+                              showModalBottomSheet<void>(
+                                context: context,
+                                showDragHandle: true,
+                                builder: (ctx) => SafeArea(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      ListTile(
+                                        leading: const Icon(Icons.home_outlined),
+                                        title: const Text('Save as Home'),
+                                        onTap: () {
+                                          Navigator.pop(ctx);
+                                          unawaited(
+                                            _persistHomeOrWork(home: true),
+                                          );
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading:
+                                            const Icon(Icons.work_outline_rounded),
+                                        title: const Text('Save as Work'),
+                                        onTap: () {
+                                          Navigator.pop(ctx);
+                                          unawaited(
+                                            _persistHomeOrWork(home: false),
+                                          );
+                                        },
+                                      ),
+                                      ListTile(
+                                        leading:
+                                            const Icon(Icons.star_outline_rounded),
+                                        title: const Text('Save as favorite…'),
+                                        onTap: () {
+                                          Navigator.pop(ctx);
+                                          unawaited(_promptFavoriteTitle());
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                      Text(
-                        'Where are you going?',
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: -0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Set pickup and drop-off, then confirm your ride.',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.secondary.withValues(alpha: 0.52),
-                          height: 1.35,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      SegmentedButton<bool>(
+                    ),
+                    const SizedBox(height: 14),
+                    SegmentedButton<bool>(
                         showSelectedIcon: false,
                         style: ButtonStyle(
                           visualDensity: VisualDensity.compact,
@@ -1423,11 +1799,10 @@ class _MapTabScreenState extends State<MapTabScreen>
                             ? null
                             : () => _requestRide(context, pickupCtrl),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ),
-            ),
+              );
+            },
           ),
         ],
       ),
