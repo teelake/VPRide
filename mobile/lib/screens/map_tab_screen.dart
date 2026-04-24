@@ -1089,79 +1089,109 @@ class _MapTabScreenState extends State<MapTabScreen>
             Positioned(
               left: 14,
               right: 14,
-              bottom: 228,
+              bottom: 268,
               child: activeTripBanner,
             ),
           Positioned(
-            left: 16,
-            right: 16,
-            bottom: 16,
+            left: 12,
+            right: 12,
+            bottom: 12,
             child: Material(
-              elevation: 8,
-              shadowColor: Colors.black26,
-              borderRadius: BorderRadius.circular(20),
-              color: Colors.white,
+              elevation: 18,
+              shadowColor: Colors.black.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(28),
+              color: AppColors.surface,
+              clipBehavior: Clip.antiAlias,
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxHeight: 400),
+                constraints: const BoxConstraints(maxHeight: 420),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 16),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Row(
-                        children: [
-                          ChoiceChip(
-                            label: const Text('Pickup pin'),
-                            selected: _pinPickup,
-                            onSelected: (_) {
-                              setState(() {
-                                _pinPickup = true;
-                                final cur =
-                                    pickupCtrl.addressLabel?.trim() ?? '';
-                                if (_pickupSearchCtrl.text.trim().isEmpty &&
-                                    cur.isNotEmpty) {
-                                  _pickupSearchCtrl.text = cur;
-                                }
-                              });
-                            },
+                      Center(
+                        child: Container(
+                          width: 36,
+                          height: 4,
+                          margin: const EdgeInsets.only(bottom: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(99),
                           ),
-                          const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('Destination pin'),
-                            selected: !_pinPickup,
-                            onSelected: (_) {
-                              setState(() {
-                                _pinPickup = false;
-                                final cur = pickupCtrl.pickup;
-                                if (_destPoint == null && cur != null) {
-                                  _destPoint = cur;
-                                  _destLabel = 'Move map or search';
-                                }
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        _pinPickup ? 'Pickup' : 'Destination',
-                        style: textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.08,
-                          color: AppColors.secondary.withValues(alpha: 0.45),
                         ),
                       ),
-                      const SizedBox(height: 6),
+                      Text(
+                        'Where are you going?',
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Set pickup and drop-off, then confirm your ride.',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.secondary.withValues(alpha: 0.52),
+                          height: 1.35,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      SegmentedButton<bool>(
+                        showSelectedIcon: false,
+                        style: ButtonStyle(
+                          visualDensity: VisualDensity.compact,
+                          backgroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.selected)) {
+                              return AppColors.secondary;
+                            }
+                            return AppColors.surfaceMuted;
+                          }),
+                          foregroundColor: WidgetStateProperty.resolveWith((
+                            states,
+                          ) {
+                            if (states.contains(WidgetState.selected)) {
+                              return AppColors.surface;
+                            }
+                            return AppColors.secondary.withValues(alpha: 0.85);
+                          }),
+                          side: WidgetStateProperty.all(
+                            BorderSide(
+                              color: AppColors.secondary.withValues(
+                                alpha: 0.12,
+                              ),
+                            ),
+                          ),
+                        ),
+                        segments: const [
+                          ButtonSegment<bool>(
+                            value: true,
+                            label: Text('Pickup'),
+                            icon: Icon(Icons.trip_origin, size: 18),
+                          ),
+                          ButtonSegment<bool>(
+                            value: false,
+                            label: Text('Drop-off'),
+                            icon: Icon(Icons.place_rounded, size: 18),
+                          ),
+                        ],
+                        selected: {_pinPickup},
+                        onSelectionChanged: (s) {
+                          _setPinPickupMode(s.first, pickupCtrl);
+                        },
+                      ),
+                      const SizedBox(height: 14),
                       if (_pinPickup) ...[
                         TextField(
                           controller: _pickupSearchCtrl,
                           focusNode: _pickupSearchFocusNode,
                           textCapitalization: TextCapitalization.sentences,
                           decoration: InputDecoration(
-                            labelText: 'Search pickup',
-                            isDense: true,
-                            border: const OutlineInputBorder(),
+                            labelText: 'Pickup address',
+                            hintText: 'Search or use map pin',
                             suffixIcon: IconButton(
                               tooltip: 'Search',
                               icon: const Icon(Icons.search_rounded),
@@ -1194,10 +1224,13 @@ class _MapTabScreenState extends State<MapTabScreen>
                               pickupCtrl.isGeocoding
                                   ? 'Finding address…'
                                   : (pickupCtrl.addressLabel ??
-                                        'Move map to set pickup pin'),
-                              style: textTheme.titleSmall?.copyWith(
+                                        'Pan map to adjust pickup'),
+                              style: textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                height: 1.3,
+                                height: 1.35,
+                                color: AppColors.secondary.withValues(
+                                  alpha: 0.78,
+                                ),
                               ),
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
@@ -1209,9 +1242,8 @@ class _MapTabScreenState extends State<MapTabScreen>
                           controller: _destSearchCtrl,
                           textCapitalization: TextCapitalization.sentences,
                           decoration: InputDecoration(
-                            labelText: 'Search destination',
-                            isDense: true,
-                            border: const OutlineInputBorder(),
+                            labelText: 'Where to?',
+                            hintText: 'Search or use map pin',
                             suffixIcon: IconButton(
                               tooltip: 'Search',
                               icon: const Icon(Icons.search_rounded),
@@ -1230,31 +1262,67 @@ class _MapTabScreenState extends State<MapTabScreen>
                           _destGeocoding
                               ? 'Finding address…'
                               : (_destLabel ??
-                                    'Move map to set destination pin'),
-                          style: textTheme.titleSmall?.copyWith(
+                                    'Pan map to adjust destination'),
+                          style: textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w600,
-                            height: 1.3,
+                            height: 1.35,
+                            color: AppColors.secondary.withValues(alpha: 0.78),
                           ),
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
-                      const SizedBox(height: 10),
-                      SwitchListTile.adaptive(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Round trip'),
-                        subtitle: const Text(
-                          'Books a return from destination back to pickup',
-                          style: TextStyle(fontSize: 12),
+                      const SizedBox(height: 12),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceMuted,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: AppColors.border,
+                          ),
                         ),
-                        value: _roundTrip,
-                        onChanged: rideDisabled
-                            ? null
-                            : (v) => setState(() {
-                                  _roundTrip = v;
-                                  _lastEstimate = null;
-                                }),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 4, 6, 4),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Round trip',
+                                      style: textTheme.titleSmall?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Return leg from drop-off to pickup',
+                                      style: textTheme.bodySmall?.copyWith(
+                                        color: AppColors.secondary.withValues(
+                                          alpha: 0.5,
+                                        ),
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Switch.adaptive(
+                                value: _roundTrip,
+                                activeTrackColor:
+                                    AppColors.primary.withValues(alpha: 0.55),
+                                onChanged: rideDisabled
+                                    ? null
+                                    : (v) => setState(() {
+                                          _roundTrip = v;
+                                          _lastEstimate = null;
+                                        }),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
+                      const SizedBox(height: 10),
                       Row(
                         children: [
                           Expanded(
@@ -1262,12 +1330,10 @@ class _MapTabScreenState extends State<MapTabScreen>
                               onPressed: rideDisabled
                                   ? null
                                   : () => _pickSchedule(context),
-                              icon: const Icon(Icons.schedule_rounded),
+                              icon: const Icon(Icons.schedule_rounded, size: 20),
                               label: Text(
-                                _scheduledPickupUtc == null
-                                    ? 'Schedule pickup'
-                                    : 'Scheduled (UTC): ${_scheduledPickupUtc!.toIso8601String()}',
-                                maxLines: 2,
+                                _scheduledPickupButtonLabel(),
+                                maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
@@ -1281,42 +1347,71 @@ class _MapTabScreenState extends State<MapTabScreen>
                             ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      OutlinedButton.icon(
+                      const SizedBox(height: 6),
+                      FilledButton.tonal(
                         onPressed: _estimateBusy || rideDisabled
                             ? null
                             : () => _runEstimate(context, pickupCtrl),
-                        icon: _estimateBusy
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                        style: FilledButton.styleFrom(
+                          foregroundColor: AppColors.secondary,
+                          backgroundColor:
+                              AppColors.primary.withValues(alpha: 0.22),
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_estimateBusy)
+                              const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
-                            : const Icon(Icons.payments_outlined),
-                        label: const Text('Refresh fare estimate'),
+                            else
+                              const Icon(Icons.receipt_long_rounded, size: 22),
+                            const SizedBox(width: 10),
+                            Text(
+                              _estimateBusy
+                                  ? 'Getting estimate…'
+                                  : 'See price estimate',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       if (_lastEstimate != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _estimateSummaryLine(_lastEstimate!),
-                          style: textTheme.bodySmall?.copyWith(
-                            color: AppColors.secondary.withValues(alpha: 0.75),
+                        const SizedBox(height: 10),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.35),
+                            ),
+                          ),
+                          child: Text(
+                            _estimateSummaryLine(_lastEstimate!),
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.secondary.withValues(alpha: 0.88),
+                              fontWeight: FontWeight.w600,
+                              height: 1.35,
+                            ),
                           ),
                         ),
                       ],
-                      if (features.promoCodeEntryEnabled) ...[
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _promoCodeCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          decoration: const InputDecoration(
-                            labelText: 'Promo code (optional)',
-                            isDense: true,
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 16),
                       AppPrimaryButton(
                         label: rideDisabled
                             ? (features.maintenanceMode
