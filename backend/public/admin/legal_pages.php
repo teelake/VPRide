@@ -8,6 +8,7 @@ require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 
 use VprideBackend\Auth;
+use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\LegalPageRepository;
 
