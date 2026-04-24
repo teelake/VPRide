@@ -45,7 +45,6 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _didSeedPickup = false;
   bool _didAutoRefreshClientConfig = false;
   bool _configRetryBusy = false;
-  final TextEditingController _promoCodeCtrl = TextEditingController();
   int? _activeRideId;
   Map<String, dynamic>? _activeRide;
   Timer? _currentRidePoll;
@@ -116,7 +115,6 @@ class _MapTabScreenState extends State<MapTabScreen>
     _geoDebounce?.cancel();
     _destGeoDebounce?.cancel();
     _geocoder.close();
-    _promoCodeCtrl.dispose();
     _destSearchCtrl.dispose();
     _pickupSearchCtrl.dispose();
     _pickupSearchFocusNode.dispose();
@@ -744,12 +742,10 @@ class _MapTabScreenState extends State<MapTabScreen>
     final token = auth.sessionToken;
     final p = pickupCtrl.pickup;
     if (token == null || p == null || !auth.isSignedIn) return;
-    final cfg = ClientConfigScope.of(context).features;
     final messenger = ScaffoldMessenger.of(context);
     final api = ApiScope.of(context);
     setState(() => _estimateBusy = true);
     try {
-      final promo = cfg.promoCodeEntryEnabled ? _promoCodeCtrl.text.trim() : '';
       final res = await api.postRideEstimate(
         bearerToken: token,
         pickupLat: p.latitude,
@@ -760,7 +756,6 @@ class _MapTabScreenState extends State<MapTabScreen>
         destAddress: _destLabel,
         roundTrip: _roundTrip,
         scheduledPickupAtIso: _scheduledPickupUtc?.toIso8601String(),
-        promoCode: promo.isNotEmpty ? promo : null,
       );
       if (!mounted) return;
       setState(() => _lastEstimate = res);
@@ -804,6 +799,36 @@ class _MapTabScreenState extends State<MapTabScreen>
     return s.isEmpty ? 'Estimate ready' : s;
   }
 
+  /// Short local-time label for the schedule chip (avoids raw UTC in UI).
+  String _scheduledPickupButtonLabel() {
+    final t = _scheduledPickupUtc;
+    if (t == null) return 'Schedule ride';
+    final l = t.toLocal();
+    final mon = l.month.toString().padLeft(2, '0');
+    final day = l.day.toString().padLeft(2, '0');
+    final h = l.hour.toString().padLeft(2, '0');
+    final m = l.minute.toString().padLeft(2, '0');
+    return 'Pickup · $mon/$day $h:$m';
+  }
+
+  void _setPinPickupMode(bool pickup, RidePickupController pickupCtrl) {
+    setState(() {
+      _pinPickup = pickup;
+      if (pickup) {
+        final cur = pickupCtrl.addressLabel?.trim() ?? '';
+        if (_pickupSearchCtrl.text.trim().isEmpty && cur.isNotEmpty) {
+          _pickupSearchCtrl.text = cur;
+        }
+      } else {
+        final cur = pickupCtrl.pickup;
+        if (_destPoint == null && cur != null) {
+          _destPoint = cur;
+          _destLabel = 'Move map or search';
+        }
+      }
+    });
+  }
+
   Future<void> _pickSchedule(BuildContext context) async {
     final now = DateTime.now();
     final d = await showDatePicker(
@@ -831,15 +856,15 @@ class _MapTabScreenState extends State<MapTabScreen>
     final auth = AuthScope.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
-    final cfg = ClientConfigScope.of(context).features;
-    if (cfg.maintenanceMode) {
-      final msg = cfg.maintenanceMessage.trim().isNotEmpty
-          ? cfg.maintenanceMessage.trim()
+    final features = ClientConfigScope.of(context).features;
+    if (features.maintenanceMode) {
+      final msg = features.maintenanceMessage.trim().isNotEmpty
+          ? features.maintenanceMessage.trim()
           : 'Ride requests are paused (maintenance).';
       messenger.showSnackBar(SnackBar(content: Text(msg)));
       return;
     }
-    if (!cfg.rideBookingEnabled) {
+    if (!features.rideBookingEnabled) {
       messenger.showSnackBar(
         const SnackBar(
           content: Text('Ride booking is turned off in the app settings.'),
@@ -868,7 +893,6 @@ class _MapTabScreenState extends State<MapTabScreen>
 
     setState(() => _rideBusy = true);
     try {
-      final promo = cfg.promoCodeEntryEnabled ? _promoCodeCtrl.text.trim() : '';
       final res = await api.postRide(
         bearerToken: token,
         pickupLat: p.latitude,
@@ -879,7 +903,6 @@ class _MapTabScreenState extends State<MapTabScreen>
         destAddress: _destLabel,
         roundTrip: _roundTrip,
         scheduledPickupAtIso: _scheduledPickupUtc?.toIso8601String(),
-        promoCode: promo.isNotEmpty ? promo : null,
       );
       if (!mounted) return;
       final id = res['id'];
@@ -977,7 +1000,7 @@ class _MapTabScreenState extends State<MapTabScreen>
             compassEnabled: true,
             mapToolbarEnabled: false,
             polylines: polys,
-            padding: const EdgeInsets.only(bottom: 200),
+            padding: const EdgeInsets.only(bottom: 240),
             onMapCreated: (c) {
               if (!_mapController.isCompleted) {
                 _mapController.complete(c);
@@ -1001,9 +1024,11 @@ class _MapTabScreenState extends State<MapTabScreen>
             child: Padding(
               padding: const EdgeInsets.only(bottom: 52),
               child: Icon(
-                Icons.location_pin,
+                Icons.location_on_rounded,
                 size: 52,
-                color: _pinPickup ? AppColors.secondary : Colors.deepOrange.shade700,
+                color: _pinPickup
+                    ? AppColors.secondary
+                    : const Color(0xFFE65100),
                 shadows: [
                   Shadow(
                     color: Colors.black.withValues(alpha: 0.2),

@@ -30,7 +30,7 @@ class AppPublicFeatures {
     helpCenterUrl: '',
     requireSignInForHome: true,
     sosEnabled: true,
-    promoCodeEntryEnabled: true,
+    promoCodeEntryEnabled: false,
   );
 
   factory AppPublicFeatures.fromJson(Object? raw) {
@@ -46,7 +46,7 @@ class AppPublicFeatures {
       helpCenterUrl: '${m['helpCenterUrl'] ?? ''}'.trim(),
       requireSignInForHome: _bool(m['requireSignInForHome'], fallback: true),
       sosEnabled: _bool(m['sosEnabled'], fallback: true),
-      promoCodeEntryEnabled: _bool(m['promoCodeEntryEnabled'], fallback: true),
+      promoCodeEntryEnabled: _bool(m['promoCodeEntryEnabled'], fallback: false),
     );
   }
 
