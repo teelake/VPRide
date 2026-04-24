@@ -331,7 +331,7 @@ class _MapTabScreenState extends State<MapTabScreen>
           textCapitalization: TextCapitalization.words,
           decoration: const InputDecoration(
             labelText: 'Name',
-            hintText: 'e.g. Gym, Mom’s',
+            hintText: "e.g. Gym, Mom's",
           ),
           onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
         ),
@@ -1447,6 +1447,8 @@ class _MapTabScreenState extends State<MapTabScreen>
                                 ? () => unawaited(_clearHomeOrWork(home: false))
                                 : null,
                           ),
+                          if (_savedPlaces.extras.isNotEmpty)
+                            const SizedBox(width: 8),
                           ..._savedPlaces.extras.map(
                             (e) => Padding(
                               padding: const EdgeInsets.only(right: 8),
@@ -1459,6 +1461,7 @@ class _MapTabScreenState extends State<MapTabScreen>
                               ),
                             ),
                           ),
+                          const SizedBox(width: 8),
                           ActionChip(
                             avatar: Icon(
                               Icons.add_location_alt_outlined,
