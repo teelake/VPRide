@@ -37,8 +37,6 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-$envOverridesClient = trim(getenv('GOOGLE_OAUTH_CLIENT_ID') ?: '') !== '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (! Auth::validateCsrf($_POST['_csrf'] ?? null)) {
         $error = 'Invalid session.';
@@ -197,13 +195,11 @@ require __DIR__ . '/includes/app_shell_start.php';
               <div class="vp-field">
                 <label class="vp-label" for="googleWebClientId">Google Sign-In server client ID</label>
                 <input class="vp-input vp-input--mono" id="googleWebClientId" name="googleWebClientId" type="text" value="<?= vp_h($settings['googleWebClientId']) ?>" placeholder="123….apps.googleusercontent.com" maxlength="512" pattern="[0-9a-zA-Z_-]+\.apps\.googleusercontent\.com" title="Server client ID ending in .apps.googleusercontent.com" autocomplete="off">
-                <p class="vp-field-hint">Android and iOS use their own OAuth clients; this value is the <strong>server</strong> client ID passed to the app as <code class="vp-inline-code">serverClientId</code> so Google returns an ID token your API can verify. It must match the JWT audience. <?php if ($envOverridesClient) { ?><strong class="vp-hint-warn">Overridden for verification by <code>GOOGLE_OAUTH_CLIENT_ID</code> in <code>.env</code>.</strong><?php } else { ?>If <code>.env</code> is empty, the backend uses this value to verify ID tokens.<?php } ?></p>
               </div>
 
               <div class="vp-field">
                 <label class="vp-label" for="mapsApiKey">Maps / Geocoding API key</label>
                 <input class="vp-input vp-input--mono" id="mapsApiKey" name="mapsApiKey" type="text" value="<?= vp_h($settings['mapsApiKey']) ?>" placeholder="AIza…" maxlength="512" pattern="([A-Za-z0-9_-]{30,512})?" title="Leave blank to use .env, or enter an alphanumeric key (about 30+ characters)" autocomplete="off">
-                <p class="vp-field-hint">Returned to the app in <code class="vp-inline-code">GET /api/v1/config/public</code> as <code class="vp-inline-code">mapsApiKey</code> (geocoding). The dashboard &quot;Live booking monitor&quot; map uses the <strong>Maps JavaScript API</strong> (pan, zoom, fullscreen); enable that API on the same key. Static Maps is used as a fallback when JavaScript is off. If this field is empty, the API can still expose a key from <code class="vp-inline-code">MAPS_API_KEY</code> or <code class="vp-inline-code">GOOGLE_MAPS_API_KEY</code> in <code>.env</code>. Native Maps SDK builds should also set the key in Gradle / iOS (<code>maps.api.key</code> / <code>GMSApiKey</code>).</p>
               </div>
 
               <div class="vp-field">
@@ -212,16 +208,6 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <p class="vp-field-hint">Semantic version for future force-upgrade checks (e.g. <code class="vp-inline-code">1.0.0</code>). Validated on save.</p>
               </div>
             </div>
-          </div>
-        </section>
-
-        <section class="vp-card vp-card--note" aria-labelledby="doc-heading">
-          <div class="vp-card__pad">
-            <h2 id="doc-heading" class="vp-section-title">Google Cloud setup</h2>
-            <ul class="vp-doc-list">
-              <li><strong>Server client ID (mobile + API):</strong> In Google Cloud Console → APIs &amp; Services → Credentials → Create credentials → OAuth client ID, create an application of type <em>Web application</em> — that is only Google’s label for this credential; you are not building a website. Use this client’s ID here and for <code class="vp-inline-code">GOOGLE_SERVER_CLIENT_ID</code> in app builds. Keep separate Android and iOS OAuth clients in the same project for the native Google Sign-In button.</li>
-              <li><strong>Maps API key:</strong> Credentials → Create credentials → API key. Enable Maps SDK for Android, Maps SDK for iOS, and Geocoding API. Restrict the key (Android package + SHA-1, iOS bundle ID, or IP for backend-only keys).</li>
-            </ul>
           </div>
         </section>
       </div>
