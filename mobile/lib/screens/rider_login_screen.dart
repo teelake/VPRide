@@ -5,6 +5,7 @@ import '../core/auth/auth_scope.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/app_buttons.dart';
 import '../core/widgets/auth_form_widgets.dart';
+import '../core/widgets/auth_legal_agreement_notice.dart';
 
 class RiderLoginScreen extends StatefulWidget {
   const RiderLoginScreen({super.key});
@@ -191,6 +192,10 @@ class _RiderLoginScreenState extends State<RiderLoginScreen> {
                                 ),
                               ),
                             ),
+                          ),
+                          const SizedBox(height: 12),
+                          const AuthLegalAgreementNotice(
+                            accountCreationCopy: false,
                           ),
                         ],
                       ),

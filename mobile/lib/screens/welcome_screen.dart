@@ -14,6 +14,7 @@ import '../core/region/region_config_scope.dart';
 import '../core/region/resolved_region_config.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/app_buttons.dart';
+import '../core/widgets/auth_legal_agreement_notice.dart';
 
 /// VP Ride welcome — CMS copy + optional upload/URL background; email + Google paths.
 class WelcomeScreen extends StatefulWidget {
@@ -286,6 +287,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                             : () => _googleSignIn(context),
                                         isLoading: false,
                                       ),
+                                      const SizedBox(height: 16),
+                                      const AuthLegalAgreementNotice(),
                                       if (!requireSignIn) ...[
                                         const SizedBox(height: 10),
                                         TextButton(

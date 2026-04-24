@@ -5,6 +5,7 @@ import '../core/auth/auth_scope.dart';
 import '../core/theme/app_colors.dart';
 import '../core/widgets/app_buttons.dart';
 import '../core/widgets/auth_form_widgets.dart';
+import '../core/widgets/auth_legal_agreement_notice.dart';
 
 /// Email + password registration → same session shape as Google.
 class RiderRegisterScreen extends StatefulWidget {
@@ -187,6 +188,8 @@ class _RiderRegisterScreenState extends State<RiderRegisterScreen> {
                             isLoading: auth.isBusy,
                             onPressed: auth.isBusy ? null : _submit,
                           ),
+                          const SizedBox(height: 16),
+                          const AuthLegalAgreementNotice(),
                         ],
                       ),
                     ),

@@ -153,6 +153,13 @@ if ($path === '/api/v1/config/public' && in_array($method, ['GET', 'OPTIONS'], t
     exit;
 }
 
+if (preg_match('#^/api/v1/legal-pages/(terms_of_use|privacy_policy)$#', $path, $vprideLegalMatch)
+    && in_array($method, ['GET', 'OPTIONS'], true)) {
+    $GLOBALS['vpride_legal_page_slug'] = $vprideLegalMatch[1];
+    require $backendRoot . '/src/handlers/api_legal_pages_public.php';
+    exit;
+}
+
 if ($path === '/api/v1/log/client' && in_array($method, ['POST', 'OPTIONS'], true)) {
     require $backendRoot . '/src/handlers/api_log_client.php';
     exit;
@@ -461,6 +468,11 @@ if ($path === '/team/new' && in_array($method, ['GET', 'POST'], true)) {
 
 if ($path === '/settings' && in_array($method, ['GET', 'POST'], true)) {
     require $backendRoot . '/public/admin/settings.php';
+    exit;
+}
+
+if ($path === '/legal-pages' && in_array($method, ['GET', 'POST'], true)) {
+    require $backendRoot . '/public/admin/legal_pages.php';
     exit;
 }
 

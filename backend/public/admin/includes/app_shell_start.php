@@ -7,7 +7,7 @@ declare(strict_types=1);
 /**
  * @var string|null $vpNavActive
  *   dashboard | bookings | schedule | fleet | riders | drivers | team | users | reports | settings | help |
- *   regions | region_new | rbac | account | region_edit
+ *   regions | region_new | rbac | account | region_edit | legal_pages
  */
 /** @var string|null $vpTopbarTitle Optional short label for the top bar */
 
@@ -188,6 +188,12 @@ $vpSearchPlaceholder = Auth::can('riders.view')
               <a href="<?= vp_url('/settings') ?>" class="vp-nav-item<?= $vpNavActive === 'settings' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'settings' ? ' aria-current="page"' : '' ?>>
                 <span class="vp-nav-item__icon" aria-hidden="true"><?= vp_nav_icon_settings() ?></span>
                 <span class="vp-nav-item__text">Settings</span>
+              </a>
+            </li>
+            <li>
+              <a href="<?= vp_url('/legal-pages') ?>" class="vp-nav-item<?= $vpNavActive === 'legal_pages' ? ' vp-nav-item--active' : '' ?>"<?= $vpNavActive === 'legal_pages' ? ' aria-current="page"' : '' ?>>
+                <span class="vp-nav-item__icon" aria-hidden="true">¶</span>
+                <span class="vp-nav-item__text">Legal pages</span>
               </a>
             </li>
           <?php } ?>

@@ -26,6 +26,20 @@ final class ApiClient {
     return Uri.parse('$base$p');
   }
 
+  /// Public legal page HTML for in-app readers ([slug] is `terms_of_use` or `privacy_policy`).
+  Future<Map<String, dynamic>> getLegalPage(String slug) async {
+    final s = slug.trim();
+    final res = await _client
+        .get(
+          _uri('/api/v1/legal-pages/$s'),
+          headers: const {
+            'Accept': 'application/json',
+          },
+        )
+        .timeout(_timeout);
+    return _decode(res);
+  }
+
   Future<Map<String, dynamic>> postAuthRegister({
     required String email,
     required String password,

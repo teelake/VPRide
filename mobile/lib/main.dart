@@ -17,6 +17,7 @@ import 'core/region/region_config_scope.dart';
 import 'core/ride/ride_pickup_controller.dart';
 import 'core/ride/ride_pickup_scope.dart';
 import 'core/logging/app_error_reporter.dart';
+import 'core/legal/legal_page_slugs.dart';
 import 'core/theme/app_theme.dart';
 import 'core/navigation/home_shell_route.dart';
 import 'screens/change_password_screen.dart';
@@ -25,6 +26,7 @@ import 'screens/home_shell_screen.dart';
 import 'screens/rider_forgot_password_screen.dart';
 import 'screens/rider_login_screen.dart';
 import 'screens/rider_register_screen.dart';
+import 'screens/legal_document_screen.dart';
 import 'screens/rider_reset_password_screen.dart';
 import 'screens/welcome_screen.dart';
 
@@ -127,6 +129,18 @@ Future<void> main() async {
         path: '/welcome/reset-password',
         builder: (context, state) => RiderResetPasswordScreen(
           initialToken: state.uri.queryParameters['token'],
+        ),
+      ),
+      GoRoute(
+        path: '/welcome/terms',
+        builder: (context, state) => const LegalDocumentScreen(
+          slug: LegalPageSlugs.termsOfUse,
+        ),
+      ),
+      GoRoute(
+        path: '/welcome/privacy',
+        builder: (context, state) => const LegalDocumentScreen(
+          slug: LegalPageSlugs.privacyPolicy,
         ),
       ),
       GoRoute(
