@@ -12,6 +12,9 @@ require_once $backendRoot . '/src/PlatformPromoSettingsRepository.php';
 require_once $backendRoot . '/src/FarePromoService.php';
 require_once $backendRoot . '/src/FixedPricingService.php';
 require_once $backendRoot . '/src/RateLimiter.php';
+require_once $backendRoot . '/src/RegionRepository.php';
+require_once $backendRoot . '/src/ServiceAreaValidator.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\ApiMobileCors;
 use VprideBackend\AppSettingsRepository;
@@ -21,7 +24,10 @@ use VprideBackend\FarePromoService;
 use VprideBackend\FixedPricingService;
 use VprideBackend\PlatformPromoSettingsRepository;
 use VprideBackend\RateLimiter;
+use VprideBackend\RegionRepository;
 use VprideBackend\RiderAuthService;
+use VprideBackend\SchemaInspector;
+use VprideBackend\ServiceAreaValidator;
 
 Config::load($backendRoot . '/.env');
 
@@ -130,9 +136,56 @@ $settings = PlatformPromoSettingsRepository::tableExists($pdo)
     ? (new PlatformPromoSettingsRepository($pdo))->getSettings()
     : null;
 
+$sa = ServiceAreaValidator::loadSettings($pdo);
+if ($sa['enforce'] && $settings !== null) {
+    if (! SchemaInspector::tableExists($pdo, 'region_configs')) {
+        http_response_code(503);
+        echo json_encode(
+            [
+                'error' => 'region_config_unavailable',
+                'message' => 'Service area is not configured (region).',
+            ],
+            JSON_THROW_ON_ERROR,
+        );
+        exit;
+    }
+    $region = (new RegionRepository($pdo))->getActivePayload();
+    $lic = (float) ($settings['service_licensed_radius_km'] ?? 0.0);
+    $buf = (float) ($settings['service_buffer_km'] ?? 0.0);
+    $outErr = ServiceAreaValidator::checkTrip(
+        $region,
+        $plat,
+        $plng,
+        $dlat,
+        $dlng,
+        $lic,
+        $buf,
+    );
+    if ($outErr !== null) {
+        $code = $outErr === 'region_config_unavailable' ? 503 : 403;
+        http_response_code($code);
+        $msg = match ($outErr) {
+            'region_config_unavailable' => 'Service area is not configured (region).',
+            'dropoff_outside_service_area' => 'Drop-off is outside the licensed service area.',
+            'pickup_outside_service_area' => 'Pickup is outside the licensed service area.',
+            default => 'This trip is not within the service area.',
+        };
+        echo json_encode(['error' => $outErr, 'message' => $msg], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        exit;
+    }
+}
+
+$fareAtUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
 $baseFare = null;
-if ($distanceKm !== null && $settings !== null) {
-    $baseFare = FixedPricingService::fareBeforePromosFromDistance($settings, $distanceKm);
+if ($settings !== null) {
+    if ($distanceKm !== null) {
+        $baseFare = FixedPricingService::fareForBookingRequest(
+            $settings,
+            $distanceKm,
+            0,
+            $fareAtUtc,
+        );
+    }
 }
 
 $pricing = [
@@ -164,8 +217,13 @@ $leg = [
 ];
 
 $returnLeg = null;
-if ($roundTrip && $distanceKm !== null && PlatformPromoSettingsRepository::tableExists($pdo)) {
-    $baseRet = FixedPricingService::fareBeforePromosFromDistance($settings, $distanceKm);
+if ($roundTrip && $distanceKm !== null && PlatformPromoSettingsRepository::tableExists($pdo) && $settings !== null) {
+    $baseRet = FixedPricingService::fareForBookingRequest(
+        $settings,
+        $distanceKm,
+        0,
+        $fareAtUtc,
+    );
     $pRet = (new FarePromoService($pdo))->computeForNewRide(
         $user['rider_user_id'],
         null,

@@ -51,6 +51,7 @@ class _MapTabScreenState extends State<MapTabScreen>
   bool _sosBusy = false;
   bool _ridePollBusy = false;
   bool _cancelRideBusy = false;
+  bool _swapRideBusy = false;
 
   /// When true, the map pin adjusts pickup; when false, destination.
   bool _pinPickup = true;
@@ -355,17 +356,33 @@ class _MapTabScreenState extends State<MapTabScreen>
                       (statusRaw == 'requested' ||
                           statusRaw == 'accepted' ||
                           statusRaw == 'in_progress');
-                  if (!canCancel) return const SizedBox.shrink();
+                  final canSwap = profileId != null &&
+                      riderUid != null &&
+                      profileId == riderUid &&
+                      statusRaw == 'requested' &&
+                      ride['riderCanRequestDifferentDriver'] == true;
+                  if (!canCancel && !canSwap) return const SizedBox.shrink();
                   return Padding(
                     padding: const EdgeInsets.only(top: 12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton(
-                        onPressed: _cancelRideBusy
-                            ? null
-                            : () => _offerCancelRide(ctx, id, ride),
-                        child: const Text('Cancel ride'),
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (canSwap)
+                          OutlinedButton(
+                            onPressed: _swapRideBusy || _cancelRideBusy
+                                ? null
+                                : () => _offerSwapDriver(ctx, id),
+                            child: const Text('Request a different driver'),
+                          ),
+                        if (canSwap && canCancel) const SizedBox(height: 8),
+                        if (canCancel)
+                          OutlinedButton(
+                            onPressed: _cancelRideBusy || _swapRideBusy
+                                ? null
+                                : () => _offerCancelRide(ctx, id, ride),
+                            child: const Text('Cancel ride'),
+                          ),
+                      ],
                     ),
                   );
                 },
@@ -375,6 +392,65 @@ class _MapTabScreenState extends State<MapTabScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _offerSwapDriver(
+    BuildContext context,
+    int rideId,
+  ) async {
+    final auth = AuthScope.of(context);
+    final token = auth.sessionToken;
+    if (token == null) return;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Request a different driver?'),
+        content: const Text(
+          'The current assignment will be released and we will try to find another available driver, '
+          'up to the limit set by your operator.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Keep this driver'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Request another driver'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true || !context.mounted) return;
+    setState(() => _swapRideBusy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    final api = ApiScope.of(context);
+    try {
+      await api.postRideRejectAssignedDriver(
+        bearerToken: token,
+        rideId: rideId,
+      );
+      if (context.mounted) {
+        await _refreshActiveRide();
+        if (context.mounted) {
+          messenger.showSnackBar(
+            const SnackBar(content: Text('Looking for another driver…')),
+          );
+        }
+      }
+    } on ApiException catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } catch (e) {
+      if (context.mounted) {
+        messenger.showSnackBar(SnackBar(content: Text(e.toString())));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _swapRideBusy = false);
+      }
+    }
   }
 
   Future<void> _offerCancelRide(

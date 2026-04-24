@@ -41,8 +41,7 @@ final class PlatformPromoSettingsRepository
             return self::defaults();
         }
         $d = self::defaults();
-
-        return [
+        $base = [
             'currency_code' => trim((string) ($row['currency_code'] ?? $d['currency_code'])) ?: $d['currency_code'],
             'decimal_places' => max(0, min(4, (int) ($row['decimal_places'] ?? $d['decimal_places']))),
             'default_ride_estimate' => (float) ($row['default_ride_estimate'] ?? $d['default_ride_estimate']),
@@ -59,6 +58,30 @@ final class PlatformPromoSettingsRepository
                 ? (int) $row['loyalty_reward_promotion_id']
                 : null,
         ];
+        if (! SchemaInspector::columnExists($this->pdo, 'platform_promo_settings', 'service_buffer_km')) {
+            return array_merge($base, self::vfhDefaults());
+        }
+        $vd = self::vfhDefaults();
+
+        return array_merge($base, [
+            'service_buffer_km' => (float) ($row['service_buffer_km'] ?? $vd['service_buffer_km']),
+            'service_licensed_radius_km' => (float) ($row['service_licensed_radius_km'] ?? $vd['service_licensed_radius_km']),
+            'enforce_service_area' => ((int) ($row['enforce_service_area'] ?? 1)) === 1,
+            'pricing_mode' => trim((string) ($row['pricing_mode'] ?? $vd['pricing_mode'])) ?: $vd['pricing_mode'],
+            'use_flat_town_pricing' => ! empty($row['use_flat_town_pricing']),
+            'flat_town_fare' => isset($row['flat_town_fare']) && $row['flat_town_fare'] !== null
+                ? (float) $row['flat_town_fare']
+                : (float) $vd['flat_town_fare'],
+            'flat_town_max_distance_km' => isset($row['flat_town_max_distance_km']) && $row['flat_town_max_distance_km'] !== null
+                ? (float) $row['flat_town_max_distance_km']
+                : (float) $vd['flat_town_max_distance_km'],
+            'meter_base_day' => (float) ($row['meter_base_day'] ?? $vd['meter_base_day']),
+            'meter_base_night' => (float) ($row['meter_base_night'] ?? $vd['meter_base_night']),
+            'meter_per_100m' => (float) ($row['meter_per_100m'] ?? $vd['meter_per_100m']),
+            'meter_per_15s_wait' => (float) ($row['meter_per_15s_wait'] ?? $vd['meter_per_15s_wait']),
+            'meter_night_start_hour' => max(0, min(23, (int) ($row['meter_night_start_hour'] ?? 0))),
+            'meter_night_end_hour' => max(0, min(24, (int) ($row['meter_night_end_hour'] ?? 6))),
+        ]);
     }
 
     /**
@@ -73,7 +96,20 @@ final class PlatformPromoSettingsRepository
      *   pricing_base_fare?: float,
      *   pricing_per_km?: float,
      *   pricing_minimum_fare?: float,
-     *   advance_booking_max_days?: int
+     *   advance_booking_max_days?: int,
+     *   service_buffer_km?: float,
+     *   service_licensed_radius_km?: float,
+     *   enforce_service_area?: bool,
+     *   pricing_mode?: string,
+     *   use_flat_town_pricing?: bool,
+     *   flat_town_fare?: float,
+     *   flat_town_max_distance_km?: float,
+     *   meter_base_day?: float,
+     *   meter_base_night?: float,
+     *   meter_per_100m?: float,
+     *   meter_per_15s_wait?: float,
+     *   meter_night_start_hour?: int,
+     *   meter_night_end_hour?: int
      * } $patch
      */
     public function save(array $patch, int $updatedByAdminId): void
@@ -167,6 +203,52 @@ final class PlatformPromoSettingsRepository
                 $updatedByAdminId,
             ]);
         }
+
+        if (SchemaInspector::columnExists($this->pdo, 'platform_promo_settings', 'service_buffer_km')) {
+            $c = $this->getSettings();
+            $buf = array_key_exists('service_buffer_km', $patch) ? (float) $patch['service_buffer_km'] : $c['service_buffer_km'];
+            $lic = array_key_exists('service_licensed_radius_km', $patch) ? (float) $patch['service_licensed_radius_km'] : $c['service_licensed_radius_km'];
+            $enf = array_key_exists('enforce_service_area', $patch) ? self::boolish($patch['enforce_service_area']) : $c['enforce_service_area'];
+            $pMode = array_key_exists('pricing_mode', $patch)
+                ? trim((string) $patch['pricing_mode'])
+                : $c['pricing_mode'];
+            if (! in_array($pMode, ['distance', 'flat_town', 'metered'], true)) {
+                $pMode = 'distance';
+            }
+            $uFlat = array_key_exists('use_flat_town_pricing', $patch) ? self::boolish($patch['use_flat_town_pricing']) : $c['use_flat_town_pricing'];
+            $ftF = array_key_exists('flat_town_fare', $patch) ? (float) $patch['flat_town_fare'] : $c['flat_town_fare'];
+            $ftM = array_key_exists('flat_town_max_distance_km', $patch) ? (float) $patch['flat_town_max_distance_km'] : $c['flat_town_max_distance_km'];
+            $mBd = array_key_exists('meter_base_day', $patch) ? (float) $patch['meter_base_day'] : $c['meter_base_day'];
+            $mBn = array_key_exists('meter_base_night', $patch) ? (float) $patch['meter_base_night'] : $c['meter_base_night'];
+            $m100 = array_key_exists('meter_per_100m', $patch) ? (float) $patch['meter_per_100m'] : $c['meter_per_100m'];
+            $m15 = array_key_exists('meter_per_15s_wait', $patch) ? (float) $patch['meter_per_15s_wait'] : $c['meter_per_15s_wait'];
+            $mNs = array_key_exists('meter_night_start_hour', $patch) ? (int) $patch['meter_night_start_hour'] : $c['meter_night_start_hour'];
+            $mNe = array_key_exists('meter_night_end_hour', $patch) ? (int) $patch['meter_night_end_hour'] : $c['meter_night_end_hour'];
+            $mNs = max(0, min(23, $mNs));
+            $mNe = max(0, min(24, $mNe));
+            $uf = $this->pdo->prepare(
+                'UPDATE platform_promo_settings SET service_buffer_km = ?, service_licensed_radius_km = ?, '
+                . 'enforce_service_area = ?, pricing_mode = ?, use_flat_town_pricing = ?, flat_town_fare = ?, '
+                . 'flat_town_max_distance_km = ?, meter_base_day = ?, meter_base_night = ?, meter_per_100m = ?, '
+                . 'meter_per_15s_wait = ?, meter_night_start_hour = ?, meter_night_end_hour = ?, updated_by_admin_id = ? WHERE id = 1',
+            );
+            $uf->execute([
+                max(0.0, $buf),
+                max(0.0, $lic),
+                $enf ? 1 : 0,
+                $pMode,
+                $uFlat ? 1 : 0,
+                $ftF,
+                $ftM,
+                $mBd,
+                $mBn,
+                $m100,
+                $m15,
+                $mNs,
+                $mNe,
+                $updatedByAdminId,
+            ]);
+        }
     }
 
     public static function tableExists(PDO $pdo): bool
@@ -179,18 +261,43 @@ final class PlatformPromoSettingsRepository
      */
     private static function defaults(): array
     {
+        return array_merge(
+            [
+                'currency_code' => 'NGN',
+                'decimal_places' => 2,
+                'default_ride_estimate' => 1500.0,
+                'pricing_base_fare' => 500.0,
+                'pricing_per_km' => 350.0,
+                'pricing_minimum_fare' => 0.0,
+                'advance_booking_max_days' => 30,
+                'promo_timezone' => 'Africa/Lagos',
+                'loyalty_enabled' => true,
+                'loyalty_trips_per_reward' => 5,
+                'loyalty_reward_promotion_id' => null,
+            ],
+            self::vfhDefaults(),
+        );
+    }
+
+    /**
+     * @return array<string, float|int|string|bool>
+     */
+    private static function vfhDefaults(): array
+    {
         return [
-            'currency_code' => 'NGN',
-            'decimal_places' => 2,
-            'default_ride_estimate' => 1500.0,
-            'pricing_base_fare' => 500.0,
-            'pricing_per_km' => 350.0,
-            'pricing_minimum_fare' => 0.0,
-            'advance_booking_max_days' => 30,
-            'promo_timezone' => 'Africa/Lagos',
-            'loyalty_enabled' => true,
-            'loyalty_trips_per_reward' => 5,
-            'loyalty_reward_promotion_id' => null,
+            'service_buffer_km' => 10.0,
+            'service_licensed_radius_km' => 15.0,
+            'enforce_service_area' => true,
+            'pricing_mode' => 'distance',
+            'use_flat_town_pricing' => false,
+            'flat_town_fare' => 10.0,
+            'flat_town_max_distance_km' => 8.0,
+            'meter_base_day' => 4.75,
+            'meter_base_night' => 6.65,
+            'meter_per_100m' => 0.211,
+            'meter_per_15s_wait' => 0.15,
+            'meter_night_start_hour' => 0,
+            'meter_night_end_hour' => 6,
         ];
     }
 

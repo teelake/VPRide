@@ -111,29 +111,68 @@ final class RiderUserRepository
     {
         $q = $q !== null ? trim($q) : '';
         $exclude = $this->sqlWhereExcludeDriverOnly();
+        $hasPhone = SchemaInspector::columnExists($this->pdo, 'rider_users', 'phone');
+        $selectBase = 'id, email, display_name, google_sub, created_at, updated_at'
+            . ($hasPhone ? ', phone' : '');
         if ($q === '') {
             if ($countOnly) {
                 return ['SELECT COUNT(*) FROM rider_users' . $exclude, []];
             }
 
             return [
-                'SELECT id, email, display_name, google_sub, created_at, updated_at FROM rider_users'
+                'SELECT ' . $selectBase . ' FROM rider_users'
                     . ($exclude !== '' ? $exclude : ''),
                 [],
             ];
         }
         $like = '%' . $q . '%';
         $driverFilter = $exclude !== '' ? ' AND COALESCE(driver_account_only, 0) = 0' : '';
+        $digitQ = preg_replace('/\D+/', '', $q) ?? '';
         if ($countOnly) {
+            if ($hasPhone && $digitQ !== '') {
+                return [
+                    'SELECT COUNT(*) FROM rider_users WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?'
+                        . ' OR (phone IS NOT NULL AND (phone LIKE ? OR phone = ?))'
+                        . ')' . $driverFilter,
+                    [$like, $like, $like, $like, $like, $digitQ],
+                ];
+            }
+            if ($hasPhone) {
+                return [
+                    'SELECT COUNT(*) FROM rider_users WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?'
+                        . ' OR (phone IS NOT NULL AND phone LIKE ?)'
+                        . ')' . $driverFilter,
+                    [$like, $like, $like, $like, $like],
+                ];
+            }
+
             return [
                 'SELECT COUNT(*) FROM rider_users WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?)'
                     . $driverFilter,
                 [$like, $like, $like, $like],
             ];
         }
+        if ($hasPhone && $digitQ !== '') {
+            return [
+                'SELECT ' . $selectBase . ' FROM rider_users '
+                    . 'WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?'
+                    . ' OR (phone IS NOT NULL AND (phone LIKE ? OR phone = ?))'
+                    . ')' . $driverFilter,
+                [$like, $like, $like, $like, $like, $digitQ],
+            ];
+        }
+        if ($hasPhone) {
+            return [
+                'SELECT ' . $selectBase . ' FROM rider_users '
+                    . 'WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?'
+                    . ' OR (phone IS NOT NULL AND phone LIKE ?)'
+                    . ')' . $driverFilter,
+                [$like, $like, $like, $like, $like],
+            ];
+        }
 
         return [
-            'SELECT id, email, display_name, google_sub, created_at, updated_at FROM rider_users '
+            'SELECT ' . $selectBase . ' FROM rider_users '
                 . 'WHERE (email LIKE ? OR display_name LIKE ? OR google_sub LIKE ? OR CAST(id AS CHAR) LIKE ?)'
                 . $driverFilter,
             [$like, $like, $like, $like],

@@ -42,7 +42,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     } elseif (isset($_POST['save_platform'])) {
         try {
             $loyPid = trim((string) ($_POST['loyalty_reward_promotion_id'] ?? ''));
-            $platRepo->save([
+            $savePatch = [
                 'currency_code' => (string) ($_POST['currency_code'] ?? 'NGN'),
                 'decimal_places' => (int) ($_POST['decimal_places'] ?? 2),
                 'default_ride_estimate' => (float) ($_POST['default_ride_estimate'] ?? 1500),
@@ -54,7 +54,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 'loyalty_enabled' => isset($_POST['loyalty_enabled']),
                 'loyalty_trips_per_reward' => (int) ($_POST['loyalty_trips_per_reward'] ?? 5),
                 'loyalty_reward_promotion_id' => $loyPid === '' ? null : (int) $loyPid,
-            ], $admin[0]);
+            ];
+            if (SchemaInspector::columnExists($pdo, 'platform_promo_settings', 'service_buffer_km')) {
+                $savePatch['service_buffer_km'] = (float) ($_POST['service_buffer_km'] ?? 10);
+                $savePatch['service_licensed_radius_km'] = (float) ($_POST['service_licensed_radius_km'] ?? 15);
+                $savePatch['enforce_service_area'] = ! empty($_POST['enforce_service_area']);
+                $savePatch['pricing_mode'] = (string) ($_POST['pricing_mode'] ?? 'distance');
+                $savePatch['use_flat_town_pricing'] = ! empty($_POST['use_flat_town_pricing']);
+                $savePatch['flat_town_fare'] = (float) ($_POST['flat_town_fare'] ?? 0);
+                $savePatch['flat_town_max_distance_km'] = (float) ($_POST['flat_town_max_distance_km'] ?? 0);
+                $savePatch['meter_base_day'] = (float) ($_POST['meter_base_day'] ?? 0);
+                $savePatch['meter_base_night'] = (float) ($_POST['meter_base_night'] ?? 0);
+                $savePatch['meter_per_100m'] = (float) ($_POST['meter_per_100m'] ?? 0);
+                $savePatch['meter_per_15s_wait'] = (float) ($_POST['meter_per_15s_wait'] ?? 0);
+                $savePatch['meter_night_start_hour'] = (int) ($_POST['meter_night_start_hour'] ?? 0);
+                $savePatch['meter_night_end_hour'] = (int) ($_POST['meter_night_end_hour'] ?? 6);
+            }
+            $platRepo->save($savePatch, $admin[0]);
             $message = 'Pricing & loyalty settings saved.';
         } catch (Throwable $e) {
             $error = 'Platform settings: ' . $e->getMessage();
@@ -245,6 +261,77 @@ require __DIR__ . '/includes/app_shell_start.php';
           placeholder="Create a 100% off (capped) coupon promo first, then enter its ID">
         <p class="vp-field-hint">Create a promotion (e.g. 100% percent discount with max discount cap) dedicated to loyalty; riders receive a grant after every N paid trips.</p>
       </div>
+      <?php if (SchemaInspector::columnExists($pdo, 'platform_promo_settings', 'service_buffer_km')) { ?>
+      <h3 class="vp-section-title" style="margin:1.5rem 0 0.75rem;">Licensed service area &amp; VFH-style pricing</h3>
+      <p class="vp-field-hint" style="margin-top:0;">Pickups and drop-offs are checked against the active <strong>region</strong> (city centers + per-city optional radius) plus a buffer. Configure city centers under Region.</p>
+      <div class="vp-field">
+        <label class="vp-label" for="service_licensed_radius_km">Default licensed radius (km) per city</label>
+        <input class="vp-input" id="service_licensed_radius_km" name="service_licensed_radius_km" type="number" step="0.1" min="0"
+          value="<?= vp_h((string) ($platform['service_licensed_radius_km'] ?? 15)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="service_buffer_km">Service buffer (km) beyond licensed radius (e.g. outskirts)</label>
+        <input class="vp-input" id="service_buffer_km" name="service_buffer_km" type="number" step="0.1" min="0"
+          value="<?= vp_h((string) ($platform['service_buffer_km'] ?? 10)) ?>">
+      </div>
+      <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+        <input type="checkbox" name="enforce_service_area" value="1"<?= ! empty($platform['enforce_service_area']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+        <span>Enforce service area in rider app and estimates (rejects out-of-area trips).</span>
+      </label>
+      <div class="vp-field" style="margin-top:0.75rem;">
+        <label class="vp-label" for="pricing_mode">Base fare model</label>
+        <select class="vp-input" id="pricing_mode" name="pricing_mode">
+          <option value="distance"<?= (string) ($platform['pricing_mode'] ?? 'distance') === 'distance' ? ' selected' : '' ?>>Distance (base + per km)</option>
+          <option value="flat_town"<?= (string) ($platform['pricing_mode'] ?? 'distance') === 'flat_town' ? ' selected' : '' ?>>Flat in-town (when distance &le; max km)</option>
+          <option value="metered"<?= (string) ($platform['pricing_mode'] ?? 'distance') === 'metered' ? ' selected' : '' ?>>Metered (day/night base + $/100 m + $/15 s wait)</option>
+        </select>
+      </div>
+      <label class="vp-toggle" style="display:flex;align-items:flex-start;gap:0.65rem;cursor:pointer;">
+        <input type="checkbox" name="use_flat_town_pricing" value="1"<?= ! empty($platform['use_flat_town_pricing']) ? ' checked' : '' ?> style="margin-top:0.2rem;">
+        <span>Also use flat in-town when distance is within the max (when not using the flat_town model alone)</span>
+      </label>
+      <div class="vp-field">
+        <label class="vp-label" for="flat_town_fare">Flat in-town total fare (currency units)</label>
+        <input class="vp-input" id="flat_town_fare" name="flat_town_fare" type="number" step="0.01" min="0"
+          value="<?= vp_h((string) ($platform['flat_town_fare'] ?? 0)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="flat_town_max_distance_km">Max distance (km) for flat in-town</label>
+        <input class="vp-input" id="flat_town_max_distance_km" name="flat_town_max_distance_km" type="number" step="0.01" min="0"
+          value="<?= vp_h((string) ($platform['flat_town_max_distance_km'] ?? 0)) ?>">
+      </div>
+      <p class="vp-field-hint">Metered mode uses the timezone above for day vs night. Waiting time is 0 for an instant estimate in the app.</p>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_base_day">Meter — day base fare</label>
+        <input class="vp-input" id="meter_base_day" name="meter_base_day" type="number" step="0.0001" min="0"
+          value="<?= vp_h((string) ($platform['meter_base_day'] ?? 4.75)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_base_night">Meter — night base fare</label>
+        <input class="vp-input" id="meter_base_night" name="meter_base_night" type="number" step="0.0001" min="0"
+          value="<?= vp_h((string) ($platform['meter_base_night'] ?? 6.65)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_per_100m">Meter — amount per 100 m of distance</label>
+        <input class="vp-input" id="meter_per_100m" name="meter_per_100m" type="number" step="0.0001" min="0"
+          value="<?= vp_h((string) ($platform['meter_per_100m'] ?? 0.211)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_per_15s_wait">Meter — amount per 15 s wait</label>
+        <input class="vp-input" id="meter_per_15s_wait" name="meter_per_15s_wait" type="number" step="0.0001" min="0"
+          value="<?= vp_h((string) ($platform['meter_per_15s_wait'] ?? 0.15)) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_night_start_hour">Night start hour (0–23, local)</label>
+        <input class="vp-input" id="meter_night_start_hour" name="meter_night_start_hour" type="number" min="0" max="23"
+          value="<?= (int) ($platform['meter_night_start_hour'] ?? 0) ?>">
+      </div>
+      <div class="vp-field">
+        <label class="vp-label" for="meter_night_end_hour">Night end hour (0–24, local; exclusive)</label>
+        <input class="vp-input" id="meter_night_end_hour" name="meter_night_end_hour" type="number" min="0" max="24"
+          value="<?= (int) ($platform['meter_night_end_hour'] ?? 6) ?>">
+      </div>
+      <?php } ?>
       <button type="submit" class="vp-btn vp-btn--primary">Save platform settings</button>
     </form>
   </div>

@@ -14,14 +14,18 @@ require_once $backendRoot . '/src/DispatchService.php';
 require_once $backendRoot . '/src/SchemaInspector.php';
 require_once $backendRoot . '/src/ConsoleRiderService.php';
 require_once $backendRoot . '/src/RideRequestNotifier.php';
+require_once $backendRoot . '/src/RegionRepository.php';
+require_once $backendRoot . '/src/ServiceAreaValidator.php';
 use VprideBackend\ConsoleRiderService;
 use VprideBackend\DispatchService;
 use VprideBackend\FarePromoService;
 use VprideBackend\FixedPricingService;
 use VprideBackend\PlatformPromoSettingsRepository;
+use VprideBackend\RegionRepository;
 use VprideBackend\RideRequestNotifier;
 use VprideBackend\RideRepository;
 use VprideBackend\SchemaInspector;
+use VprideBackend\ServiceAreaValidator;
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
@@ -146,8 +150,51 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                 }
             }
 
+            if ($error === '' && $settings !== null) {
+                $sa = ServiceAreaValidator::loadSettings($pdo);
+                if ($sa['enforce']) {
+                    if (! SchemaInspector::tableExists($pdo, 'region_configs')) {
+                        $error = 'Service area enforcement is on, but the region is not configured.';
+                    } else {
+                        $region = (new RegionRepository($pdo))->getActivePayload();
+                        $lic = (float) ($settings['service_licensed_radius_km'] ?? 0.0);
+                        $buf = (float) ($settings['service_buffer_km'] ?? 0.0);
+                        $outErr = ServiceAreaValidator::checkTrip(
+                            $region,
+                            $plat,
+                            $plng,
+                            $dlatF,
+                            $dlngF,
+                            $lic,
+                            $buf,
+                        );
+                        if ($outErr !== null) {
+                            $error = match ($outErr) {
+                                'region_config_unavailable' => 'Service area is not configured (no active region).',
+                                'dropoff_outside_service_area' => 'Drop-off is outside the licensed service area.',
+                                'pickup_outside_service_area' => 'Pickup is outside the licensed service area.',
+                                default => 'This trip is not within the service area.',
+                            };
+                        }
+                    }
+                }
+            }
+
+            $fareAtUtc = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+            if ($scheduledUtc !== null) {
+                try {
+                    $fareAtUtc = new DateTimeImmutable($scheduledUtc, new DateTimeZone('UTC'));
+                } catch (Throwable) {
+                }
+            }
+
             if ($error === '' && $distanceKm !== null && $settings !== null) {
-                $baseFare = FixedPricingService::fareBeforePromosFromDistance($settings, $distanceKm);
+                $baseFare = FixedPricingService::fareForBookingRequest(
+                    $settings,
+                    $distanceKm,
+                    0,
+                    $fareAtUtc,
+                );
             } else {
                 $baseFare = null;
             }
@@ -167,7 +214,12 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
                     ];
                 $pricingReturn = null;
                 if ($roundTrip && $distanceKm !== null && PlatformPromoSettingsRepository::tableExists($pdo) && $settings !== null) {
-                    $baseRet = FixedPricingService::fareBeforePromosFromDistance($settings, $distanceKm);
+                    $baseRet = FixedPricingService::fareForBookingRequest(
+                        $settings,
+                        $distanceKm,
+                        0,
+                        $fareAtUtc,
+                    );
                     $pricingReturn = (new FarePromoService($pdo))->computeForNewRide(
                         $riderUserId,
                         null,

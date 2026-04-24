@@ -569,6 +569,9 @@ final class RideRepository
             );
             $stmt->execute([$driverRiderUserId, $rideId]);
         }
+        if ($stmt->rowCount() > 0) {
+            $this->setRideFleetVehicleFromDriver($rideId, $driverRiderUserId);
+        }
     }
 
     public function clearDriverOnRequestedRide(int $rideId): void
@@ -576,10 +579,17 @@ final class RideRepository
         if (! SchemaInspector::columnExists($this->pdo, 'rides', 'driver_rider_user_id')) {
             return;
         }
-        $stmt = $this->pdo->prepare(
-            'UPDATE rides SET driver_rider_user_id = NULL '
-            . "WHERE id = ? AND status = 'requested'",
-        );
+        if (SchemaInspector::columnExists($this->pdo, 'rides', 'fleet_vehicle_id')) {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET driver_rider_user_id = NULL, fleet_vehicle_id = NULL '
+                . "WHERE id = ? AND status = 'requested'",
+            );
+        } else {
+            $stmt = $this->pdo->prepare(
+                'UPDATE rides SET driver_rider_user_id = NULL '
+                . "WHERE id = ? AND status = 'requested'",
+            );
+        }
         $stmt->execute([$rideId]);
         if (SchemaInspector::columnExists($this->pdo, 'rides', 'assign_source')) {
             $u = $this->pdo->prepare(
@@ -587,6 +597,24 @@ final class RideRepository
             );
             $u->execute([$rideId]);
         }
+    }
+
+    private function setRideFleetVehicleFromDriver(int $rideId, int $driverRiderUserId): void
+    {
+        if (! SchemaInspector::columnExists($this->pdo, 'rides', 'fleet_vehicle_id')) {
+            return;
+        }
+        $fv = null;
+        if (SchemaInspector::tableExists($this->pdo, 'fleet_drivers')) {
+            $q = $this->pdo->prepare('SELECT fleet_vehicle_id FROM fleet_drivers WHERE rider_user_id = ? LIMIT 1');
+            $q->execute([$driverRiderUserId]);
+            $col = $q->fetchColumn();
+            if ($col !== false && $col !== null) {
+                $fv = (int) $col;
+            }
+        }
+        $u = $this->pdo->prepare('UPDATE rides SET fleet_vehicle_id = ? WHERE id = ?');
+        $u->execute([$fv, $rideId]);
     }
 
     /**
@@ -622,6 +650,10 @@ final class RideRepository
                 );
             }
             $stmt->execute([$driverRiderUserId, $rideId]);
+        }
+
+        if ($stmt->rowCount() > 0) {
+            $this->setRideFleetVehicleFromDriver($rideId, $driverRiderUserId);
         }
 
         return $stmt->rowCount() > 0;

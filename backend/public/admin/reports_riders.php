@@ -7,11 +7,13 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/RiderUserRepository.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\RiderUserRepository;
+use VprideBackend\SchemaInspector;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -46,17 +48,29 @@ if ($export) {
     $fn = 'vpride-riders-' . gmdate('Y-m-d') . '.csv';
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="' . $fn . '"');
-    echo vp_csv_line(['id', 'email', 'display_name', 'google_sub', 'created_at', 'updated_at']);
+    $hasPhone = SchemaInspector::columnExists($pdo, 'rider_users', 'phone');
+    $head = ['id', 'email', 'display_name'];
+    if ($hasPhone) {
+        $head[] = 'phone';
+    }
+    $head = array_merge($head, ['google_sub', 'created_at', 'updated_at']);
+    echo vp_csv_line($head);
     $all = $repo->listFiltered($qParam, 10000, 0);
     foreach ($all as $r) {
-        echo vp_csv_line([
+        $row = [
             (string) $r['id'],
             (string) $r['email'],
             (string) ($r['display_name'] ?? ''),
+        ];
+        if ($hasPhone) {
+            $row[] = (string) ($r['phone'] ?? '');
+        }
+        $row = array_merge($row, [
             (string) $r['google_sub'],
             (string) $r['created_at'],
             (string) $r['updated_at'],
         ]);
+        echo vp_csv_line($row);
     }
     exit;
 }
@@ -100,7 +114,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <div class="vp-filter-grid">
         <div class="vp-field vp-field--grow">
           <label class="vp-label" for="q">Keyword</label>
-          <input class="vp-input" id="q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Email, name, Google subject, or ID" autocomplete="off">
+          <input class="vp-input" id="q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Email, name, phone, Google subject, or ID" autocomplete="off">
         </div>
         <div class="vp-field">
           <label class="vp-label" for="per_page">Rows per page</label>
@@ -161,6 +175,9 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">ID</th>
               <th scope="col">Email</th>
               <th scope="col">Name</th>
+              <?php if (SchemaInspector::columnExists($pdo, 'rider_users', 'phone')) { ?>
+                <th scope="col">Phone</th>
+              <?php } ?>
               <th scope="col">Google sub</th>
               <th scope="col">Joined</th>
             </tr>
@@ -171,6 +188,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__id"><?= (int) $r['id'] ?></td>
                 <td><?= vp_h((string) $r['email']) ?></td>
                 <td><?= vp_h((string) ($r['display_name'] ?? '—')) ?></td>
+                <?php if (SchemaInspector::columnExists($pdo, 'rider_users', 'phone')) { ?>
+                  <td class="vp-table__mono" style="font-size:0.75rem;"><?= vp_h((string) ($r['phone'] ?? '—')) ?></td>
+                <?php } ?>
                 <td class="vp-table__mono vp-table__muted" style="font-size:0.75rem; max-width:10rem;"><?= vp_h((string) $r['google_sub']) ?></td>
                 <td class="vp-table__muted" style="font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
               </tr>

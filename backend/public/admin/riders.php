@@ -7,11 +7,13 @@ require_once $backendRoot . '/src/Config.php';
 require_once $backendRoot . '/src/Database.php';
 require_once $backendRoot . '/src/Auth.php';
 require_once $backendRoot . '/src/RiderUserRepository.php';
+require_once $backendRoot . '/src/SchemaInspector.php';
 
 use VprideBackend\Auth;
 use VprideBackend\Config;
 use VprideBackend\Database;
 use VprideBackend\RiderUserRepository;
+use VprideBackend\SchemaInspector;
 
 Config::load($backendRoot . '/.env');
 Auth::startSession();
@@ -56,7 +58,7 @@ require __DIR__ . '/includes/app_shell_start.php';
 
 <header class="vp-page-hero">
   <h1 class="vp-page-title">Riders</h1>
-  <p class="vp-page-desc">Passenger app accounts (excludes driver-only fleet logins — <code>driver_account_only</code>).</p>
+  <p class="vp-page-desc">Passenger app accounts (excludes driver-only fleet logins — <code>driver_account_only</code>). Phone is shown when the <code>rider_users.phone</code> column exists (run <code>migration_client_brief_2026.sql</code> for SMS / console-registered riders).</p>
 </header>
 
 <div class="vp-toolbar vp-toolbar--split">
@@ -78,7 +80,7 @@ require __DIR__ . '/includes/app_shell_start.php';
       <form method="get" action="<?= vp_h(vp_url('/riders')) ?>" class="vp-inline-search">
         <input type="hidden" name="per_page" value="<?= (int) $perPage ?>">
         <label class="vp-sr-only" for="rider-q">Search riders</label>
-        <input class="vp-input vp-input--search" id="rider-q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Search email, name, ID…" autocomplete="off">
+        <input class="vp-input vp-input--search" id="rider-q" name="q" type="search" value="<?= vp_h($q) ?>" placeholder="Search email, name, phone, ID…" autocomplete="off">
         <button type="submit" class="vp-btn vp-btn--primary vp-btn--sm">Search</button>
       </form>
     </div>
@@ -107,7 +109,7 @@ require __DIR__ . '/includes/app_shell_start.php';
         <?php
           vp_empty_state(
               'No riders yet',
-              'Profiles are created when someone signs in with Google on the VP Ride app.',
+              'Profiles are created from the app (Google, email/password) or from a console “new rider” booking.',
               Auth::can('reports.view') ? [['label' => 'Reports & export', 'href' => vp_url('/reports/riders'), 'variant' => 'primary']] : [],
           );
         ?>
@@ -121,6 +123,9 @@ require __DIR__ . '/includes/app_shell_start.php';
               <th scope="col">ID</th>
               <th scope="col">Email</th>
               <th scope="col">Name</th>
+              <?php if (SchemaInspector::columnExists($pdo, 'rider_users', 'phone')) { ?>
+                <th scope="col">Phone</th>
+              <?php } ?>
               <th scope="col">Google sub</th>
               <th scope="col">Joined</th>
             </tr>
@@ -131,6 +136,9 @@ require __DIR__ . '/includes/app_shell_start.php';
                 <td class="vp-table__id"><?= (int) $r['id'] ?></td>
                 <td><?= vp_h((string) $r['email']) ?></td>
                 <td><?= vp_h((string) ($r['display_name'] ?? '—')) ?></td>
+                <?php if (SchemaInspector::columnExists($pdo, 'rider_users', 'phone')) { ?>
+                  <td class="vp-table__mono" style="font-size:0.8125rem;"><?= vp_h((string) ($r['phone'] ?? '—')) ?></td>
+                <?php } ?>
                 <td class="vp-table__mono vp-table__muted" style="font-size:0.75rem; max-width:12rem; overflow:hidden; text-overflow:ellipsis;"><?= vp_h((string) $r['google_sub']) ?></td>
                 <td style="color:var(--vp-muted); font-size:0.8125rem;"><?= vp_h((string) $r['created_at']) ?></td>
               </tr>
